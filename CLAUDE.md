@@ -1,5 +1,39 @@
 @AGENTS.md
 
+## Project Context
+
+**OSS Growth Index** is a co-branded quarterly website by **Supabase** and **>commit VC** (commit.fund) that ranks the top 200 fastest-growing open source GitHub organizations each quarter.
+
+### Goals
+- **>commit:** build reputation with OSS developers, surface potential investment deals
+- **Supabase:** generate developer leads and awareness
+
+### How the ranking works
+Each quarter, growth is measured across multiple signals per GitHub organization:
+- GitHub stars and contributors
+- npm downloads
+- PyPI downloads
+- HuggingFace downloads and likes
+
+Each signal produces a growth rate and a percentile rank. These are weighted and aggregated into a single composite score used for ranking.
+
+### Two tiers
+The index is split into two independent leaderboards:
+- **Above 1,000 stars** — established orgs with meaningful baselines
+- **Below 1,000 stars** — emerging orgs where relative growth is more meaningful
+
+### Pages
+1. **Home (`/`)** — ranked table for both tiers, with key metrics per org (rank, name, growth score, stars, country, etc.)
+2. **Org detail (`/org/[slug]`)** — in-depth breakdown for a single organization: all signal metrics, growth rates, description, links
+
+### Data
+- Source during prototyping: CSV files in `/data/`, read server-side via `src/lib/data.ts`
+- Future: Supabase (Postgres), updated quarterly
+- Key fields per org: `company_name`, `logo_url`, `description`, `country`, `homepage_url`, `github_owner_url`, per-signal start/end values, growth rates, percentiles, and weights
+
+### Context of use
+Users land from social media, newsletters, or Supabase/commit blog posts. They are technically literate and opinionated — they judge quality instantly. The experience must reward both a **quick scan** (top 10, tier badges, growth numbers) and **deeper exploration** (methodology, org detail page).
+
 ## Design Context
 
 ### Users
