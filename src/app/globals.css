@@ -24,6 +24,7 @@
   --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-brand: var(--brand);
+  --color-green: var(--green);
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
@@ -74,6 +75,7 @@
   --chart-5: oklch(0.424 0.199 265.638);
   --radius: 0.625rem;
   --brand: #F69694;
+  --green: #3ECF8E;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -117,6 +119,7 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
   --brand: #F69694;
+  --green: #3ECF8E;
 }
 
 @layer base {

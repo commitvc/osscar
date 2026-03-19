@@ -85,8 +85,8 @@ function MetricCell({ value, rate }: MetricCellProps) {
       {rate != null ? (
         <span className={cn(
           "font-mono text-[0.7rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm",
-          rateSign === "positive" && "bg-brand/15 text-brand",
-          rateSign === "negative" && "bg-destructive/15 text-destructive",
+          rateSign === "positive" && "bg-green/15 text-green",
+          rateSign === "negative" && "bg-brand/15 text-brand",
           rateSign === "zero" && "text-muted-foreground/40",
         )}>
           {formatGrowthRate(rate)}
@@ -202,7 +202,7 @@ export function OrgTable({ above, below }: OrgTableProps) {
       id: "gh_stars",
       sortUndefined: 1,
       sortDescFirst: true,
-      header: ({ column }) => <SortHeader column={column} label="Stars" />,
+      header: ({ column }) => <SortHeader column={column} label="STARS" />,
       cell: ({ row }) => (
         <MetricCell
           value={row.original.github_stars_end}
@@ -214,7 +214,7 @@ export function OrgTable({ above, below }: OrgTableProps) {
       id: "gh_contrib",
       sortUndefined: 1,
       sortDescFirst: true,
-      header: ({ column }) => <SortHeader column={column} label="Contributors" />,
+      header: ({ column }) => <SortHeader column={column} label="CONTRIBUTORS" />,
       cell: ({ row }) => (
         <MetricCell
           value={row.original.github_contributors_end}
@@ -226,7 +226,7 @@ export function OrgTable({ above, below }: OrgTableProps) {
       id: "npm",
       sortUndefined: 1,
       sortDescFirst: true,
-      header: ({ column }) => <SortHeader column={column} label="NPM" />,
+      header: ({ column }) => <SortHeader column={column} label="NPM DOWNLOADS" />,
       cell: ({ row }) => (
         <MetricCell
           value={row.original.npm_downloads_end}
@@ -238,7 +238,7 @@ export function OrgTable({ above, below }: OrgTableProps) {
       id: "pypi",
       sortUndefined: 1,
       sortDescFirst: true,
-      header: ({ column }) => <SortHeader column={column} label="PyPI" />,
+      header: ({ column }) => <SortHeader column={column} label="PYPI DOWNLOADS" />,
       cell: ({ row }) => (
         <MetricCell
           value={row.original.pypi_downloads_end}
@@ -252,7 +252,7 @@ export function OrgTable({ above, below }: OrgTableProps) {
         id: "hf",
         sortUndefined: 1,
         sortDescFirst: true,
-        header: ({ column }) => <SortHeader column={column} label="Hugging Face" />,
+        header: ({ column }) => <SortHeader column={column} label="HUGGING FACE" />,
         cell: ({ row }) => {
           const org = row.original
           const value = org.huggingface_downloads_end ?? org.huggingface_likes_end
@@ -348,12 +348,12 @@ export function OrgTable({ above, below }: OrgTableProps) {
                     className={cn(
                       "text-[0.65rem] uppercase tracking-widest text-muted-foreground/70 font-semibold py-3",
                       header.id === "rank" && "w-12",
-                      header.id === "org" && "w-90",
-                      header.id === "gh_stars" && "w-24 pl-6",
-                      header.id === "gh_contrib" && "w-28",
-                      header.id === "npm" && "w-24",
-                      header.id === "pypi" && "w-24",
-                      header.id === "hf" && "w-28",
+                      header.id === "org" && "w-72",
+                      header.id === "gh_stars" && "w-32 pl-4",
+                      header.id === "gh_contrib" && "w-36",
+                      header.id === "npm" && "w-36",
+                      header.id === "pypi" && "w-36",
+                      header.id === "hf" && "w-36",
                       header.id === "links" && "w-16",
                     )}
                   >
@@ -380,7 +380,7 @@ export function OrgTable({ above, below }: OrgTableProps) {
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
-                      className={cn("py-3", cell.column.id === "gh_stars" && "pl-6")}
+                      className={cn("py-3", cell.column.id === "gh_stars" && "pl-4")}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
