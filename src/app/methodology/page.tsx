@@ -39,14 +39,11 @@ function MetricTable() {
     { key: "github_contributors", label: "GitHub Contributors", family: "github", description: "Unique contributors across the org's repos" },
     { key: "npm_downloads", label: "npm Downloads", family: "usage", description: "Monthly download count from npm" },
     { key: "pypi_downloads", label: "PyPI Downloads", family: "usage", description: "Monthly download count from PyPI" },
-    { key: "huggingface_downloads", label: "HuggingFace Downloads", family: "huggingface", description: "Model/dataset downloads on Hugging Face" },
-    { key: "huggingface_likes", label: "HuggingFace Likes", family: "huggingface", description: "Likes on Hugging Face models and datasets" },
   ]
 
   const familyColors: Record<string, string> = {
     github: "text-green border-green/30 bg-green/5",
     usage: "text-blue-400 border-blue-400/30 bg-blue-400/5",
-    huggingface: "text-yellow-400 border-yellow-400/30 bg-yellow-400/5",
   }
 
   return (
@@ -83,8 +80,6 @@ function PaddingTable() {
     { metric: "github_contributors", below: "5", above: "10" },
     { metric: "npm_downloads", below: "100", above: "1,000" },
     { metric: "pypi_downloads", below: "100", above: "1,000" },
-    { metric: "huggingface_downloads", below: "100", above: "1,000" },
-    { metric: "huggingface_likes", below: "100", above: "1,000" },
   ]
 
   return (
@@ -133,7 +128,7 @@ export default function MethodologyPage() {
             </h1>
             <p className="text-lg text-muted-foreground leading-relaxed">
               A transparent, signal-weighted ranking of the fastest-growing open source organizations.
-              Each quarter, we measure growth across six signals, normalize within peer groups, and produce a single composite score.
+              Each quarter, we measure growth across four signals, normalize within peer groups, and produce a single composite score.
             </p>
           </div>
         </section>
@@ -151,7 +146,7 @@ export default function MethodologyPage() {
                 Instead, we measure the <em className="text-foreground not-italic font-medium">rate of change</em> over a single quarter, normalized so that a small org and a large org can be compared fairly within their peer group.
               </p>
               <p>
-                Six signals are tracked per organization. Not every org has data for every signal — a pure Python library won't have npm downloads; a CLI tool might not appear on Hugging Face.
+                Four signals are tracked per organization. Not every org has data for every signal — a pure Python library won't have npm downloads.
                 The weighting step handles this gracefully: signals with no data contribute no weight, so the composite score adapts to whatever signals are available.
               </p>
             </Prose>
@@ -199,10 +194,10 @@ export default function MethodologyPage() {
 
           {/* Step 3: Signals */}
           <Section id="signals">
-            <SectionTitle step="03">Measure six growth signals</SectionTitle>
+            <SectionTitle step="03">Measure four growth signals</SectionTitle>
             <Prose>
               <p>
-                Each organization is tracked across six signals. For each signal, we record the value at the start and end of the quarter.
+                Each organization is tracked across four signals. For each signal, we record the value at the start and end of the quarter.
               </p>
             </Prose>
             <MetricTable />
@@ -246,29 +241,29 @@ export default function MethodologyPage() {
                 ))}
               </ul>
               <p className="mt-4">
-                Orgs that don't use npm, PyPI, or Hugging Face simply won't have data for those signals, so they're ineligible for them. The weighting step (below) ensures this doesn't penalize them.
+                Orgs that don't use npm or PyPI simply won't have data for those signals, so they're ineligible for them. The weighting step (below) ensures this doesn't penalize them.
               </p>
             </Prose>
           </Section>
 
-          {/* Step 4: Z-score */}
+          {/* Step 4: Robust scaling */}
           <Section id="normalization">
             <SectionTitle step="04">Normalize growth rates within each division</SectionTitle>
             <Prose>
               <p>
                 Raw growth rates can't be compared directly across signals — a 20% increase in stars means something very different from a 20% increase in PyPI downloads.
-                To put all signals on a common scale, we compute a <em className="text-foreground not-italic font-medium">z-score</em> for each signal within each division:
+                To put all signals on a common scale, we apply <em className="text-foreground not-italic font-medium">robust scaling</em> (equivalent to scikit-learn's <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">RobustScaler</code>) for each signal within each division:
               </p>
             </Prose>
             <Formula>
-              z = (growth_rate − μ) / σ
+              scaled = (growth_rate − median) / IQR
             </Formula>
             <Prose>
               <p>
-                where μ is the mean and σ is the population standard deviation of growth rates for that signal, computed only over eligible organizations in the same division.
+                where <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">median</code> and <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">IQR</code> (interquartile range, Q75 − Q25) are computed only over eligible organizations in the same division.
               </p>
               <p>
-                A z-score of 0 means the org grew at the average rate. A z-score of +2 means it grew two standard deviations above the mean — a strong outlier. Negative z-scores indicate below-average growth.
+                Unlike z-score normalization, this approach is robust to outliers — a single org with explosive growth won't distort the scale for everyone else, since the median and IQR are not sensitive to extreme values.
               </p>
               <p>
                 We also compute a <em className="text-foreground not-italic font-medium">growth percentile</em> (what fraction of peers this org grew faster than) and a <em className="text-foreground not-italic font-medium">size percentile</em> (where the org's end-of-quarter value ranks among peers). Both are used in the weighting step.
@@ -311,19 +306,19 @@ export default function MethodologyPage() {
             <SectionTitle step="06">Compute composite score</SectionTitle>
             <Prose>
               <p>
-                The composite score is a weighted sum of z-scores across all eligible signals:
+                The composite score is a weighted sum of scaled growth rates across all eligible signals:
               </p>
             </Prose>
             <Formula>
-              composite_score = Σ (final_weight<sub>i</sub> × z_score<sub>i</sub>)
+              composite_score = Σ (final_weight<sub>i</sub> × scaled_rate<sub>i</sub>)
             </Formula>
             <Prose>
               <p>
-                Because each z-score is relative to that signal's distribution within the division, and the weights adapt to the signals each org actually uses, the composite score is directly comparable across all organizations in the same division — regardless of which signals they participate in.
+                Because each scaled rate is relative to that signal's distribution within the division, and the weights adapt to the signals each org actually uses, the composite score is directly comparable across all organizations in the same division — regardless of which signals they participate in.
               </p>
               <p>
                 An org only active on GitHub and PyPI is evaluated on those two signals with their weights summing to 1.
-                An org active across all six signals is evaluated on all six, with the same property.
+                An org active across all four signals is evaluated on all four, with the same property.
               </p>
             </Prose>
           </Section>

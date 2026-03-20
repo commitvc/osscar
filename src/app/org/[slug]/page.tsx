@@ -6,8 +6,6 @@ import {
   Users,
   Package,
   Package2,
-  Brain,
-  Heart,
   Github,
   Globe,
   Linkedin,
@@ -161,28 +159,6 @@ function buildSignals(org: OrgEntry): SignalConfig[] {
       rate: org.pypi_downloads_growth_rate,
       percentile: org.pypi_downloads_growth_percentile,
       weight: org.pypi_downloads_final_weight,
-    },
-    {
-      key: "huggingface_downloads",
-      label: "HF Downloads",
-      icon: Brain,
-      color: "#FBBF24",
-      end: org.huggingface_downloads_end,
-      start: org.huggingface_downloads_start,
-      rate: org.huggingface_downloads_growth_rate,
-      percentile: org.huggingface_downloads_growth_percentile,
-      weight: org.huggingface_downloads_final_weight,
-    },
-    {
-      key: "huggingface_likes",
-      label: "HF Likes",
-      icon: Heart,
-      color: "#F472B6",
-      end: org.huggingface_likes_end,
-      start: org.huggingface_likes_start,
-      rate: org.huggingface_likes_growth_rate,
-      percentile: org.huggingface_likes_growth_percentile,
-      weight: org.huggingface_likes_final_weight,
     },
   ];
 }
@@ -385,13 +361,6 @@ export default async function OrgPage({ params }: Props) {
           data: frontendOrg.pypi_weekly,
           color: BRAND,
           periodLabel: "weekly downloads",
-        },
-        {
-          key: "hf",
-          label: "HuggingFace",
-          data: frontendOrg.huggingface_monthly,
-          color: BRAND,
-          periodLabel: "monthly downloads",
         },
       ]
     : [];
@@ -643,10 +612,9 @@ export default async function OrgPage({ params }: Props) {
                 </p>
                 <p className="text-xs text-muted-foreground/45 leading-relaxed">
                   Rankings are based on quarter-over-quarter growth across GitHub
-                  stars, contributors, npm downloads, PyPI downloads, and
-                  HuggingFace activity. Each signal is normalized to a percentile
-                  rank within the tier and weighted by relevance to produce a
-                  composite score.
+                  stars, contributors, npm downloads, and PyPI downloads. Each
+                  signal is normalized to a percentile rank within the tier and
+                  weighted by relevance to produce a composite score.
                 </p>
               </div>
               <div className="flex flex-col items-start sm:items-end gap-1 shrink-0">
