@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import {
   useReactTable,
   getCoreRowModel,
@@ -166,15 +167,13 @@ export function OrgTable({ above, below }: OrgTableProps) {
           <div className="flex items-start gap-2.5">
             <OrgLogo logoUrl={org.logo_url} name={org.company_name} size={24} className="mt-0.5 shrink-0" />
             <div className="min-w-0">
-              <a
-                href={org.github_owner_url ?? "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold text-sm text-foreground hover:text-brand transition-colors truncate leading-snug flex items-baseline gap-1 cursor-pointer"
+              <Link
+                href={org.github_owner_url ? `/org/${org.github_owner_url.trim().replace(/\/$/, "").split("/").pop()?.toLowerCase()}` : "#"}
+                className="font-semibold text-sm text-foreground hover:text-green transition-colors truncate leading-snug flex items-baseline gap-1 cursor-pointer"
               >
                 <span className="truncate">{org.company_name}</span>
                 {flag && <span className="text-[0.85em] shrink-0">{flag}</span>}
-              </a>
+              </Link>
               {org.description ? (
                 <Tooltip.Root>
                   <Tooltip.Trigger

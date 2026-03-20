@@ -42,5 +42,4 @@ next-env.d.ts
 
 # misc
 /symlinks
-/data
 /.claude

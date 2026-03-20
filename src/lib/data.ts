@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import Papa from "papaparse";
-import type { OrgEntry } from "@/types";
+import type { OrgEntry, FrontendOrgData, RepoEntry, TimeSeriesPoint } from "@/types";
 
 function parseCsv(filename: string): OrgEntry[] {
   const file = fs.readFileSync(
@@ -22,4 +22,53 @@ export function getAbove1000(): OrgEntry[] {
 
 export function getBelow1000(): OrgEntry[] {
   return parseCsv("oss_growth_index_below_1000_Q42025_top200_clean.csv");
+}
+
+type RawFrontendRow = Record<string, string>;
+
+function safeParseJson<T>(str: string | null | undefined): T[] {
+  if (!str) return [];
+  try {
+    const parsed = JSON.parse(str);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function getFrontendData(): FrontendOrgData[] {
+  const file = fs.readFileSync(
+    path.join(process.cwd(), "data", "oss_index_prototype_frontend_data.csv"),
+    "utf-8"
+  );
+  const { data } = Papa.parse<RawFrontendRow>(file, {
+    header: true,
+    dynamicTyping: false,
+    skipEmptyLines: true,
+  });
+
+  return data.map((row) => ({
+    github_owner_id: row.github_owner_id ?? "",
+    company_id: row.company_id ?? "",
+    name: row.name ?? "",
+    description: row.description || null,
+    github_url: row.github_url ?? "",
+    logo_url: row.logo_url || null,
+    github_homepage_url: row.github_homepage_url || null,
+    country: row.country || null,
+    homepage_url: row.homepage_url || null,
+    repositories: safeParseJson<RepoEntry>(row.repositories),
+    github_stars_weekly: safeParseJson<TimeSeriesPoint>(row.github_stars_weekly),
+    github_contributors_weekly: safeParseJson<TimeSeriesPoint>(
+      row.github_contributors_weekly
+    ),
+    npm_weekly: safeParseJson<TimeSeriesPoint>(row.npm_weekly),
+    pypi_weekly: safeParseJson<TimeSeriesPoint>(row.pypi_weekly),
+    huggingface_monthly: safeParseJson<TimeSeriesPoint>(row.huggingface_monthly),
+  }));
+}
+
+export function extractSlug(url: string | null | undefined): string | null {
+  if (!url) return null;
+  return url.trim().replace(/\/$/, "").split("/").pop()?.toLowerCase() ?? null;
 }

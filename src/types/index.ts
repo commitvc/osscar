@@ -50,3 +50,36 @@ export type OrgEntry = {
 };
 
 export type Tier = "above_1000" | "below_1000";
+
+export type RepoEntry = {
+  url: string;
+  name: string;
+  forks: number;
+  stars: number;
+  license: string | null;
+  language: string | null;
+  description: string | null;
+};
+
+export type TimeSeriesPoint = {
+  date: string;
+  value: number;
+};
+
+export type FrontendOrgData = {
+  github_owner_id: string;
+  company_id: string;
+  name: string;
+  description: string | null;
+  github_url: string;
+  logo_url: string | null;
+  github_homepage_url: string | null;
+  country: string | null;
+  homepage_url: string | null;
+  repositories: RepoEntry[];
+  github_stars_weekly: TimeSeriesPoint[];
+  github_contributors_weekly: TimeSeriesPoint[];
+  npm_weekly: TimeSeriesPoint[];
+  pypi_weekly: TimeSeriesPoint[];
+  huggingface_monthly: TimeSeriesPoint[];
+};
