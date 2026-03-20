@@ -129,7 +129,7 @@ interface OrgTableProps {
 }
 
 export function OrgTable({ above, below }: OrgTableProps) {
-  const [activeTier, setActiveTier] = useState<Tier>("above_1000")
+  const [activeTier, setActiveTier] = useState<Tier>("below_1000")
   const [sorting, setSorting] = useState<SortingState>([])
 
   const columns = [
@@ -249,21 +249,6 @@ export function OrgTable({ above, below }: OrgTableProps) {
         />
       ),
     }),
-    columnHelper.accessor(
-      row => row.huggingface_downloads_growth_rate ?? row.huggingface_likes_growth_rate,
-      {
-        id: "hf",
-        sortUndefined: 1,
-        sortDescFirst: true,
-        header: ({ column }) => <SortHeader column={column} label="HUGGING FACE" />,
-        cell: ({ row }) => {
-          const org = row.original
-          const value = org.huggingface_downloads_end ?? org.huggingface_likes_end
-          const rate = org.huggingface_downloads_growth_rate ?? org.huggingface_likes_growth_rate
-          return <MetricCell value={value} rate={rate} />
-        },
-      }
-    ),
     columnHelper.display({
       id: "links",
       header: "",
@@ -323,7 +308,7 @@ export function OrgTable({ above, below }: OrgTableProps) {
     <div className="space-y-4">
       {/* Tier selector */}
       <div className="flex gap-6 border-b border-white/10">
-        {(["above_1000", "below_1000"] as Tier[]).map((tier) => (
+        {(["below_1000", "above_1000"] as Tier[]).map((tier) => (
           <button
             key={tier}
             onClick={() => handleTierChange(tier)}
@@ -356,7 +341,6 @@ export function OrgTable({ above, below }: OrgTableProps) {
                       header.id === "gh_contrib" && "w-36",
                       header.id === "npm" && "w-36",
                       header.id === "pypi" && "w-36",
-                      header.id === "hf" && "w-36",
                       header.id === "links" && "w-16",
                     )}
                   >

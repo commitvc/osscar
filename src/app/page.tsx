@@ -24,10 +24,10 @@ export default async function Home() {
               style={{ fontSize: "clamp(1.75rem, 2vw + 0.75rem, 2.5rem)", letterSpacing: "-0.02em" }}
             >
               Top Fastest-Growing{" "}
-              <span className="text-brand">Open Source Organizations</span>
+              <span style={{ color: "#FA0D07" }}>Open Source Organizations</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
-              Ranked by composite growth across GitHub stars, contributors, npm, PyPI, and Hugging Face. Updated quarterly by{" "}
+              Ranked by composite growth across GitHub stars, contributors, npm, and PyPI. Updated quarterly by{" "}
               <span className="text-foreground font-semibold">Supabase</span>
               {" × "}
               <span className="text-foreground font-semibold">&gt;commit</span>.
