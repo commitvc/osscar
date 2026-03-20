@@ -32,6 +32,9 @@ export default async function Home() {
               {" × "}
               <span className="text-foreground font-semibold">&gt;commit</span>.
             </p>
+            <a href="/methodology" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-brand transition-colors font-mono">
+              Read the methodology →
+            </a>
           </div>
         </section>
 
