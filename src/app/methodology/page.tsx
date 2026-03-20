@@ -162,7 +162,7 @@ export default function MethodologyPage() {
             <SectionTitle step="01">Filter to GitHub organizations</SectionTitle>
             <Prose>
               <p>
-                Only accounts with <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">github_owner_type = "organization"</code> are included.
+                Only Github accounts of type organization are included.
                 Personal accounts and forks are excluded. This ensures the index reflects meaningful project ecosystems rather than individual repositories.
               </p>
             </Prose>
