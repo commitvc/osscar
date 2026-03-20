@@ -99,12 +99,12 @@ function MetricCell({ value, rate }: MetricCellProps) {
   )
 }
 
-function SortHeader({ column, label }: { column: Column<OrgEntry, number | null>; label: string }) {
+function SortHeader({ column, label, align = "right" }: { column: Column<OrgEntry, unknown>; label: string; align?: "left" | "right" }) {
   const sorted = column.getIsSorted()
   return (
     <button
       onClick={column.getToggleSortingHandler()}
-      className="flex items-center gap-1 ml-auto cursor-pointer select-none group"
+      className={`flex items-center gap-1 cursor-pointer select-none group${align === "right" ? " ml-auto" : ""}`}
     >
       {label}
       <span className={cn(
@@ -133,12 +133,14 @@ export function OrgTable({ above, below }: OrgTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
 
   const columns = [
-    columnHelper.display({
+    columnHelper.accessor((_row: OrgEntry) => 0 as number, {
       id: "rank",
-      header: "#",
-      cell: ({ row, table }) => {
-        const { pageIndex, pageSize } = table.getState().pagination
-        const rank = pageIndex * pageSize + row.index + 1
+      enableSorting: true,
+      sortingFn: (rowA, rowB) => rowA.index - rowB.index,
+      sortDescFirst: false,
+      header: ({ column }) => <SortHeader column={column} label="#" align="left" />,
+      cell: ({ row }) => {
+        const rank = row.index + 1
         const pip = RANK_PIPS[rank]
         return (
           <div className="flex items-center gap-2">
@@ -157,9 +159,11 @@ export function OrgTable({ above, below }: OrgTableProps) {
         )
       },
     }),
-    columnHelper.display({
+    columnHelper.accessor((row: OrgEntry) => row.company_name, {
       id: "org",
-      header: "Organization",
+      enableSorting: true,
+      sortDescFirst: false,
+      header: ({ column }) => <SortHeader column={column} label="Organization" align="left" />,
       cell: ({ row }) => {
         const org = row.original
         const flag = countryFlag(org.country)
@@ -364,7 +368,7 @@ export function OrgTable({ above, below }: OrgTableProps) {
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows.map((row) => {
-              const rank = pageIndex * pageSize + row.index + 1
+              const rank = row.index + 1
               return (
                 <TableRow
                   key={row.id}
