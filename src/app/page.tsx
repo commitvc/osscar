@@ -24,7 +24,7 @@ export default async function Home() {
               style={{ fontSize: "clamp(1.75rem, 2vw + 0.75rem, 2.5rem)", letterSpacing: "-0.02em" }}
             >
               Top Fastest-Growing{" "}
-              <span style={{ color: "#FA0D07" }}>Open Source Organizations</span>
+              <span className="text-green">Open Source Organizations</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
               Ranked by composite growth across GitHub stars, contributors, npm, and PyPI. Updated quarterly by{" "}
@@ -32,7 +32,7 @@ export default async function Home() {
               {" × "}
               <span className="text-foreground font-semibold">&gt;commit</span>.
             </p>
-            <a href="/methodology" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-brand transition-colors font-mono">
+            <a href="/methodology" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-green transition-colors font-mono">
               Read the methodology →
             </a>
           </div>

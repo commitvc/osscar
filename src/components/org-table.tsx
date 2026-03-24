@@ -315,7 +315,7 @@ export function OrgTable({ above, below }: OrgTableProps) {
             className={cn(
               "pb-3 text-xs uppercase tracking-widest font-semibold transition-colors -mb-px cursor-pointer",
               activeTier === tier
-                ? "border-b-2 border-brand text-foreground"
+                ? "border-b-2 border-green text-foreground"
                 : "text-muted-foreground hover:text-foreground/70"
             )}
           >

@@ -331,7 +331,7 @@ export default async function OrgPage({ params }: Props) {
   const tierLabel = tier === "above_1000" ? "Scaling" : "Emerging";
 
   // Chart metrics — all use the brand accent color for visual consistency
-  const BRAND = "#F69694";
+  const BRAND = "#3ECF8E";
   const chartMetrics: MetricConfig[] = frontendOrg
     ? [
         {
@@ -395,7 +395,7 @@ export default async function OrgPage({ params }: Props) {
             className="absolute inset-0 pointer-events-none"
             style={{
               background:
-                "radial-gradient(ellipse 55% 90% at 90% 50%, rgba(246,150,148,0.04) 0%, transparent 65%)",
+                "radial-gradient(ellipse 55% 90% at 90% 50%, rgba(62,207,142,0.04) 0%, transparent 65%)",
             }}
           />
 
@@ -421,7 +421,7 @@ export default async function OrgPage({ params }: Props) {
                     </h1>
                     <div className="flex items-center gap-2.5 mt-2 flex-wrap">
                       <span
-                        className="font-mono text-[0.6rem] uppercase tracking-widest font-semibold px-2 py-0.5 rounded-sm border border-brand/30 bg-brand/10 text-brand"
+                        className="font-mono text-[0.6rem] uppercase tracking-widest font-semibold px-2 py-0.5 rounded-sm border border-green/30 bg-green/10 text-green"
                       >
                         {tierLabel}
                       </span>
@@ -624,7 +624,7 @@ export default async function OrgPage({ params }: Props) {
                 <span
                   className={cn(
                     "font-mono text-xs font-semibold",
-                    tier === "above_1000" ? "text-green" : "text-brand"
+                    "text-green"
                   )}
                 >
                   {tierLabel} ·{" "}
