@@ -26,11 +26,11 @@ export function SiteHeader() {
           <span className="text-white/30 text-xs select-none">×</span>
           <a href="https://commit.fund" target="_blank" rel="noopener noreferrer">
             <Image
-              src="/commit-logo-dark.png"
+              src="/commit-logo-dark.svg"
               alt=">commit"
-              height={36}
-              width={80}
-              style={{ width: "auto", height: "36px" }}
+              height={18}
+              width={77}
+              style={{ width: "auto", height: "18px" }}
               className="opacity-80 hover:opacity-100 transition-opacity"
             />
           </a>
