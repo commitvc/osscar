@@ -28,8 +28,8 @@ import {
 } from "@/components/ui/table"
 
 const TIER_LABELS: Record<Tier, string> = {
-  above_1000: "Heavyweight",
-  below_1000: "Lightweight",
+  above_1000: "Scaling",
+  below_1000: "Emerging",
 }
 
 const RANK_PIPS: Record<number, string> = {

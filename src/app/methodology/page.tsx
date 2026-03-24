@@ -178,7 +178,7 @@ export default function MethodologyPage() {
                 </div>
                 <div className="border border-white/10 rounded p-4">
                   <div className="font-mono text-xs text-muted-foreground mb-1">above_1000</div>
-                  <div className="text-foreground font-semibold">Established</div>
+                  <div className="text-foreground font-semibold">Scaling</div>
                   <div className="text-sm text-muted-foreground mt-1">stars_start ≥ 1,000</div>
                 </div>
               </div>

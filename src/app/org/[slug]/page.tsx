@@ -328,7 +328,7 @@ export default async function OrgPage({ params }: Props) {
   const flag = country ? COUNTRY_FLAGS[country] : null;
   const rankColor = rank ? getRankColor(rank) : "rgba(255,255,255,0.5)";
   const rankGlow = rank ? getRankGlow(rank) : "none";
-  const tierLabel = tier === "above_1000" ? "Heavyweight" : "Lightweight";
+  const tierLabel = tier === "above_1000" ? "Scaling" : "Emerging";
 
   // Chart metrics — all use the brand accent color for visual consistency
   const BRAND = "#F69694";
