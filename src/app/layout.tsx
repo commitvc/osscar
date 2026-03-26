@@ -15,7 +15,7 @@ const sourceCodePro = Source_Code_Pro({
 });
 
 export const metadata: Metadata = {
-  title: "OSS Growth Index",
+  title: "OSSCARs",
   description:
     "The quarterly ranking of the fastest-growing open source organizations, by Supabase and >commit.",
 };

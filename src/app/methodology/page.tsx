@@ -123,7 +123,7 @@ export default function MethodologyPage() {
               style={{ fontSize: "clamp(1.75rem, 2vw + 0.75rem, 2.5rem)", letterSpacing: "-0.02em" }}
             >
               How the{" "}
-              <span className="text-brand">OSS Growth Index</span>{" "}
+              <span className="text-green">OSSCAR Index</span>{" "}
               is computed
             </h1>
             <p className="text-lg text-muted-foreground leading-relaxed">
@@ -141,7 +141,7 @@ export default function MethodologyPage() {
             <SectionTitle>Overview</SectionTitle>
             <Prose>
               <p>
-                The OSS Growth Index ranks GitHub organizations by how fast they are growing — not by how large they already are.
+                The OSSCAR Index ranks GitHub organizations by how fast they are growing — not by how large they already are.
                 Raw size metrics (total stars, total downloads) would simply surface the biggest names in open source.
                 Instead, we measure the <em className="text-foreground not-italic font-medium">rate of change</em> over a single quarter, normalized so that a small org and a large org can be compared fairly within their peer group.
               </p>
@@ -335,32 +335,6 @@ export default function MethodologyPage() {
                 Division assignment is based on quarter-start stars, so the ranking reflects growth over a full quarter
                 for a consistent peer group.
               </p>
-            </Prose>
-          </Section>
-
-          {/* What's not included */}
-          <Section id="excluded">
-            <SectionTitle>What is not included</SectionTitle>
-            <Prose>
-              <p>
-                A few things are explicitly out of scope in the current methodology:
-              </p>
-              <ul className="space-y-2 not-prose mt-2">
-                {[
-                  { label: "Web visits", note: "Tracked internally but not included in the composite score for this edition." },
-                  { label: "Absolute size", note: "Having 10 million stars doesn't help your score. Only rate of change matters." },
-                  { label: "Historical trend", note: "Each quarter is computed independently. A single quarter of high growth earns a high rank." },
-                  { label: "Individual repos", note: "The unit of analysis is the GitHub organization, not individual repositories." },
-                ].map((item) => (
-                  <li key={item.label} className="flex items-start gap-3 text-sm">
-                    <span className="font-mono text-muted-foreground mt-0.5 shrink-0">—</span>
-                    <span>
-                      <span className="text-foreground font-medium">{item.label}.</span>{" "}
-                      <span className="text-muted-foreground">{item.note}</span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
             </Prose>
           </Section>
 
