@@ -63,9 +63,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!rankingOrg) return { title: "OSS Growth Index" };
 
   const score = computeScore(rankingOrg);
+  const ogImageUrl = `/api/og?slug=${slug}`;
   return {
     title: `${rankingOrg.company_name} — OSS Growth Index Q4 2025`,
     description: `${rankingOrg.company_name} on the OSS Growth Index Q4 2025 with a composite score of ${formatScore(score)}.`,
+    openGraph: {
+      images: [{ url: ogImageUrl, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      images: [ogImageUrl],
+    },
   };
 }
 

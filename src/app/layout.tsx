@@ -15,6 +15,9 @@ const sourceCodePro = Source_Code_Pro({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+  ),
   title: "OSSCARs",
   description:
     "The quarterly ranking of the fastest-growing open source organizations, by Supabase and >commit.",
