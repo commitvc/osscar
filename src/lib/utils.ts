@@ -12,8 +12,8 @@ export function computeScore(org: OrgEntry): number {
     org.github_contributors_final_weight,
     org.npm_downloads_final_weight,
     org.pypi_downloads_final_weight,
-    org.huggingface_downloads_final_weight,
-    org.huggingface_likes_final_weight,
+    org.cargo_downloads_final_weight,
+    org.docker_pulls_final_weight,
   ].reduce<number>((sum, w) => sum + (w ?? 0), 0)
 }
 

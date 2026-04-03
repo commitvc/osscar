@@ -17,7 +17,7 @@ export default async function Home() {
         <section className="border-b border-white/10 px-6 py-14">
           <div className="max-w-6xl mx-auto space-y-4">
             <Badge variant="outline" className="font-mono text-[0.65rem] uppercase tracking-widest border-white/20 text-muted-foreground px-2.5 py-1">
-              Q4 2025
+              Q1 2026
             </Badge>
             <h1
               className="font-bold leading-[1.15] text-foreground"
@@ -27,7 +27,7 @@ export default async function Home() {
               <span className="text-green">Open Source Organizations</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
-              Ranked by composite growth across GitHub stars, contributors, npm, and PyPI. Updated quarterly by{" "}
+              Ranked by composite growth across GitHub stars, contributors, npm, PyPI, and Cargo. Updated quarterly by{" "}
               <span className="text-foreground font-semibold">Supabase</span>
               {" × "}
               <span className="text-foreground font-semibold">&gt;commit</span>.

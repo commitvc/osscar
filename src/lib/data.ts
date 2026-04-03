@@ -17,11 +17,11 @@ function parseCsv(filename: string): OrgEntry[] {
 }
 
 export function getAbove1000(): OrgEntry[] {
-  return parseCsv("oss_growth_index_above_1000_Q42025_top200_clean.csv");
+  return parseCsv("oss_growth_index_above_1000_Q12026_top200_clean.csv");
 }
 
 export function getBelow1000(): OrgEntry[] {
-  return parseCsv("oss_growth_index_below_1000_Q42025_top200_clean.csv");
+  return parseCsv("oss_growth_index_below_1000_Q12026_top200_clean.csv");
 }
 
 type RawFrontendRow = Record<string, string>;
@@ -55,7 +55,6 @@ export function getFrontendData(): FrontendOrgData[] {
     github_url: row.github_url ?? "",
     logo_url: row.logo_url || null,
     github_homepage_url: row.github_homepage_url || null,
-    country: row.country || null,
     homepage_url: row.homepage_url || null,
     repositories: safeParseJson<RepoEntry>(row.repositories),
     github_stars_weekly: safeParseJson<TimeSeriesPoint>(row.github_stars_weekly),
@@ -64,7 +63,7 @@ export function getFrontendData(): FrontendOrgData[] {
     ),
     npm_weekly: safeParseJson<TimeSeriesPoint>(row.npm_weekly),
     pypi_weekly: safeParseJson<TimeSeriesPoint>(row.pypi_weekly),
-    huggingface_monthly: safeParseJson<TimeSeriesPoint>(row.huggingface_monthly),
+    cargo_weekly: safeParseJson<TimeSeriesPoint>(row.cargo_weekly),
   }));
 }
 

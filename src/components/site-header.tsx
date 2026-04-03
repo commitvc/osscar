@@ -17,7 +17,7 @@ export function SiteHeader() {
             OSSCAR
           </Link>
           <span className="text-white/20 text-sm select-none">|</span>
-          <span className="font-mono text-[0.65rem] uppercase tracking-widest text-muted-foreground">Q4 2025</span>
+          <span className="font-mono text-[0.65rem] uppercase tracking-widest text-muted-foreground">Q1 2026</span>
         </div>
         <div className="flex items-center gap-3">
           <a href="https://supabase.com" target="_blank" rel="noopener noreferrer">

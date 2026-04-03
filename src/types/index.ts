@@ -1,9 +1,11 @@
 export type OrgEntry = {
-  company_id: string;
-  company_name: string;
-  company_type: string;
+  owner_id: string;
+  owner_login: string;
+  owner_name: string;
+  owner_url: string | null;
   homepage_url: string | null;
-  github_owner_url: string | null;
+  owner_description: string | null;
+  owner_logo: string | null;
   quarter_start: string;
   quarter_end: string;
 
@@ -31,22 +33,17 @@ export type OrgEntry = {
   pypi_downloads_growth_percentile: number | null;
   pypi_downloads_final_weight: number | null;
 
-  huggingface_downloads_start: number | null;
-  huggingface_downloads_end: number | null;
-  huggingface_downloads_growth_rate: number | null;
-  huggingface_downloads_growth_percentile: number | null;
-  huggingface_downloads_final_weight: number | null;
+  cargo_downloads_start: number | null;
+  cargo_downloads_end: number | null;
+  cargo_downloads_growth_rate: number | null;
+  cargo_downloads_growth_percentile: number | null;
+  cargo_downloads_final_weight: number | null;
 
-  huggingface_likes_start: number | null;
-  huggingface_likes_end: number | null;
-  huggingface_likes_growth_rate: number | null;
-  huggingface_likes_growth_percentile: number | null;
-  huggingface_likes_final_weight: number | null;
-
-  country: string | null;
-  description: string | null;
-  linkedin_url: string | null;
-  logo_url: string | null;
+  docker_pulls_start: number | null;
+  docker_pulls_end: number | null;
+  docker_pulls_growth_rate: number | null;
+  docker_pulls_growth_percentile: number | null;
+  docker_pulls_final_weight: number | null;
 };
 
 export type Tier = "above_1000" | "below_1000";
@@ -74,12 +71,11 @@ export type FrontendOrgData = {
   github_url: string;
   logo_url: string | null;
   github_homepage_url: string | null;
-  country: string | null;
   homepage_url: string | null;
   repositories: RepoEntry[];
   github_stars_weekly: TimeSeriesPoint[];
   github_contributors_weekly: TimeSeriesPoint[];
   npm_weekly: TimeSeriesPoint[];
   pypi_weekly: TimeSeriesPoint[];
-  huggingface_monthly: TimeSeriesPoint[];
+  cargo_weekly: TimeSeriesPoint[];
 };

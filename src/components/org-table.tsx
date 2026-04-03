@@ -38,25 +38,26 @@ const RANK_PIPS: Record<number, string> = {
   3: "#CD7F32",
 }
 
-function countryFlag(country: string | null): string {
-  if (!country) return ""
-  const map: Record<string, string> = {
-    "United States": "🇺🇸", "Germany": "🇩🇪", "United Kingdom": "🇬🇧",
-    "France": "🇫🇷", "Canada": "🇨🇦", "China": "🇨🇳", "India": "🇮🇳",
-    "Japan": "🇯🇵", "Israel": "🇮🇱", "Australia": "🇦🇺", "Netherlands": "🇳🇱",
-    "Switzerland": "🇨🇭", "Sweden": "🇸🇪", "Norway": "🇳🇴", "Finland": "🇫🇮",
-    "Denmark": "🇩🇰", "Brazil": "🇧🇷", "Singapore": "🇸🇬", "South Korea": "🇰🇷",
-    "Spain": "🇪🇸", "Italy": "🇮🇹", "Poland": "🇵🇱", "Russia": "🇷🇺",
-    "Ukraine": "🇺🇦", "Austria": "🇦🇹", "Belgium": "🇧🇪", "Czech Republic": "🇨🇿",
-    "Portugal": "🇵🇹", "Taiwan": "🇹🇼", "Hong Kong": "🇭🇰", "New Zealand": "🇳🇿",
-    "Mexico": "🇲🇽", "Argentina": "🇦🇷", "Chile": "🇨🇱", "Colombia": "🇨🇴",
-    "Turkey": "🇹🇷", "South Africa": "🇿🇦", "Nigeria": "🇳🇬", "Egypt": "🇪🇬",
-    "United Arab Emirates": "🇦🇪", "Romania": "🇷🇴", "Hungary": "🇭🇺",
-    "Greece": "🇬🇷", "Ireland": "🇮🇪", "Indonesia": "🇮🇩", "Pakistan": "🇵🇰",
-    "Bangladesh": "🇧🇩", "Vietnam": "🇻🇳", "Thailand": "🇹🇭", "Malaysia": "🇲🇾",
-    "Philippines": "🇵🇭",
-  }
-  return map[country] ?? ""
+function computePackageDownloads(org: OrgEntry): { value: number | null; rate: number | null } {
+  const hasAny =
+    org.npm_downloads_end != null ||
+    org.pypi_downloads_end != null ||
+    org.cargo_downloads_end != null
+
+  if (!hasAny) return { value: null, rate: null }
+
+  const startTotal =
+    (org.npm_downloads_start ?? 0) +
+    (org.pypi_downloads_start ?? 0) +
+    (org.cargo_downloads_start ?? 0)
+
+  const endTotal =
+    (org.npm_downloads_end ?? 0) +
+    (org.pypi_downloads_end ?? 0) +
+    (org.cargo_downloads_end ?? 0)
+
+  const rate = startTotal > 0 ? (endTotal - startTotal) / startTotal : null
+  return { value: endTotal, rate }
 }
 
 interface MetricCellProps {
@@ -159,36 +160,34 @@ export function OrgTable({ above, below }: OrgTableProps) {
         )
       },
     }),
-    columnHelper.accessor((row: OrgEntry) => row.company_name, {
+    columnHelper.accessor((row: OrgEntry) => row.owner_name, {
       id: "org",
       enableSorting: true,
       sortDescFirst: false,
       header: ({ column }) => <SortHeader column={column} label="Organization" align="left" />,
       cell: ({ row }) => {
         const org = row.original
-        const flag = countryFlag(org.country)
         return (
           <div className="flex items-start gap-2.5">
-            <OrgLogo logoUrl={org.logo_url} name={org.company_name} size={24} className="mt-0.5 shrink-0" />
+            <OrgLogo logoUrl={org.owner_logo} name={org.owner_name} size={24} className="mt-0.5 shrink-0" />
             <div className="min-w-0">
               <Link
-                href={org.github_owner_url ? `/org/${org.github_owner_url.trim().replace(/\/$/, "").split("/").pop()?.toLowerCase()}` : "#"}
+                href={org.owner_url ? `/org/${org.owner_url.trim().replace(/\/$/, "").split("/").pop()?.toLowerCase()}` : "#"}
                 className="font-semibold text-sm text-foreground hover:text-green transition-colors truncate leading-snug flex items-baseline gap-1 cursor-pointer"
               >
-                <span className="truncate">{org.company_name}</span>
-                {flag && <span className="text-[0.85em] shrink-0">{flag}</span>}
+                <span className="truncate">{org.owner_name}</span>
               </Link>
-              {org.description ? (
+              {org.owner_description ? (
                 <Tooltip.Root>
                   <Tooltip.Trigger
                     className="text-xs text-muted-foreground block truncate leading-snug w-full text-left cursor-default"
                   >
-                    {org.description}
+                    {org.owner_description}
                   </Tooltip.Trigger>
                   <Tooltip.Portal>
                     <Tooltip.Positioner side="bottom" align="start" sideOffset={6}>
                       <Tooltip.Popup className="z-50 max-w-xs rounded-md border border-white/10 bg-popover px-3 py-2 text-xs text-popover-foreground shadow-lg">
-                        {org.description}
+                        {org.owner_description}
                       </Tooltip.Popup>
                     </Tooltip.Positioner>
                   </Tooltip.Portal>
@@ -225,29 +224,15 @@ export function OrgTable({ above, below }: OrgTableProps) {
         />
       ),
     }),
-    columnHelper.accessor(row => row.npm_downloads_growth_rate, {
-      id: "npm",
+    columnHelper.accessor(row => computePackageDownloads(row).rate, {
+      id: "packages",
       sortUndefined: 1,
       sortDescFirst: true,
-      header: ({ column }) => <SortHeader column={column} label="NPM DOWNLOADS" />,
-      cell: ({ row }) => (
-        <MetricCell
-          value={row.original.npm_downloads_end}
-          rate={row.original.npm_downloads_growth_rate}
-        />
-      ),
-    }),
-    columnHelper.accessor(row => row.pypi_downloads_growth_rate, {
-      id: "pypi",
-      sortUndefined: 1,
-      sortDescFirst: true,
-      header: ({ column }) => <SortHeader column={column} label="PYPI DOWNLOADS" />,
-      cell: ({ row }) => (
-        <MetricCell
-          value={row.original.pypi_downloads_end}
-          rate={row.original.pypi_downloads_growth_rate}
-        />
-      ),
+      header: ({ column }) => <SortHeader column={column} label="PKG DOWNLOADS" />,
+      cell: ({ row }) => {
+        const { value, rate } = computePackageDownloads(row.original)
+        return <MetricCell value={value} rate={rate} />
+      },
     }),
     columnHelper.display({
       id: "links",
@@ -267,9 +252,9 @@ export function OrgTable({ above, below }: OrgTableProps) {
                 <ExternalLink size={14} />
               </a>
             )}
-            {org.github_owner_url && (
+            {org.owner_url && (
               <a
-                href={org.github_owner_url}
+                href={org.owner_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
@@ -339,8 +324,7 @@ export function OrgTable({ above, below }: OrgTableProps) {
                       header.id === "org" && "w-72",
                       header.id === "gh_stars" && "w-32 pl-4",
                       header.id === "gh_contrib" && "w-36",
-                      header.id === "npm" && "w-36",
-                      header.id === "pypi" && "w-36",
+                      header.id === "packages" && "w-40",
                       header.id === "links" && "w-16",
                     )}
                   >
