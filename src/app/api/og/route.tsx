@@ -69,20 +69,19 @@ export async function GET(request: NextRequest) {
   const above = getAbove1000();
   const below = getBelow1000();
 
-  const aboveOrg = above.find((o) => extractSlug(o.github_owner_url) === slug);
-  const belowOrg = below.find((o) => extractSlug(o.github_owner_url) === slug);
+  const aboveOrg = above.find((o) => extractSlug(o.owner_url) === slug);
+  const belowOrg = below.find((o) => extractSlug(o.owner_url) === slug);
   const org = aboveOrg ?? belowOrg;
 
   if (!org) return new Response("Not found", { status: 404 });
 
   const tierData = aboveOrg ? above : below;
-  const rankIndex = tierData.findIndex((o) => extractSlug(o.github_owner_url) === slug);
+  const rankIndex = tierData.findIndex((o) => extractSlug(o.owner_url) === slug);
   const rank = rankIndex >= 0 ? rankIndex + 1 : null;
   const tierLabel = aboveOrg ? "Scaling" : "Emerging";
 
-  const name = org.company_name;
-  const country = org.country;
-  const logoUrl = org.logo_url;
+  const name = org.owner_name;
+  const logoUrl = org.owner_logo;
 
   // Static assets
   const supabasePng = fs.readFileSync(
@@ -215,8 +214,8 @@ export async function GET(request: NextRequest) {
                 {displayName}
               </span>
 
-              {/* Country only */}
-              {country && (
+              {/* Homepage URL */}
+              {org.homepage_url && (
                 <span
                   style={{
                     color: "rgba(255,255,255,0.35)",
@@ -224,7 +223,7 @@ export async function GET(request: NextRequest) {
                     letterSpacing: "0.02em",
                   }}
                 >
-                  {country}
+                  {org.homepage_url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
                 </span>
               )}
             </div>

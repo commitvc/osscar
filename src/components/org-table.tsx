@@ -164,7 +164,7 @@ export function OrgTable({ above, below }: OrgTableProps) {
       id: "org",
       enableSorting: true,
       sortDescFirst: false,
-      header: ({ column }) => <SortHeader column={column} label="Organization" align="left" />,
+      header: ({ column }) => <SortHeader column={column} label="ORGANIZATION" align="left" />,
       cell: ({ row }) => {
         const org = row.original
         return (
@@ -228,7 +228,7 @@ export function OrgTable({ above, below }: OrgTableProps) {
       id: "packages",
       sortUndefined: 1,
       sortDescFirst: true,
-      header: ({ column }) => <SortHeader column={column} label="PKG DOWNLOADS" />,
+      header: ({ column }) => <SortHeader column={column} label="PACKAGE DOWNLOADS" />,
       cell: ({ row }) => {
         const { value, rate } = computePackageDownloads(row.original)
         return <MetricCell value={value} rate={rate} />
