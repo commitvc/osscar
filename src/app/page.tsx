@@ -27,10 +27,10 @@ export default async function Home() {
               <span className="text-green">Open Source Organizations</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
-              Ranked by composite growth across GitHub stars, contributors, npm, PyPI, and Cargo. Updated quarterly by{" "}
-              <span className="text-foreground font-semibold">Supabase</span>
+              Ranked by composite growth across GitHub stars, contributors and package downloads. Updated quarterly by{" "}
+              <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-foreground font-semibold hover:text-green transition-colors">Supabase</a>
               {" × "}
-              <span className="text-foreground font-semibold">&gt;commit</span>.
+              <a href="https://commit.fund" target="_blank" rel="noopener noreferrer" className="text-foreground font-semibold hover:text-green transition-colors">&gt;commit</a>.
             </p>
             <a href="/methodology" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-green transition-colors font-mono">
               Read the methodology →
