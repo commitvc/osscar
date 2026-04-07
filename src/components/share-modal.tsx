@@ -59,7 +59,7 @@ export function ShareModal({
       ? `${window.location.origin}/org/${slug}`
       : `/org/${slug}`;
 
-  const shareText = `${name} ranked #${rank} in the ${tierLabel} tier — OSS Growth Index Q4 2025`;
+  const shareText = `${name} ranked #${rank} in the ${tierLabel} tier — OSS Growth Index Q1 2026`;
   const shareTextEncoded = encodeURIComponent(shareText);
   const pageUrlEncoded = encodeURIComponent(pageUrl);
 
@@ -101,7 +101,7 @@ export function ShareModal({
   async function handleDownload() {
     const a = document.createElement("a");
     a.href = ogImageUrl;
-    a.download = `${slug}-osscar-q4-2025.png`;
+    a.download = `${slug}-osscar-q1-2026.png`;
     a.click();
   }
 
