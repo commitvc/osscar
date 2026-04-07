@@ -1,7 +1,6 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import { getAbove1000, getBelow1000, extractSlug } from "@/lib/data";
-import { formatGrowthRate, formatCompact } from "@/lib/utils";
 import fs from "fs";
 import path from "path";
 
@@ -30,22 +29,6 @@ function getRankColor(rank: number): string {
   if (rank <= 3) return "#E8A020";
   if (rank <= 10) return "#3ECF8E";
   return "rgba(255,255,255,0.7)";
-}
-
-function getRankBadgeBorder(rank: number | null): string {
-  if (!rank) return "1px solid rgba(255,255,255,0.15)";
-  if (rank === 1) return "1px solid rgba(244,196,48,0.45)";
-  if (rank <= 3) return "1px solid rgba(232,160,32,0.4)";
-  if (rank <= 10) return "1px solid rgba(62,207,142,0.35)";
-  return "1px solid rgba(255,255,255,0.15)";
-}
-
-function getRankBadgeBg(rank: number | null): string {
-  if (!rank) return "rgba(255,255,255,0.05)";
-  if (rank === 1) return "rgba(244,196,48,0.12)";
-  if (rank <= 3) return "rgba(232,160,32,0.1)";
-  if (rank <= 10) return "rgba(62,207,142,0.1)";
-  return "rgba(255,255,255,0.05)";
 }
 
 async function fetchImageAsDataUrl(url: string): Promise<string | null> {
@@ -100,26 +83,31 @@ export async function GET(request: NextRequest) {
   // Font
   const fontData = await getInterBold();
 
-  // Active signals only
-  const signals = [
-    { label: "GitHub Stars", rate: org.github_stars_growth_rate, end: org.github_stars_end, color: "#F4C430" },
-    { label: "Contributors", rate: org.github_contributors_growth_rate, end: org.github_contributors_end, color: "#60A5FA" },
-    { label: "NPM Downloads", rate: org.npm_downloads_growth_rate, end: org.npm_downloads_end, color: "#FB923C" },
-    { label: "PyPI Downloads", rate: org.pypi_downloads_growth_rate, end: org.pypi_downloads_end, color: "#A78BFA" },
-  ].filter((s) => s.rate != null);
-
   // Dynamic sizing
   const displayName = name.length > 28 ? name.slice(0, 27) + "…" : name;
   const nameFontSize =
-    displayName.length <= 10 ? 44
-    : displayName.length <= 16 ? 38
-    : displayName.length <= 22 ? 32
+    displayName.length <= 10 ? 48
+    : displayName.length <= 16 ? 40
+    : displayName.length <= 22 ? 34
     : 28;
 
   const rankColor = rank ? getRankColor(rank) : "rgba(255,255,255,0.45)";
 
-  // Rank number font size: big for single digit, smaller for multi-digit
-  const rankFontSize = !rank ? 120 : rank < 10 ? 148 : rank < 100 ? 120 : 96;
+  // Bigger rank number now that metrics are gone
+  const rankFontSize = !rank ? 180 : rank < 10 ? 220 : rank < 100 ? 178 : 138;
+
+  // Tier badge colors
+  const tierColor = aboveOrg ? "#3ECF8E" : "#60A5FA";
+  const tierBg = aboveOrg ? "rgba(62,207,142,0.1)" : "rgba(96,165,250,0.1)";
+  const tierBorder = aboveOrg ? "rgba(62,207,142,0.28)" : "rgba(96,165,250,0.28)";
+
+  // Description (trimmed to fit one line)
+  const rawDesc = org.owner_description;
+  const description = rawDesc
+    ? rawDesc.length > 95
+      ? rawDesc.slice(0, 94) + "…"
+      : rawDesc
+    : null;
 
   return new ImageResponse(
     (
@@ -150,11 +138,11 @@ export async function GET(request: NextRequest) {
             display: "flex",
             flexDirection: "column",
             flex: 1,
-            padding: "36px 64px 0",
+            padding: "44px 64px 0",
           }}
         >
-          {/* ── Org identity row (compact) ── */}
-          <div style={{ display: "flex", alignItems: "center", gap: "18px" }}>
+          {/* ── Org identity row ── */}
+          <div style={{ display: "flex", alignItems: "flex-start", gap: "22px" }}>
             {/* Logo */}
             {orgLogoDataUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -162,9 +150,9 @@ export async function GET(request: NextRequest) {
                 src={orgLogoDataUrl}
                 alt={displayName}
                 style={{
-                  width: "64px",
-                  height: "64px",
-                  borderRadius: "14px",
+                  width: "88px",
+                  height: "88px",
+                  borderRadius: "18px",
                   objectFit: "contain",
                   backgroundColor: "rgba(255,255,255,0.04)",
                   border: "1px solid rgba(255,255,255,0.1)",
@@ -174,16 +162,16 @@ export async function GET(request: NextRequest) {
             ) : (
               <div
                 style={{
-                  width: "64px",
-                  height: "64px",
-                  borderRadius: "14px",
+                  width: "88px",
+                  height: "88px",
+                  borderRadius: "18px",
                   backgroundColor: "rgba(255,255,255,0.06)",
                   border: "1px solid rgba(255,255,255,0.1)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   color: "rgba(255,255,255,0.5)",
-                  fontSize: "28px",
+                  fontSize: "36px",
                   fontWeight: 800,
                   flexShrink: 0,
                 }}
@@ -200,6 +188,7 @@ export async function GET(request: NextRequest) {
                 gap: "10px",
                 flex: 1,
                 minWidth: 0,
+                paddingTop: "4px",
               }}
             >
               <span
@@ -214,18 +203,44 @@ export async function GET(request: NextRequest) {
                 {displayName}
               </span>
 
-              {/* Homepage URL */}
-              {org.homepage_url && (
-                <span
+              {/* URL + tier badge row */}
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                {org.homepage_url && (
+                  <span
+                    style={{
+                      color: "rgba(255,255,255,0.28)",
+                      fontSize: "12px",
+                      letterSpacing: "0.02em",
+                    }}
+                  >
+                    {org.homepage_url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                  </span>
+                )}
+                {/* Tier badge pill */}
+                <div
                   style={{
-                    color: "rgba(255,255,255,0.35)",
-                    fontSize: "11px",
-                    letterSpacing: "0.02em",
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "3px 11px",
+                    borderRadius: "100px",
+                    border: `1px solid ${tierBorder}`,
+                    backgroundColor: tierBg,
                   }}
                 >
-                  {org.homepage_url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-                </span>
-              )}
+                  <span
+                    style={{
+                      color: tierColor,
+                      fontSize: "9px",
+                      fontWeight: 700,
+                      letterSpacing: "0.2em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {tierLabel} Tier
+                  </span>
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -237,25 +252,42 @@ export async function GET(request: NextRequest) {
               alignItems: "center",
               justifyContent: "center",
               flex: 1,
+              position: "relative",
             }}
           >
+            {/* Subtle rank glow */}
+            {rank && (
+              <div
+                style={{
+                  position: "absolute",
+                  width: "500px",
+                  height: "280px",
+                  background: `radial-gradient(ellipse at center, ${rankColor}14 0%, transparent 68%)`,
+                  display: "flex",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                }}
+              />
+            )}
+
             {rank ? (
               <div
                 style={{
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  gap: "0px",
+                  position: "relative",
                 }}
               >
                 <span
                   style={{
-                    color: "rgba(255,255,255,0.25)",
+                    color: "rgba(255,255,255,0.18)",
                     fontSize: "10px",
                     fontWeight: 700,
-                    letterSpacing: "0.4em",
+                    letterSpacing: "0.55em",
                     textTransform: "uppercase",
-                    marginBottom: "6px",
+                    marginBottom: "2px",
                     display: "flex",
                   }}
                 >
@@ -267,7 +299,7 @@ export async function GET(request: NextRequest) {
                     fontSize: `${rankFontSize}px`,
                     fontWeight: 800,
                     letterSpacing: "-0.05em",
-                    lineHeight: 1,
+                    lineHeight: 0.9,
                     display: "flex",
                   }}
                 >
@@ -275,16 +307,16 @@ export async function GET(request: NextRequest) {
                 </span>
                 <span
                   style={{
-                    color: "rgba(255,255,255,0.45)",
-                    fontSize: "13px",
+                    color: "rgba(255,255,255,0.3)",
+                    fontSize: "16px",
                     fontWeight: 600,
-                    letterSpacing: "0.16em",
+                    letterSpacing: "0.18em",
                     textTransform: "uppercase",
-                    marginTop: "16px",
+                    marginTop: "22px",
                     display: "flex",
                   }}
                 >
-                  OSSCAR Index · Q4 2025 · {tierLabel} Tier
+                  OSS Growth Index · Q1 2026
                 </span>
               </div>
             ) : (
@@ -301,69 +333,6 @@ export async function GET(request: NextRequest) {
               </span>
             )}
           </div>
-
-          {/* ── Metric cards (compact) ── */}
-          {signals.length > 0 && (
-            <div
-              style={{
-                display: "flex",
-                gap: "12px",
-                marginBottom: "36px",
-                flexShrink: 0,
-              }}
-            >
-              {signals.map((s) => (
-                <div
-                  key={s.label}
-                  style={{
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "8px",
-                    padding: "16px 20px",
-                    backgroundColor: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: "12px",
-                  }}
-                >
-                  <span
-                    style={{
-                      color: "rgba(255,255,255,0.28)",
-                      fontSize: "8px",
-                      fontWeight: 700,
-                      letterSpacing: "0.22em",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {s.label}
-                  </span>
-                  <span
-                    style={{
-                      color: s.color,
-                      fontSize: "38px",
-                      fontWeight: 800,
-                      letterSpacing: "-0.04em",
-                      lineHeight: 1,
-                    }}
-                  >
-                    {formatGrowthRate(s.rate)}
-                  </span>
-                  {s.end != null && (
-                    <span
-                      style={{
-                        color: "rgba(255,255,255,0.22)",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        letterSpacing: "-0.01em",
-                      }}
-                    >
-                      {formatCompact(s.end)} total
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* ── Bottom branding bar ── */}
@@ -397,7 +366,7 @@ export async function GET(request: NextRequest) {
             <img
               src={supabaseDataUrl}
               alt="Supabase"
-              style={{ height: "20px", opacity: 0.7 }}
+              style={{ height: "26px", opacity: 0.7 }}
             />
             <span
               style={{
@@ -412,7 +381,7 @@ export async function GET(request: NextRequest) {
             <img
               src={commitLogoDataUrl}
               alt=">commit"
-              style={{ height: "22px", opacity: 0.75 }}
+              style={{ height: "28px", opacity: 0.75 }}
             />
           </div>
         </div>
