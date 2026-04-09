@@ -24,11 +24,30 @@ async function getInterBold(): Promise<ArrayBuffer | null> {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function getTopN(rank: number): number {
+  if (rank === 1) return 1;
+  if (rank === 2) return 2;
+  if (rank <= 3) return 3;
+  if (rank <= 10) return 10;
+  if (rank <= 20) return 20;
+  if (rank <= 50) return 50;
+  if (rank <= 100) return 100;
+  if (rank <= 500) return 500;
+  return 1000;
+}
+
 function getRankColor(rank: number): string {
-  if (rank === 1) return "#F4C430";
-  if (rank <= 3) return "#E8A020";
-  if (rank <= 10) return "#3ECF8E";
-  return "rgba(255,255,255,0.7)";
+  if (rank === 1) return "#F0B429";   // amber
+  if (rank === 2) return "#C8D0DA";   // silver
+  if (rank === 3) return "#C87941";   // bronze
+  return "#3ECF8E";                   // supabase green for the rest
+}
+
+function getOscarFile(rank: number): string {
+  if (rank === 1) return "oscar-amber.png";
+  if (rank === 2) return "oscar-silver.png";
+  if (rank === 3) return "oscar-bronze.png";
+  return "oscar-white.png";
 }
 
 async function fetchImageAsDataUrl(url: string): Promise<string | null> {
@@ -77,37 +96,41 @@ export async function GET(request: NextRequest) {
   );
   const commitLogoDataUrl = `data:image/svg+xml;base64,${commitSvg.toString("base64")}`;
 
+  // Oscar statue
+  const oscarFile = rank ? getOscarFile(rank) : "oscar-white.png";
+  const oscarPng = fs.readFileSync(path.join(process.cwd(), "public", oscarFile));
+  const oscarDataUrl = `data:image/png;base64,${oscarPng.toString("base64")}`;
+
   // Org logo
   const orgLogoDataUrl = logoUrl ? await fetchImageAsDataUrl(logoUrl) : null;
 
   // Font
   const fontData = await getInterBold();
 
-  // Dynamic sizing
-  const displayName = name.length > 28 ? name.slice(0, 27) + "…" : name;
+  // Dynamic name sizing
+  const displayName = name.length > 26 ? name.slice(0, 25) + "…" : name;
   const nameFontSize =
-    displayName.length <= 10 ? 48
-    : displayName.length <= 16 ? 40
-    : displayName.length <= 22 ? 34
-    : 28;
+    displayName.length <= 8  ? 72
+    : displayName.length <= 12 ? 64
+    : displayName.length <= 17 ? 56
+    : displayName.length <= 22 ? 48
+    : 42;
 
-  const rankColor = rank ? getRankColor(rank) : "rgba(255,255,255,0.45)";
-
-  // Bigger rank number now that metrics are gone
-  const rankFontSize = !rank ? 180 : rank < 10 ? 220 : rank < 100 ? 178 : 138;
+  const rankColor = rank ? getRankColor(rank) : "rgba(255,255,255,0.4)";
+  const topN = rank ? getTopN(rank) : null;
 
   // Tier badge colors
   const tierColor = aboveOrg ? "#3ECF8E" : "#60A5FA";
-  const tierBg = aboveOrg ? "rgba(62,207,142,0.1)" : "rgba(96,165,250,0.1)";
-  const tierBorder = aboveOrg ? "rgba(62,207,142,0.28)" : "rgba(96,165,250,0.28)";
+  const tierBg = aboveOrg ? "rgba(62,207,142,0.12)" : "rgba(96,165,250,0.12)";
+  const tierBorder = aboveOrg ? "rgba(62,207,142,0.3)" : "rgba(96,165,250,0.3)";
 
-  // Description (trimmed to fit one line)
-  const rawDesc = org.owner_description;
-  const description = rawDesc
-    ? rawDesc.length > 95
-      ? rawDesc.slice(0, 94) + "…"
-      : rawDesc
-    : null;
+  // Glow color behind logo — rank 1 gets amber glow, rank 2 silver, rank 3 bronze, rest: tier color
+  const glowColor =
+    rank === 1 ? "rgba(240,180,41,0.18)"
+    : rank === 2 ? "rgba(200,208,218,0.14)"
+    : rank === 3 ? "rgba(200,121,65,0.18)"
+    : aboveOrg  ? "rgba(62,207,142,0.14)"
+    : "rgba(96,165,250,0.14)";
 
   return new ImageResponse(
     (
@@ -117,7 +140,7 @@ export async function GET(request: NextRequest) {
           flexDirection: "column",
           width: "1200px",
           height: "630px",
-          backgroundColor: "#0f0f0f",
+          background: "linear-gradient(160deg, #111111 0%, #0a0a0a 50%, #0c0c0c 100%)",
           fontFamily: "Inter, sans-serif",
           overflow: "hidden",
         }}
@@ -126,7 +149,7 @@ export async function GET(request: NextRequest) {
         <div
           style={{
             height: "4px",
-            backgroundColor: "#3ECF8E",
+            background: "linear-gradient(90deg, #3ECF8E 0%, #2db87a 100%)",
             display: "flex",
             flexShrink: 0,
           }}
@@ -137,201 +160,191 @@ export async function GET(request: NextRequest) {
           style={{
             display: "flex",
             flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "flex-start",
             flex: 1,
-            padding: "44px 64px 0",
+            padding: "48px 80px 0",
+            position: "relative",
           }}
         >
-          {/* ── Org identity row ── */}
-          <div style={{ display: "flex", alignItems: "flex-start", gap: "22px" }}>
-            {/* Logo */}
-            {orgLogoDataUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={orgLogoDataUrl}
-                alt={displayName}
-                style={{
-                  width: "88px",
-                  height: "88px",
-                  borderRadius: "18px",
-                  objectFit: "contain",
-                  backgroundColor: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  flexShrink: 0,
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: "88px",
-                  height: "88px",
-                  borderRadius: "18px",
-                  backgroundColor: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "rgba(255,255,255,0.5)",
-                  fontSize: "36px",
-                  fontWeight: 800,
-                  flexShrink: 0,
-                }}
-              >
-                {name.charAt(0).toUpperCase()}
-              </div>
-            )}
+          {/* Ambient glow behind logo */}
+          <div
+            style={{
+              position: "absolute",
+              top: "0px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "700px",
+              height: "360px",
+              background: `radial-gradient(ellipse at center top, ${glowColor} 0%, transparent 62%)`,
+              display: "flex",
+            }}
+          />
 
-            {/* Name + meta */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-                flex: 1,
-                minWidth: 0,
-                paddingTop: "4px",
-              }}
-            >
-              <span
-                style={{
-                  color: "white",
-                  fontSize: `${nameFontSize}px`,
-                  fontWeight: 800,
-                  letterSpacing: "-0.03em",
-                  lineHeight: 1,
-                }}
-              >
-                {displayName}
-              </span>
-
-              {/* URL + tier badge row */}
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                {org.homepage_url && (
-                  <span
-                    style={{
-                      color: "rgba(255,255,255,0.28)",
-                      fontSize: "12px",
-                      letterSpacing: "0.02em",
-                    }}
-                  >
-                    {org.homepage_url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-                  </span>
-                )}
-                {/* Tier badge pill */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    padding: "3px 11px",
-                    borderRadius: "100px",
-                    border: `1px solid ${tierBorder}`,
-                    backgroundColor: tierBg,
-                  }}
-                >
-                  <span
-                    style={{
-                      color: tierColor,
-                      fontSize: "9px",
-                      fontWeight: 700,
-                      letterSpacing: "0.2em",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {tierLabel} Tier
-                  </span>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          {/* ── Rank hero ── */}
+          {/* ── Identity block (logo + name) ── */}
           <div
             style={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              justifyContent: "center",
-              flex: 1,
               position: "relative",
+              gap: "18px",
             }}
           >
-            {/* Subtle rank glow */}
-            {rank && (
-              <div
-                style={{
-                  position: "absolute",
-                  width: "500px",
-                  height: "280px",
-                  background: `radial-gradient(ellipse at center, ${rankColor}14 0%, transparent 68%)`,
-                  display: "flex",
-                  top: "50%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                }}
-              />
-            )}
-
-            {rank ? (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  position: "relative",
-                }}
-              >
-                <span
+            {/* Logo */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                position: "relative",
+              }}
+            >
+              {orgLogoDataUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={orgLogoDataUrl}
+                  alt={displayName}
                   style={{
-                    color: "rgba(255,255,255,0.18)",
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    letterSpacing: "0.55em",
-                    textTransform: "uppercase",
-                    marginBottom: "2px",
-                    display: "flex",
+                    width: "112px",
+                    height: "112px",
+                    borderRadius: "22px",
+                    objectFit: "contain",
+                    backgroundColor: "rgba(255,255,255,0.05)",
+                    border: "1.5px solid rgba(255,255,255,0.12)",
                   }}
-                >
-                  RANKED
-                </span>
-                <span
+                />
+              ) : (
+                <div
                   style={{
-                    color: rankColor,
-                    fontSize: `${rankFontSize}px`,
+                    width: "112px",
+                    height: "112px",
+                    borderRadius: "22px",
+                    backgroundColor: "rgba(255,255,255,0.07)",
+                    border: "1.5px solid rgba(255,255,255,0.12)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "rgba(255,255,255,0.6)",
+                    fontSize: "48px",
                     fontWeight: 800,
-                    letterSpacing: "-0.05em",
-                    lineHeight: 0.9,
-                    display: "flex",
                   }}
                 >
-                  #{rank}
-                </span>
-                <span
-                  style={{
-                    color: "rgba(255,255,255,0.3)",
-                    fontSize: "16px",
-                    fontWeight: 600,
-                    letterSpacing: "0.18em",
-                    textTransform: "uppercase",
-                    marginTop: "22px",
-                    display: "flex",
-                  }}
-                >
-                  OSS Growth Index · Q1 2026
-                </span>
-              </div>
-            ) : (
+                  {name.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
+
+            {/* Org name */}
+            <span
+              style={{
+                color: "white",
+                fontSize: `${nameFontSize}px`,
+                fontWeight: 800,
+                letterSpacing: "-0.035em",
+                lineHeight: 1,
+                textAlign: "center",
+                display: "flex",
+              }}
+            >
+              {displayName}
+            </span>
+
+            {/* Tier badge — tucked under name */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                padding: "4px 14px",
+                borderRadius: "100px",
+                backgroundColor: tierBg,
+                border: `1px solid ${tierBorder}`,
+                marginTop: "-4px",
+              }}
+            >
               <span
                 style={{
-                  color: "rgba(255,255,255,0.2)",
-                  fontSize: "48px",
-                  fontWeight: 800,
-                  letterSpacing: "-0.03em",
+                  color: tierColor,
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  letterSpacing: "0.2em",
+                  textTransform: "uppercase",
                   display: "flex",
                 }}
               >
-                —
+                {tierLabel} Tier
               </span>
-            )}
+            </div>
+          </div>
+
+          {/* ── Achievement + index block ── */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "16px",
+              position: "relative",
+              marginTop: "96px",
+            }}
+          >
+            {/* Achievement row */}
+            {rank && topN !== null ? (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "22px",
+                  padding: "20px 40px",
+                  borderRadius: "18px",
+                  backgroundColor: "rgba(255,255,255,0.04)",
+                  border: `1px solid ${rankColor}45`,
+                  minWidth: "640px",
+                }}
+              >
+                {/* Oscar statue */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={oscarDataUrl}
+                  alt="Award"
+                  style={{
+                    height: "90px",
+                    width: "45px",
+                    objectFit: "contain",
+                    flexShrink: 0,
+                  }}
+                />
+
+                {/* Text */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <span
+                    style={{
+                      color: rankColor,
+                      fontSize: "48px",
+                      fontWeight: 800,
+                      letterSpacing: "-0.04em",
+                      lineHeight: 1,
+                      display: "flex",
+                    }}
+                  >
+                    Top {topN}
+                  </span>
+                  <span
+                    style={{
+                      color: "rgba(255,255,255,0.38)",
+                      fontSize: "16px",
+                      fontWeight: 600,
+                      letterSpacing: "0.01em",
+                      display: "flex",
+                    }}
+                  >
+                    out of +80K open source organizations
+                  </span>
+                </div>
+              </div>
+            ) : null}
+
           </div>
         </div>
 
@@ -342,37 +355,52 @@ export async function GET(request: NextRequest) {
             alignItems: "center",
             justifyContent: "space-between",
             padding: "0 64px",
-            height: "56px",
+            height: "64px",
             borderTop: "1px solid rgba(255,255,255,0.07)",
             flexShrink: 0,
           }}
         >
-          <span
-            style={{
-              color: "rgba(255,255,255,0.22)",
-              fontSize: "11px",
-              fontWeight: 700,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-            }}
-          >
-            osscar.io
-          </span>
+          {/* Left: index name + osscar */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+            <span
+              style={{
+                color: "rgba(255,255,255,0.55)",
+                fontSize: "13px",
+                fontWeight: 700,
+                letterSpacing: "0.04em",
+                display: "flex",
+              }}
+            >
+              OSS Growth Index · Q1 2026
+            </span>
+            <span
+              style={{
+                color: "rgba(255,255,255,0.2)",
+                fontSize: "11px",
+                fontWeight: 600,
+                letterSpacing: "0.1em",
+                display: "flex",
+              }}
+            >
+              osscar.io
+            </span>
+          </div>
 
           <div
-            style={{ display: "flex", alignItems: "center", gap: "12px" }}
+            style={{ display: "flex", alignItems: "center", gap: "14px" }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={supabaseDataUrl}
               alt="Supabase"
-              style={{ height: "26px", opacity: 0.7 }}
+              style={{ height: "24px", opacity: 0.65 }}
             />
             <span
               style={{
-                color: "rgba(255,255,255,0.2)",
-                fontSize: "15px",
+                color: "rgba(255,255,255,0.18)",
+                fontSize: "14px",
                 fontWeight: 400,
+                display: "flex",
               }}
             >
               ×
@@ -381,7 +409,7 @@ export async function GET(request: NextRequest) {
             <img
               src={commitLogoDataUrl}
               alt=">commit"
-              style={{ height: "28px", opacity: 0.75 }}
+              style={{ height: "26px", opacity: 0.7 }}
             />
           </div>
         </div>
