@@ -200,7 +200,7 @@ function SignalCard({
         <span className="font-mono text-3xl font-bold text-foreground tabular-nums leading-none">
           {hasData ? formatCompact(signal.end) : "—"}
         </span>
-        {signal.rate != null && (
+        {signal.rate != null && signal.rate > 0 && (
           <span
             className={cn(
               "font-mono text-xs font-semibold px-2 py-0.5 rounded-sm tabular-nums",

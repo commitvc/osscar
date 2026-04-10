@@ -84,7 +84,7 @@ function MetricCell({ value, rate }: MetricCellProps) {
       <span className="font-mono text-sm font-semibold text-foreground tabular-nums leading-none">
         {value != null ? formatCompact(value) : "—"}
       </span>
-      {rate != null ? (
+      {rate != null && rate > 0 ? (
         <span className={cn(
           "font-mono text-[0.7rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm",
           rateSign === "positive" && "bg-green/15 text-green",
