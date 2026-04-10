@@ -37,7 +37,7 @@ function MetricTable() {
   const metrics = [
     { key: "github_stars", label: "GitHub Stars", family: "github", description: "Net new stars on the org's repos" },
     { key: "github_contributors", label: "GitHub Contributors", family: "github", description: "Unique contributors across the org's repos" },
-    { key: "package_downloads", label: "Package Downloads", family: "usage", description: "Aggregated monthly download count across npm, PyPI, and other registries" },
+    { key: "package_downloads", label: "Package Downloads", family: "usage", description: "Aggregated download count across npm, PyPI, and Cargo (sum of available registries)" },
   ]
 
   const familyColors: Record<string, string> = {
@@ -77,7 +77,7 @@ function PaddingTable() {
   const rows = [
     { metric: "github_stars", below: "100", above: "1,000" },
     { metric: "github_contributors", below: "5", above: "10" },
-    { metric: "package_downloads", below: "100", above: "1,000" },
+    { metric: "package_downloads", below: "1,000", above: "10,000" },
   ]
 
   return (
@@ -125,8 +125,8 @@ export default function MethodologyPage() {
               is computed
             </h1>
             <p className="text-lg text-muted-foreground leading-relaxed">
-              A transparent, signal-weighted ranking of the fastest-growing open source organizations.
-              Each quarter, we measure growth across four signals, normalize within peer groups, and produce a single composite score.
+              A transparent ranking of the fastest-growing open source organizations.
+              Each quarter, we measure growth across three signals, score them on a common scale within peer groups, and sum the scores into a single composite.
             </p>
           </div>
         </section>
@@ -141,11 +141,11 @@ export default function MethodologyPage() {
               <p>
                 The OSSCAR Index ranks GitHub organizations by how fast they are growing — not by how large they already are.
                 Raw size metrics (total stars, total downloads) would simply surface the biggest names in open source.
-                Instead, we measure the <em className="text-foreground not-italic font-medium">rate of change</em> over a single quarter, normalized so that a small org and a large org can be compared fairly within their peer group.
+                Instead, we measure the <em className="text-foreground not-italic font-medium">rate of change</em> over a single quarter, scored so that a small org and a large org can be compared fairly within their peer group.
               </p>
               <p>
-                Four signals are tracked per organization. Not every org has data for every signal — a pure Python library won't have npm downloads.
-                The weighting step handles this gracefully: signals with no data contribute no weight, so the composite score adapts to whatever signals are available.
+                Three signals are tracked per organization. Not every org has data for every signal — a pure Python library won't have npm downloads.
+                The composite step handles this gracefully: signals with no data contribute nothing to the score, and having more positive signals always helps. Breadth of growth is rewarded.
               </p>
             </Prose>
           </Section>
@@ -155,7 +155,7 @@ export default function MethodologyPage() {
             <SectionTitle step="01">Filter to GitHub organizations</SectionTitle>
             <Prose>
               <p>
-                Only Github accounts of type organization are included.
+                Only GitHub accounts of type organization are included.
                 Personal accounts and forks are excluded. This ensures the index reflects meaningful project ecosystems rather than individual repositories.
               </p>
             </Prose>
@@ -182,7 +182,7 @@ export default function MethodologyPage() {
               </div>
               <p>
                 Keeping these divisions separate matters because relative growth at 100 stars is structurally different from growth at 100,000 stars.
-                Z-scores, percentiles, and rankings are all computed within each division independently.
+                Scores and rankings are computed within each division independently.
               </p>
               <p>
                 Division is locked at quarter start. An org that crosses 1,000 stars during the quarter stays in the emerging tier for that quarter's results.
@@ -192,15 +192,18 @@ export default function MethodologyPage() {
 
           {/* Step 3: Signals */}
           <Section id="signals">
-            <SectionTitle step="03">Measure four growth signals</SectionTitle>
+            <SectionTitle step="03">Measure three growth signals</SectionTitle>
             <Prose>
               <p>
-                Each organization is tracked across four signals. For each signal, we record the value at the start and end of the quarter.
+                Each organization is tracked across three signals. For each signal, we record the value at the start and end of the quarter.
               </p>
             </Prose>
             <MetricTable />
             <Prose>
               <p className="mt-6">
+                Package downloads aggregate npm, PyPI, and Cargo. If an org only publishes to one or two registries, we sum the available values rather than penalizing for missing ones. An org with no data across all three registries receives a null for this signal.
+              </p>
+              <p>
                 The raw quarterly growth rate for a signal is:
               </p>
             </Prose>
@@ -210,7 +213,7 @@ export default function MethodologyPage() {
             <Prose>
               <p>
                 Rather than dividing by the raw start value, we divide by a <em className="text-foreground not-italic font-medium">padded start</em>: the larger of the actual start value and a minimum threshold.
-                This prevents tiny absolute changes from producing enormous growth rates (e.g., going from 2 to 4 stars shouldn't produce a 100% growth rate that outranks a project going from 5,000 to 8,000 stars).
+                This prevents tiny absolute changes from producing enormous growth rates (e.g., going from 2 to 4 stars shouldn't outrank a project going from 5,000 to 8,000 stars).
               </p>
             </Prose>
             <Formula>
@@ -238,92 +241,61 @@ export default function MethodologyPage() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-4">
-                Orgs that don't use npm or PyPI simply won't have data for those signals, so they're ineligible for them. The weighting step (below) ensures this doesn't penalize them.
-              </p>
             </Prose>
           </Section>
 
-          {/* Step 4: Robust scaling */}
+          {/* Step 4: Log-minmax scoring */}
           <Section id="normalization">
-            <SectionTitle step="04">Normalize growth rates within each division</SectionTitle>
+            <SectionTitle step="04">Score growth via log-minmax scaling</SectionTitle>
             <Prose>
               <p>
-                Raw growth rates can't be compared directly across signals — a 20% increase in stars means something very different from a 20% increase in PyPI downloads.
-                To put all signals on a common scale, we apply <em className="text-foreground not-italic font-medium">robust scaling</em> (equivalent to scikit-learn's <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">RobustScaler</code>) for each signal within each division:
+                Raw growth rates can't be compared directly across signals — a 20% increase in stars means something very different from a 20% increase in package downloads.
+                To put all signals on a common scale, we apply a two-step <em className="text-foreground not-italic font-medium">log-minmax</em> transform for each signal within each division:
               </p>
             </Prose>
             <Formula>
-              scaled = (growth_rate − median) / IQR
+              <div>1. log_val = log(1 + growth_rate)</div>
+              <div className="mt-1">2. score = (log_val − min) / (max − min) × 100</div>
             </Formula>
             <Prose>
               <p>
-                where <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">median</code> and <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">IQR</code> (interquartile range, Q75 − Q25) are computed only over eligible organizations in the same division.
+                The logarithm compresses extreme outliers while preserving meaningful separation between high and low growers.
+                The min-max step then maps the distribution to <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">[0, 100]</code>, making scores directly comparable across signals.
               </p>
               <p>
-                Unlike z-score normalization, this approach is robust to outliers — a single org with explosive growth won't distort the scale for everyone else, since the median and IQR are not sensitive to extreme values.
+                This balances two failure modes: using raw percentiles would collapse every org to an arbitrary rank and throw away information about magnitude; using raw log values would let a single extreme outlier compress everyone else toward zero.
+                Log-minmax sits between them — outliers are highlighted, but the scale stays meaningful.
               </p>
               <p>
-                We also compute a <em className="text-foreground not-italic font-medium">growth percentile</em> (what fraction of peers this org grew faster than) and a <em className="text-foreground not-italic font-medium">size percentile</em> (where the org's end-of-quarter value ranks among peers). Both are used in the weighting step.
+                Both <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">min</code> and <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">max</code> are computed only over eligible organizations in the same division for that signal.
               </p>
             </Prose>
           </Section>
 
-          {/* Step 5: Weighting */}
-          <Section id="weighting">
-            <SectionTitle step="05">Weight signals by growth × size</SectionTitle>
-            <Prose>
-              <p>
-                Not all signals should contribute equally. An org with 10 million npm downloads should have its npm growth weighted more heavily than an org with 200 downloads.
-                Signals where an org is both large and growing fast should dominate; irrelevant signals (zero data) should contribute nothing.
-              </p>
-              <p>
-                For each eligible signal, a <em className="text-foreground not-italic font-medium">weight magnitude</em> is computed as the product of two percentiles:
-              </p>
-            </Prose>
-            <Formula>
-              weight_magnitude = growth_percentile × size_percentile
-            </Formula>
-            <Prose>
-              <p>
-                This rewards signals where the org is both growing quickly (high growth percentile) <em className="text-foreground not-italic font-medium">and</em> operating at meaningful scale (high size percentile).
-                An org that is large but not growing, or growing fast but from near-zero, will have a lower magnitude than one doing both.
-              </p>
-              <p>
-                Ineligible signals have <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">null</code> magnitude and are excluded entirely.
-                Magnitudes are then normalized so weights sum to 1 across the signals that are active for each org:
-              </p>
-            </Prose>
-            <Formula>
-              final_weight<sub>i</sub> = weight_magnitude<sub>i</sub> / Σ weight_magnitudes
-            </Formula>
-          </Section>
-
-          {/* Step 6: Composite */}
+          {/* Step 5: Composite */}
           <Section id="composite">
-            <SectionTitle step="06">Compute composite score</SectionTitle>
+            <SectionTitle step="05">Sum eligible scores into a composite</SectionTitle>
             <Prose>
               <p>
-                The composite score is a weighted sum of scaled growth rates across all eligible signals:
+                Each eligible signal contributes its score directly to the composite — no normalization, no cross-signal weighting:
               </p>
             </Prose>
             <Formula>
-              composite_score = Σ (final_weight<sub>i</sub> × scaled_rate<sub>i</sub>)
+              composite_score = Σ score<sub>i</sub>{"  "}(for each eligible signal i)
             </Formula>
             <Prose>
               <p>
-                Because each scaled rate is relative to that signal's distribution within the division, and the weights adapt to the signals each org actually uses, the composite score is directly comparable across all organizations in the same division — regardless of which signals they participate in.
+                This is deliberately <em className="text-foreground not-italic font-medium">breadth-rewarding</em>: an org growing across GitHub stars, contributors, and package downloads will outscore an org that only excels on one signal, even if that one signal score is high. Being genuinely multi-dimensional is treated as a stronger signal of health.
               </p>
               <p>
-                An org only active on GitHub and PyPI is evaluated on those two signals with their weights summing to 1.
-                An org active across all four signals is evaluated on all four, with the same property.
+                Signals with no data simply don't appear in the sum. An org that only publishes to GitHub is evaluated on two signals; one active across all three is evaluated on all three. The maximum possible composite is 300 (three signals each scoring 100).
               </p>
             </Prose>
           </Section>
 
-          {/* Step 7: Ranking */}
+          {/* Step 6: Ranking */}
           <Section id="ranking">
-            <SectionTitle step="07">Rank within each division</SectionTitle>
+            <SectionTitle step="06">Rank within each division</SectionTitle>
             <Prose>
               <p>
                 Organizations are ranked by their composite score in descending order, independently within each division.
@@ -341,7 +313,7 @@ export default function MethodologyPage() {
             <div className="border border-white/10 rounded p-6 space-y-3">
               <h2 className="text-base font-semibold text-foreground">Questions or feedback?</h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                This methodology will evolve as we refine the index. If you notice an org that seems misranked, a signal worth adding, or a weighting scheme worth discussing, reach out to the teams at Supabase and{" "}
+                This methodology will evolve as we refine the index. If you notice an org that seems misranked, a signal worth adding, or a scoring scheme worth discussing, reach out to the teams at Supabase and{" "}
                 <span className="text-foreground">&gt;commit</span>.
               </p>
             </div>
