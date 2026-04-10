@@ -21,30 +21,11 @@ export type OrgEntry = {
   github_contributors_growth_percentile: number | null;
   github_contributors_final_weight: number | null;
 
-  npm_downloads_start: number | null;
-  npm_downloads_end: number | null;
-  npm_downloads_growth_rate: number | null;
-  npm_downloads_growth_percentile: number | null;
-  npm_downloads_final_weight: number | null;
-
-  pypi_downloads_start: number | null;
-  pypi_downloads_end: number | null;
-  pypi_downloads_growth_rate: number | null;
-  pypi_downloads_growth_percentile: number | null;
-  pypi_downloads_final_weight: number | null;
-
-  cargo_downloads_start: number | null;
-  cargo_downloads_end: number | null;
-  cargo_downloads_growth_rate: number | null;
-  cargo_downloads_growth_percentile: number | null;
-  cargo_downloads_final_weight: number | null;
-
-  docker_pulls_start: number | null;
-  docker_pulls_end: number | null;
-  docker_pulls_growth_rate: number | null;
-  docker_pulls_growth_percentile: number | null;
-  docker_pulls_final_weight: number | null;
-
+  package_downloads_start: number | null;
+  package_downloads_end: number | null;
+  package_downloads_growth_rate: number | null;
+  package_downloads_growth_percentile: number | null;
+  package_downloads_final_weight: number | null;
 };
 
 export type Tier = "above_1000" | "below_1000";

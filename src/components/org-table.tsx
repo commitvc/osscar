@@ -39,25 +39,11 @@ const RANK_PIPS: Record<number, string> = {
 }
 
 function computePackageDownloads(org: OrgEntry): { value: number | null; rate: number | null } {
-  const hasAny =
-    org.npm_downloads_end != null ||
-    org.pypi_downloads_end != null ||
-    org.cargo_downloads_end != null
-
-  if (!hasAny) return { value: null, rate: null }
-
-  const startTotal =
-    (org.npm_downloads_start ?? 0) +
-    (org.pypi_downloads_start ?? 0) +
-    (org.cargo_downloads_start ?? 0)
-
-  const endTotal =
-    (org.npm_downloads_end ?? 0) +
-    (org.pypi_downloads_end ?? 0) +
-    (org.cargo_downloads_end ?? 0)
-
-  const rate = startTotal > 0 ? (endTotal - startTotal) / startTotal : null
-  return { value: endTotal, rate }
+  if (org.package_downloads_end == null) return { value: null, rate: null }
+  return {
+    value: org.package_downloads_end,
+    rate: org.package_downloads_growth_rate,
+  }
 }
 
 const LOW_BASELINE_THRESHOLD = 100
@@ -132,7 +118,7 @@ function MetricCell({ value, rate, startValue, metricLabel = "stars" }: MetricCe
       <span className="font-mono text-sm font-semibold text-foreground tabular-nums leading-none">
         {value != null ? formatCompact(value) : "—"}
       </span>
-      {rate != null ? (
+      {rate != null && rate > 0 ? (
         <span className={cn(
           "font-mono text-[0.7rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm",
           rateSign === "positive" && "bg-green/15 text-green",
@@ -403,8 +389,8 @@ export function OrgTable({ above, below }: OrgTableProps) {
             aVal = aData.value
             bVal = bData.value
           } else {
-            const aStart = (rowA.original.npm_downloads_start ?? 0) + (rowA.original.pypi_downloads_start ?? 0) + (rowA.original.cargo_downloads_start ?? 0)
-            const bStart = (rowB.original.npm_downloads_start ?? 0) + (rowB.original.pypi_downloads_start ?? 0) + (rowB.original.cargo_downloads_start ?? 0)
+            const aStart = rowA.original.package_downloads_start
+            const bStart = rowB.original.package_downloads_start
             aVal = displayedGrowth(aStart || null, aData.value, aData.rate)
             bVal = displayedGrowth(bStart || null, bData.value, bData.rate)
           }
@@ -420,8 +406,7 @@ export function OrgTable({ above, below }: OrgTableProps) {
         ),
         cell: ({ row }) => {
           const { value, rate } = computePackageDownloads(row.original)
-          const startTotal = (row.original.npm_downloads_start ?? 0) + (row.original.pypi_downloads_start ?? 0) + (row.original.cargo_downloads_start ?? 0)
-          return <MetricCell value={value} rate={rate} startValue={startTotal || null} metricLabel="downloads" />
+          return <MetricCell value={value} rate={rate} startValue={row.original.package_downloads_start} metricLabel="downloads" />
         },
       },
     ),
