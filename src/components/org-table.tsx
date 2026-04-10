@@ -39,25 +39,11 @@ const RANK_PIPS: Record<number, string> = {
 }
 
 function computePackageDownloads(org: OrgEntry): { value: number | null; rate: number | null } {
-  const hasAny =
-    org.npm_downloads_end != null ||
-    org.pypi_downloads_end != null ||
-    org.cargo_downloads_end != null
-
-  if (!hasAny) return { value: null, rate: null }
-
-  const startTotal =
-    (org.npm_downloads_start ?? 0) +
-    (org.pypi_downloads_start ?? 0) +
-    (org.cargo_downloads_start ?? 0)
-
-  const endTotal =
-    (org.npm_downloads_end ?? 0) +
-    (org.pypi_downloads_end ?? 0) +
-    (org.cargo_downloads_end ?? 0)
-
-  const rate = startTotal > 0 ? (endTotal - startTotal) / startTotal : null
-  return { value: endTotal, rate }
+  if (org.package_downloads_end == null) return { value: null, rate: null }
+  return {
+    value: org.package_downloads_end,
+    rate: org.package_downloads_growth_rate,
+  }
 }
 
 interface MetricCellProps {

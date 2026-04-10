@@ -37,8 +37,7 @@ function MetricTable() {
   const metrics = [
     { key: "github_stars", label: "GitHub Stars", family: "github", description: "Net new stars on the org's repos" },
     { key: "github_contributors", label: "GitHub Contributors", family: "github", description: "Unique contributors across the org's repos" },
-    { key: "npm_downloads", label: "npm Downloads", family: "usage", description: "Monthly download count from npm" },
-    { key: "pypi_downloads", label: "PyPI Downloads", family: "usage", description: "Monthly download count from PyPI" },
+    { key: "package_downloads", label: "Package Downloads", family: "usage", description: "Aggregated monthly download count across npm, PyPI, and other registries" },
   ]
 
   const familyColors: Record<string, string> = {
@@ -78,8 +77,7 @@ function PaddingTable() {
   const rows = [
     { metric: "github_stars", below: "100", above: "1,000" },
     { metric: "github_contributors", below: "5", above: "10" },
-    { metric: "npm_downloads", below: "100", above: "1,000" },
-    { metric: "pypi_downloads", below: "100", above: "1,000" },
+    { metric: "package_downloads", below: "100", above: "1,000" },
   ]
 
   return (
