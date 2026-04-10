@@ -30,7 +30,7 @@ import {
   formatGrowthRate,
   cn,
 } from "@/lib/utils";
-import type { OrgEntry, FrontendOrgData, Tier } from "@/types";
+import type { OrgEntry, FrontendOrgData, Tier, TimeSeriesPoint } from "@/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -329,6 +329,21 @@ export default async function OrgPage({ params }: Props) {
   const rankGlow = rank ? getRankGlow(rank) : "none";
   const tierLabel = tier === "above_1000" ? "Scaling" : "Emerging";
 
+  // If the first data point is more than 14 days after the quarter start,
+  // the signal didn't exist at the start of the quarter — prepend a zero so
+  // the chart shows the ramp-up from nothing instead of starting mid-air.
+  function withLeadingZero(data: TimeSeriesPoint[], quarterStart: string): TimeSeriesPoint[] {
+    if (data.length === 0) return data;
+    const qStart = new Date(quarterStart).getTime();
+    const firstPt = new Date(data[0].date).getTime();
+    const diffDays = (firstPt - qStart) / 86_400_000;
+    if (diffDays <= 14) return data;
+    const zeroPrevDate = new Date(firstPt - 7 * 86_400_000).toISOString().split("T")[0];
+    return [{ date: zeroPrevDate, value: 0 }, ...data];
+  }
+
+  const quarterStart = rankingOrg?.quarter_start ?? "2026-01-01";
+
   // Chart metrics
   const BRAND = "#3ECF8E";
   const chartMetrics: MetricConfig[] = frontendOrg
@@ -336,35 +351,35 @@ export default async function OrgPage({ params }: Props) {
         {
           key: "stars",
           label: "Stars",
-          data: frontendOrg.github_stars_weekly,
+          data: withLeadingZero(frontendOrg.github_stars_weekly, quarterStart),
           color: BRAND,
           periodLabel: "cumulative stars",
         },
         {
           key: "contributors",
           label: "Contributors",
-          data: frontendOrg.github_contributors_weekly,
+          data: withLeadingZero(frontendOrg.github_contributors_weekly, quarterStart),
           color: BRAND,
           periodLabel: "cumulative contributors",
         },
         {
           key: "npm",
           label: "NPM",
-          data: frontendOrg.npm_weekly,
+          data: withLeadingZero(frontendOrg.npm_weekly, quarterStart),
           color: BRAND,
           periodLabel: "weekly downloads",
         },
         {
           key: "pypi",
           label: "PyPI",
-          data: frontendOrg.pypi_weekly,
+          data: withLeadingZero(frontendOrg.pypi_weekly, quarterStart),
           color: BRAND,
           periodLabel: "weekly downloads",
         },
         {
           key: "cargo",
           label: "Cargo",
-          data: frontendOrg.cargo_weekly,
+          data: withLeadingZero(frontendOrg.cargo_weekly, quarterStart),
           color: BRAND,
           periodLabel: "weekly downloads",
         },
