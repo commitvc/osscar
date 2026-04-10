@@ -259,12 +259,11 @@ export default function MethodologyPage() {
             </Formula>
             <Prose>
               <p>
-                The logarithm compresses extreme outliers while preserving meaningful separation between high and low growers.
+                The logarithm compresses the long tail of growth rates while preserving meaningful separation between a 10× and a 1,000× grower — unlike percentiles, which would give both nearly the same rank if they're both in the top 1%.
                 The min-max step then maps the distribution to <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">[0, 100]</code>, making scores directly comparable across signals.
               </p>
               <p>
-                This balances two failure modes: using raw percentiles would collapse every org to an arbitrary rank and throw away information about magnitude; using raw log values would let a single extreme outlier compress everyone else toward zero.
-                Log-minmax sits between them — outliers are highlighted, but the scale stays meaningful.
+                No clipping is applied. If one org grows exceptionally fast, it anchors the maximum and compresses others downward — this is intentional. A genuinely exceptional grower should visibly dominate the leaderboard. Percentiles would obscure that; log-minmax preserves it.
               </p>
               <p>
                 Both <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">min</code> and <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">max</code> are computed only over eligible organizations in the same division for that signal.

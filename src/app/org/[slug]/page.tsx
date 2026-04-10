@@ -101,7 +101,6 @@ type SignalConfig = {
   start: number | null;
   rate: number | null;
   percentile: number | null;
-  weight: number | null;
 };
 
 function buildSignals(org: OrgEntry): SignalConfig[] {
@@ -115,7 +114,6 @@ function buildSignals(org: OrgEntry): SignalConfig[] {
       start: org.github_stars_start,
       rate: org.github_stars_growth_rate,
       percentile: org.github_stars_growth_percentile,
-      weight: org.github_stars_final_weight,
     },
     {
       key: "github_contributors",
@@ -126,7 +124,6 @@ function buildSignals(org: OrgEntry): SignalConfig[] {
       start: org.github_contributors_start,
       rate: org.github_contributors_growth_rate,
       percentile: org.github_contributors_growth_percentile,
-      weight: org.github_contributors_final_weight,
     },
     {
       key: "package_downloads",
@@ -137,7 +134,6 @@ function buildSignals(org: OrgEntry): SignalConfig[] {
       start: org.package_downloads_start,
       rate: org.package_downloads_growth_rate,
       percentile: org.package_downloads_growth_percentile,
-      weight: org.package_downloads_final_weight,
     },
   ];
 }
@@ -154,11 +150,9 @@ const PADDING_THRESHOLDS: Record<string, { above_1000: number; below_1000: numbe
 
 function SignalCard({
   signal,
-  weightPct,
   tier,
 }: {
   signal: SignalConfig;
-  weightPct: number;
   tier: Tier;
 }) {
   const hasData = signal.end != null;
@@ -208,7 +202,7 @@ function SignalCard({
           signal.start < padding;
 
         return (
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2.5">
             <div className="flex items-baseline gap-2.5 flex-wrap">
               <span className="font-mono text-3xl font-bold text-foreground tabular-nums leading-none">
                 {hasData ? formatCompact(signal.end) : "—"}
@@ -238,73 +232,6 @@ function SignalCard({
         );
       })()}
 
-      {/* Weight bar */}
-      <div className="space-y-1.5 mt-auto pt-1">
-        <div className="h-[3px] bg-white/5 rounded-full overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all"
-            style={{
-              width: `${Math.min(100, weightPct)}%`,
-              backgroundColor: signal.color,
-            }}
-          />
-        </div>
-        <span className="font-mono text-[0.7rem] text-muted-foreground/50">
-          {weightPct.toFixed(1)}% of score
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function ScoreBar({
-  signals,
-  total,
-}: {
-  signals: SignalConfig[];
-  total: number;
-}) {
-  const active = signals.filter((s) => (s.weight ?? 0) > 0);
-  if (total === 0 || active.length === 0) return null;
-
-  return (
-    <div className="space-y-3">
-      <div className="h-2 rounded-full flex overflow-hidden gap-[2px]">
-        {active.map((s) => {
-          const pct = ((s.weight ?? 0) / total) * 100;
-          return (
-            <div
-              key={s.key}
-              className="h-full transition-all"
-              style={{
-                width: `${pct}%`,
-                backgroundColor: s.color,
-                minWidth: pct > 1 ? "4px" : "0",
-              }}
-              title={`${s.label}: ${pct.toFixed(1)}%`}
-            />
-          );
-        })}
-      </div>
-      <div className="flex flex-wrap gap-x-5 gap-y-1.5">
-        {active.map((s) => {
-          const pct = ((s.weight ?? 0) / total) * 100;
-          return (
-            <div key={s.key} className="flex items-center gap-1.5">
-              <span
-                className="size-1.5 rounded-full shrink-0"
-                style={{ backgroundColor: s.color }}
-              />
-              <span className="font-mono text-[0.6rem] text-muted-foreground/55 uppercase tracking-wider">
-                {s.label}
-              </span>
-              <span className="font-mono text-[0.6rem] text-muted-foreground/35">
-                {pct.toFixed(1)}%
-              </span>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }
@@ -358,11 +285,12 @@ export default async function OrgPage({ params }: Props) {
   // the chart shows the ramp-up from nothing instead of starting mid-air.
   function withLeadingZero(data: TimeSeriesPoint[], quarterStart: string): TimeSeriesPoint[] {
     if (data.length === 0) return data;
-    const qStart = new Date(quarterStart).getTime();
     const firstPt = new Date(data[0].date).getTime();
-    const diffDays = (firstPt - qStart) / 86_400_000;
-    if (diffDays <= 14) return data;
+    const qStart = new Date(quarterStart).getTime();
+    if (firstPt <= qStart) return data;
     const zeroPrevDate = new Date(firstPt - 7 * 86_400_000).toISOString().split("T")[0];
+    // Only prepend if the zero point falls within the quarter
+    if (zeroPrevDate < quarterStart) return data;
     return [{ date: zeroPrevDate, value: 0 }, ...data];
   }
 
@@ -566,20 +494,13 @@ export default async function OrgPage({ params }: Props) {
               </div>
 
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                {signals.map((signal) => {
-                  const weightPct =
-                    score > 0
-                      ? ((signal.weight ?? 0) / score) * 100
-                      : 0;
-                  return (
-                    <SignalCard
-                      key={signal.key}
-                      signal={signal}
-                      weightPct={weightPct}
-                      tier={tier}
-                    />
-                  );
-                })}
+                {signals.map((signal) => (
+                  <SignalCard
+                    key={signal.key}
+                    signal={signal}
+                    tier={tier}
+                  />
+                ))}
               </div>
             </section>
           )}
@@ -596,7 +517,7 @@ export default async function OrgPage({ params }: Props) {
                 </span>
               </div>
               <div className="bg-card border border-white/10 rounded-xl p-6">
-                <GrowthChart metrics={chartMetrics} />
+                <GrowthChart metrics={chartMetrics} quarterStart={quarterStart} quarterEnd="2026-03-31" />
               </div>
             </section>
           )}

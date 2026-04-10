@@ -58,9 +58,11 @@ function CustomTooltip({ active, payload, label, color, periodLabel }: CustomToo
 
 interface GrowthChartProps {
   metrics: MetricConfig[];
+  quarterStart?: string;
+  quarterEnd?: string;
 }
 
-export function GrowthChart({ metrics }: GrowthChartProps) {
+export function GrowthChart({ metrics, quarterStart = "2026-01-01", quarterEnd = "2026-03-31" }: GrowthChartProps) {
   const id = useId();
   const available = metrics.filter((m) => m.data.length > 0);
   const [activeKey, setActiveKey] = useState(available[0]?.key ?? "");
@@ -79,7 +81,11 @@ export function GrowthChart({ metrics }: GrowthChartProps) {
 
   const gradientId = `gradient-${id}-${current.key}`;
 
-  const tickInterval = Math.max(1, Math.floor(current.data.length / 6));
+  const filteredData = current.data.filter(
+    (d) => d.date >= quarterStart && d.date <= quarterEnd
+  );
+
+  const tickInterval = Math.max(1, Math.floor(filteredData.length / 6));
 
   return (
     <div className="space-y-4">
@@ -105,7 +111,7 @@ export function GrowthChart({ metrics }: GrowthChartProps) {
       {/* Chart */}
       <ResponsiveContainer width="100%" height={336}>
         <AreaChart
-          data={current.data}
+          data={filteredData}
           margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
         >
           <defs>
@@ -152,7 +158,7 @@ export function GrowthChart({ metrics }: GrowthChartProps) {
             type="number"
             interval="preserveStartEnd"
             ticks={(() => {
-              const maxVal = Math.max(...current.data.map(d => d.value));
+              const maxVal = Math.max(...filteredData.map(d => d.value));
               const steps = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000];
               const step = steps.find(s => maxVal / s <= 6) ?? steps[steps.length - 1];
               const ticks: number[] = [];
