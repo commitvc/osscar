@@ -67,17 +67,12 @@ function MetricCell({ value, rate, startValue, metricLabel = "stars" }: MetricCe
 
   const isLowBaseline = startValue != null && startValue < LOW_BASELINE_THRESHOLD && rate != null
 
-  // Low-baseline orgs: show real growth + tooltip explaining methodology computation
+  // Low-baseline orgs: show methodology rate in table, real growth in tooltip
   if (isLowBaseline) {
-    const realRate = startValue === 0 || startValue == null
-      ? null
-      : value != null && startValue > 0
-        ? (value - startValue) / startValue
-        : null
     const realRateLabel = startValue === 0 || startValue == null
       ? "+∞"
-      : realRate != null
-        ? `+${realRate.toFixed(1)}×`
+      : value != null && startValue > 0
+        ? `+${((value - startValue) / startValue).toFixed(1)}×`
         : "—"
 
     return (
@@ -88,7 +83,7 @@ function MetricCell({ value, rate, startValue, metricLabel = "stars" }: MetricCe
               {value != null ? formatCompact(value) : "—"}
             </span>
             <span className="font-mono text-[0.7rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm bg-green/15 text-green">
-              {realRateLabel}
+              {formatGrowthRate(rate)}
             </span>
           </div>
         </Tooltip.Trigger>
@@ -96,7 +91,7 @@ function MetricCell({ value, rate, startValue, metricLabel = "stars" }: MetricCe
           <Tooltip.Positioner side="top" sideOffset={6}>
             <Tooltip.Popup className="z-50 max-w-xs rounded-md border border-white/10 bg-popover px-3 py-2 text-xs text-popover-foreground shadow-lg space-y-1.5">
               <p>
-                For ranking purposes, our methodology uses a minimum baseline of 100 {metricLabel}, so this org{"'"}s growth is computed as 100 → {formatCompact(value)}, giving <span className="font-semibold text-green">{formatGrowthRate(rate)}</span>.
+                Real growth is <span className="font-semibold text-green">{realRateLabel}</span> ({formatCompact(startValue ?? 0)} → {formatCompact(value)}). Our methodology uses a minimum baseline of 100 {metricLabel}, so the displayed rate is computed as 100 → {formatCompact(value)}, giving <span className="font-semibold text-green">{formatGrowthRate(rate)}</span>.
               </p>
               <a href="/methodology" className="inline-flex items-center gap-1 text-[0.65rem] text-muted-foreground hover:text-green transition-colors font-mono">
                 Read the methodology →
@@ -196,12 +191,8 @@ function realGrowth(start: number | null, end: number | null): number | null {
   return (end - start) / start
 }
 
-/** Returns the displayed growth value for sorting: real growth for low-baseline orgs, methodology rate otherwise */
-function displayedGrowth(start: number | null, end: number | null, methodologyRate: number | null): number | null {
-  const isLow = start != null && start < LOW_BASELINE_THRESHOLD
-  if (isLow) {
-    return realGrowth(start, end)
-  }
+/** Returns the displayed growth value for sorting — always the methodology rate (what's shown in the table) */
+function displayedGrowth(_start: number | null, _end: number | null, methodologyRate: number | null): number | null {
   return methodologyRate
 }
 

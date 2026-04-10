@@ -176,8 +176,15 @@ function SignalCard({
         </span>
       </div>
 
-      {/* Value + real growth + score rate */}
+      {/* Value + methodology rate + real growth note */}
       {(() => {
+        const padding = PADDING_THRESHOLDS[signal.key]?.[tier];
+        const isLowBaseline =
+          signal.rate != null &&
+          signal.start != null &&
+          padding != null &&
+          signal.start < padding;
+
         const realRate =
           signal.start == null || signal.start === 0
             ? signal.end != null && signal.end > 0
@@ -193,25 +200,13 @@ function SignalCard({
               ? `+${realRate.toFixed(1)}×`
               : null;
 
-        // Check whether the score rate differs from the real rate
-        const padding = PADDING_THRESHOLDS[signal.key]?.[tier];
-        const scoreRateDiffers =
-          signal.rate != null &&
-          signal.start != null &&
-          padding != null &&
-          signal.start < padding;
-
         return (
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-1.5">
             <div className="flex items-baseline gap-2.5 flex-wrap">
               <span className="font-mono text-3xl font-bold text-foreground tabular-nums leading-none">
                 {hasData ? formatCompact(signal.end) : "—"}
               </span>
-              {realLabel ? (
-                <span className="font-mono text-sm font-semibold px-2 py-0.5 rounded-sm tabular-nums bg-green/15 text-green">
-                  {realLabel}
-                </span>
-              ) : signal.rate != null ? (
+              {signal.rate != null ? (
                 <span
                   className={cn(
                     "font-mono text-sm font-semibold px-2 py-0.5 rounded-sm tabular-nums",
@@ -222,10 +217,10 @@ function SignalCard({
                 </span>
               ) : null}
             </div>
-            {scoreRateDiffers && (
+            {isLowBaseline && realLabel && (
               <span className="font-mono text-[0.65rem] tabular-nums text-muted-foreground/40 leading-tight">
-                <span className="font-semibold text-green">{formatGrowthRate(signal.rate)}</span>
-                {" "}for ranking (min baseline {formatCompact(padding!)})
+                Real growth: <span className="font-semibold text-green">{realLabel}</span>
+                {" "}({formatCompact(signal.start)} → {formatCompact(signal.end)}). Min baseline {formatCompact(padding!)} used for ranking.
               </span>
             )}
           </div>
