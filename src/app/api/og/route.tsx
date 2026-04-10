@@ -40,7 +40,7 @@ function getRankColor(rank: number): string {
   if (rank === 1) return "#F0B429";   // amber
   if (rank === 2) return "#C8D0DA";   // silver
   if (rank === 3) return "#C87941";   // bronze
-  return "#3ECF8E";                   // supabase green for the rest
+  return "#D9D9D9";                     // white for the rest
 }
 
 function getOscarFile(rank: number): string {
@@ -161,9 +161,9 @@ export async function GET(request: NextRequest) {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            justifyContent: "flex-start",
+            justifyContent: "center",
             flex: 1,
-            padding: "48px 80px 0",
+            padding: "0 80px",
             position: "relative",
           }}
         >
@@ -285,7 +285,7 @@ export async function GET(request: NextRequest) {
               alignItems: "center",
               gap: "16px",
               position: "relative",
-              marginTop: "96px",
+              marginTop: "48px",
             }}
           >
             {/* Achievement row */}
@@ -296,11 +296,11 @@ export async function GET(request: NextRequest) {
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "22px",
-                  padding: "20px 40px",
+                  padding: "20px",
                   borderRadius: "18px",
                   backgroundColor: "rgba(255,255,255,0.04)",
                   border: `1px solid ${rankColor}45`,
-                  minWidth: "640px",
+                  minWidth: "540px",
                 }}
               >
                 {/* Oscar statue */}

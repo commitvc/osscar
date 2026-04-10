@@ -44,6 +44,7 @@ export type OrgEntry = {
   docker_pulls_growth_rate: number | null;
   docker_pulls_growth_percentile: number | null;
   docker_pulls_final_weight: number | null;
+
 };
 
 export type Tier = "above_1000" | "below_1000";

@@ -103,7 +103,7 @@ export function GrowthChart({ metrics }: GrowthChartProps) {
       </div>
 
       {/* Chart */}
-      <ResponsiveContainer width="100%" height={280}>
+      <ResponsiveContainer width="100%" height={336}>
         <AreaChart
           data={current.data}
           margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
@@ -125,9 +125,10 @@ export function GrowthChart({ metrics }: GrowthChartProps) {
               new Date(d).toLocaleDateString("en-US", { month: "short" })
             }
             tick={{
-              fontSize: 10,
-              fill: "rgba(255,255,255,0.35)",
+              fontSize: 11,
+              fill: "rgba(255,255,255,0.55)",
               fontFamily: "var(--font-mono)",
+              fontWeight: 600,
             }}
             tickLine={false}
             axisLine={{ stroke: "rgba(255,255,255,0.08)" }}
@@ -136,13 +137,31 @@ export function GrowthChart({ metrics }: GrowthChartProps) {
           <YAxis
             tickFormatter={(v: number) => formatCompact(v)}
             tick={{
-              fontSize: 10,
-              fill: "rgba(255,255,255,0.35)",
+              fontSize: 11,
+              fill: "rgba(255,255,255,0.55)",
               fontFamily: "var(--font-mono)",
+              fontWeight: 600,
             }}
             tickLine={false}
             axisLine={false}
             width={52}
+            domain={[0, "auto"]}
+            allowDecimals={false}
+            tickCount={6}
+            scale="linear"
+            type="number"
+            interval="preserveStartEnd"
+            ticks={(() => {
+              const maxVal = Math.max(...current.data.map(d => d.value));
+              const steps = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000];
+              const step = steps.find(s => maxVal / s <= 6) ?? steps[steps.length - 1];
+              const ticks: number[] = [];
+              for (let v = 0; v <= maxVal + step; v += step) {
+                ticks.push(v);
+                if (v >= maxVal) break;
+              }
+              return ticks;
+            })()}
           />
           <Tooltip
             content={
@@ -154,7 +173,7 @@ export function GrowthChart({ metrics }: GrowthChartProps) {
             cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
           />
           <Area
-            type="monotone"
+            type="linear"
             dataKey="value"
             stroke={current.color}
             strokeWidth={2}

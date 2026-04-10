@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, useRef } from "react"
 import Link from "next/link"
 import {
   useReactTable,
@@ -60,12 +60,16 @@ function computePackageDownloads(org: OrgEntry): { value: number | null; rate: n
   return { value: endTotal, rate }
 }
 
+const LOW_BASELINE_THRESHOLD = 100
+
 interface MetricCellProps {
   value: number | null
   rate: number | null
+  startValue?: number | null
+  metricLabel?: string
 }
 
-function MetricCell({ value, rate }: MetricCellProps) {
+function MetricCell({ value, rate, startValue, metricLabel = "stars" }: MetricCellProps) {
   const hasData = value != null || rate != null
   if (!hasData) {
     return (
@@ -75,6 +79,50 @@ function MetricCell({ value, rate }: MetricCellProps) {
     )
   }
 
+  const isLowBaseline = startValue != null && startValue < LOW_BASELINE_THRESHOLD && rate != null
+
+  // Low-baseline orgs: show real growth + tooltip explaining methodology computation
+  if (isLowBaseline) {
+    const realRate = startValue === 0 || startValue == null
+      ? null
+      : value != null && startValue > 0
+        ? (value - startValue) / startValue
+        : null
+    const realRateLabel = startValue === 0 || startValue == null
+      ? "+∞"
+      : realRate != null
+        ? `+${realRate.toFixed(1)}×`
+        : "—"
+
+    return (
+      <Tooltip.Root>
+        <Tooltip.Trigger className="cursor-default w-full">
+          <div className="flex items-center justify-end gap-1.5">
+            <span className="font-mono text-sm font-semibold text-foreground tabular-nums leading-none">
+              {value != null ? formatCompact(value) : "—"}
+            </span>
+            <span className="font-mono text-[0.7rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm bg-green/15 text-green">
+              {realRateLabel}
+            </span>
+          </div>
+        </Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Positioner side="top" sideOffset={6}>
+            <Tooltip.Popup className="z-50 max-w-xs rounded-md border border-white/10 bg-popover px-3 py-2 text-xs text-popover-foreground shadow-lg space-y-1.5">
+              <p>
+                For ranking purposes, our methodology uses a minimum baseline of 100 {metricLabel}, so this org{"'"}s growth is computed as 100 → {formatCompact(value)}, giving <span className="font-semibold text-green">{formatGrowthRate(rate)}</span>.
+              </p>
+              <a href="/methodology" className="inline-flex items-center gap-1 text-[0.65rem] text-muted-foreground hover:text-green transition-colors font-mono">
+                Read the methodology →
+              </a>
+            </Tooltip.Popup>
+          </Tooltip.Positioner>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    )
+  }
+
+  // Normal display
   const rateSign = rate != null
     ? (rate > 0 ? "positive" : rate < 0 ? "negative" : "zero")
     : "none"
@@ -100,26 +148,84 @@ function MetricCell({ value, rate }: MetricCellProps) {
   )
 }
 
-function SortHeader({ column, label, align = "right" }: { column: Column<OrgEntry, unknown>; label: string; align?: "left" | "right" }) {
+type SortMode = "growth" | "absolute"
+
+function SortHeader({ column, label, align = "right", sortMode, onToggleMode }: {
+  column: Column<OrgEntry, unknown>
+  label: string
+  align?: "left" | "right"
+  sortMode?: SortMode
+  onToggleMode?: () => void
+}) {
   const sorted = column.getIsSorted()
+
   return (
-    <button
-      onClick={column.getToggleSortingHandler()}
-      className={`flex items-center gap-1 cursor-pointer select-none group${align === "right" ? " ml-auto" : ""}`}
-    >
-      {label}
-      <span className={cn(
-        "transition-colors",
-        sorted ? "text-foreground" : "text-muted-foreground/30 group-hover:text-muted-foreground/60"
-      )}>
-        {sorted === "asc"
-          ? <ChevronUp size={11} />
-          : sorted === "desc"
-          ? <ChevronDown size={11} />
-          : <ChevronsUpDown size={11} />}
-      </span>
-    </button>
+    <div className={`flex flex-col gap-1${align === "right" ? " items-end" : " items-start"}`}>
+      <button
+        onClick={column.getToggleSortingHandler()}
+        className="flex items-center gap-1 cursor-pointer select-none group"
+      >
+        {label}
+        <span className={cn(
+          "transition-colors",
+          sorted ? "text-foreground" : "text-muted-foreground/30 group-hover:text-muted-foreground/60"
+        )}>
+          {sorted === "asc"
+            ? <ChevronUp size={11} />
+            : sorted === "desc"
+            ? <ChevronDown size={11} />
+            : <ChevronsUpDown size={11} />}
+        </span>
+      </button>
+      {sortMode && onToggleMode && (
+        <div className="flex rounded-sm overflow-hidden border border-white/8">
+          <button
+            onClick={(e) => { e.stopPropagation(); if (sortMode !== "growth") onToggleMode() }}
+            className={cn(
+              "px-1.5 py-px font-mono text-[0.5rem] uppercase tracking-wider cursor-pointer transition-colors",
+              sortMode === "growth" ? "bg-green/15 text-green" : "text-muted-foreground/30 hover:text-muted-foreground/60"
+            )}
+          >
+            growth
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); if (sortMode !== "absolute") onToggleMode() }}
+            className={cn(
+              "px-1.5 py-px font-mono text-[0.5rem] uppercase tracking-wider cursor-pointer transition-colors border-l border-white/8",
+              sortMode === "absolute" ? "bg-green/15 text-green" : "text-muted-foreground/30 hover:text-muted-foreground/60"
+            )}
+          >
+            total
+          </button>
+        </div>
+      )}
+    </div>
   )
+}
+
+/** Compute the real growth rate; returns Infinity when start is 0 and end > 0 */
+function realGrowth(start: number | null, end: number | null): number | null {
+  if (end == null) return null
+  if (start == null || start === 0) return end > 0 ? Infinity : null
+  return (end - start) / start
+}
+
+/** Returns the displayed growth value for sorting: real growth for low-baseline orgs, methodology rate otherwise */
+function displayedGrowth(start: number | null, end: number | null, methodologyRate: number | null): number | null {
+  const isLow = start != null && start < LOW_BASELINE_THRESHOLD
+  if (isLow) {
+    return realGrowth(start, end)
+  }
+  return methodologyRate
+}
+
+/** Compare two nullable numbers for sorting. Nulls always last, Infinity always first (in natural asc, TanStack flips for desc). */
+function compareMetric(a: number | null, b: number | null): number {
+  // Nulls: use sortUndefined-like behavior — always push to end
+  // Return -Infinity proxy so TanStack desc flip puts them at bottom
+  const aNum = a == null ? -Infinity : a
+  const bNum = b == null ? -Infinity : b
+  return aNum - bNum
 }
 
 const columnHelper = createColumnHelper<OrgEntry>()
@@ -132,14 +238,29 @@ interface OrgTableProps {
 export function OrgTable({ above, below }: OrgTableProps) {
   const [activeTier, setActiveTier] = useState<Tier>("below_1000")
   const [sorting, setSorting] = useState<SortingState>([])
+  const [starsSortMode, setStarsSortMode] = useState<SortMode>("growth")
+  const [contribSortMode, setContribSortMode] = useState<SortMode>("growth")
+  const [pkgSortMode, setPkgSortMode] = useState<SortMode>("growth")
 
-  const columns = [
+  // Refs so sortingFn always reads the latest mode without depending on closures
+  const starsModeRef = useRef(starsSortMode)
+  starsModeRef.current = starsSortMode
+  const contribModeRef = useRef(contribSortMode)
+  contribModeRef.current = contribSortMode
+  const pkgModeRef = useRef(pkgSortMode)
+  pkgModeRef.current = pkgSortMode
+
+  // Create new sort-state objects to break TanStack's internal memo cache
+  const forceSortRefresh = () => setSorting(prev => prev.length > 0 ? prev.map(s => ({ ...s })) : prev)
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const columns = useMemo(() => [
     columnHelper.accessor((_row: OrgEntry) => 0 as number, {
       id: "rank",
       enableSorting: true,
       sortingFn: (rowA, rowB) => rowA.index - rowB.index,
       sortDescFirst: false,
-      header: ({ column }) => <SortHeader column={column} label="#" align="left" />,
+      header: ({ column }) => <SortHeader column={column} label="RANKING" align="left" />,
       cell: ({ row }) => {
         const rank = row.index + 1
         const pip = RANK_PIPS[rank]
@@ -200,40 +321,110 @@ export function OrgTable({ above, below }: OrgTableProps) {
         )
       },
     }),
-    columnHelper.accessor(row => row.github_stars_growth_rate, {
-      id: "gh_stars",
-      sortUndefined: 1,
-      sortDescFirst: true,
-      header: ({ column }) => <SortHeader column={column} label="STARS" />,
-      cell: ({ row }) => (
-        <MetricCell
-          value={row.original.github_stars_end}
-          rate={row.original.github_stars_growth_rate}
-        />
-      ),
-    }),
-    columnHelper.accessor(row => row.github_contributors_growth_rate, {
-      id: "gh_contrib",
-      sortUndefined: 1,
-      sortDescFirst: true,
-      header: ({ column }) => <SortHeader column={column} label="CONTRIBUTORS" />,
-      cell: ({ row }) => (
-        <MetricCell
-          value={row.original.github_contributors_end}
-          rate={row.original.github_contributors_growth_rate}
-        />
-      ),
-    }),
-    columnHelper.accessor(row => computePackageDownloads(row).rate, {
-      id: "packages",
-      sortUndefined: 1,
-      sortDescFirst: true,
-      header: ({ column }) => <SortHeader column={column} label="PACKAGE DOWNLOADS" />,
-      cell: ({ row }) => {
-        const { value, rate } = computePackageDownloads(row.original)
-        return <MetricCell value={value} rate={rate} />
+    columnHelper.accessor(
+      row => row.github_stars_end ?? 0,
+      {
+        id: "gh_stars",
+        sortUndefined: 1,
+        sortDescFirst: true,
+        sortingFn: (rowA, rowB) => {
+          const mode = starsModeRef.current
+          const aVal = mode === "growth"
+            ? displayedGrowth(rowA.original.github_stars_start, rowA.original.github_stars_end, rowA.original.github_stars_growth_rate)
+            : rowA.original.github_stars_end
+          const bVal = mode === "growth"
+            ? displayedGrowth(rowB.original.github_stars_start, rowB.original.github_stars_end, rowB.original.github_stars_growth_rate)
+            : rowB.original.github_stars_end
+          return compareMetric(aVal, bVal)
+        },
+        header: ({ column }) => (
+          <SortHeader
+            column={column}
+            label="STARS"
+            sortMode={starsSortMode}
+            onToggleMode={() => { setStarsSortMode(m => m === "growth" ? "absolute" : "growth"); forceSortRefresh() }}
+          />
+        ),
+        cell: ({ row }) => (
+          <MetricCell
+            value={row.original.github_stars_end}
+            rate={row.original.github_stars_growth_rate}
+            startValue={row.original.github_stars_start}
+          />
+        ),
       },
-    }),
+    ),
+    columnHelper.accessor(
+      row => row.github_contributors_end ?? 0,
+      {
+        id: "gh_contrib",
+        sortUndefined: 1,
+        sortDescFirst: true,
+        sortingFn: (rowA, rowB) => {
+          const mode = contribModeRef.current
+          const aVal = mode === "growth"
+            ? displayedGrowth(rowA.original.github_contributors_start, rowA.original.github_contributors_end, rowA.original.github_contributors_growth_rate)
+            : rowA.original.github_contributors_end
+          const bVal = mode === "growth"
+            ? displayedGrowth(rowB.original.github_contributors_start, rowB.original.github_contributors_end, rowB.original.github_contributors_growth_rate)
+            : rowB.original.github_contributors_end
+          return compareMetric(aVal, bVal)
+        },
+        header: ({ column }) => (
+          <SortHeader
+            column={column}
+            label="CONTRIBUTORS"
+            sortMode={contribSortMode}
+            onToggleMode={() => { setContribSortMode(m => m === "growth" ? "absolute" : "growth"); forceSortRefresh() }}
+          />
+        ),
+        cell: ({ row }) => (
+          <MetricCell
+            value={row.original.github_contributors_end}
+            rate={row.original.github_contributors_growth_rate}
+            startValue={row.original.github_contributors_start}
+            metricLabel="contributors"
+          />
+        ),
+      },
+    ),
+    columnHelper.accessor(
+      row => computePackageDownloads(row).value ?? 0,
+      {
+        id: "packages",
+        sortUndefined: 1,
+        sortDescFirst: true,
+        sortingFn: (rowA, rowB) => {
+          const mode = pkgModeRef.current
+          const aData = computePackageDownloads(rowA.original)
+          const bData = computePackageDownloads(rowB.original)
+          let aVal: number | null, bVal: number | null
+          if (mode === "absolute") {
+            aVal = aData.value
+            bVal = bData.value
+          } else {
+            const aStart = (rowA.original.npm_downloads_start ?? 0) + (rowA.original.pypi_downloads_start ?? 0) + (rowA.original.cargo_downloads_start ?? 0)
+            const bStart = (rowB.original.npm_downloads_start ?? 0) + (rowB.original.pypi_downloads_start ?? 0) + (rowB.original.cargo_downloads_start ?? 0)
+            aVal = displayedGrowth(aStart || null, aData.value, aData.rate)
+            bVal = displayedGrowth(bStart || null, bData.value, bData.rate)
+          }
+          return compareMetric(aVal, bVal)
+        },
+        header: ({ column }) => (
+          <SortHeader
+            column={column}
+            label="PACKAGE DOWNLOADS"
+            sortMode={pkgSortMode}
+            onToggleMode={() => { setPkgSortMode(m => m === "growth" ? "absolute" : "growth"); forceSortRefresh() }}
+          />
+        ),
+        cell: ({ row }) => {
+          const { value, rate } = computePackageDownloads(row.original)
+          const startTotal = (row.original.npm_downloads_start ?? 0) + (row.original.pypi_downloads_start ?? 0) + (row.original.cargo_downloads_start ?? 0)
+          return <MetricCell value={value} rate={rate} startValue={startTotal || null} metricLabel="downloads" />
+        },
+      },
+    ),
     columnHelper.display({
       id: "links",
       header: "",
@@ -267,7 +458,7 @@ export function OrgTable({ above, below }: OrgTableProps) {
         )
       },
     }),
-  ]
+  ], [starsSortMode, contribSortMode, pkgSortMode])
 
   const table = useReactTable({
     data: activeTier === "above_1000" ? above : below,
@@ -320,11 +511,11 @@ export function OrgTable({ above, below }: OrgTableProps) {
                     key={header.id}
                     className={cn(
                       "text-[0.65rem] uppercase tracking-widest text-muted-foreground/70 font-semibold py-3",
-                      header.id === "rank" && "w-12",
-                      header.id === "org" && "w-72",
-                      header.id === "gh_stars" && "w-32 pl-4",
-                      header.id === "gh_contrib" && "w-36",
-                      header.id === "packages" && "w-40",
+                      header.id === "rank" && "w-20",
+                      header.id === "org" && "w-60",
+                      header.id === "gh_stars" && "w-36 pl-4",
+                      header.id === "gh_contrib" && "w-40",
+                      header.id === "packages" && "w-48",
                       header.id === "links" && "w-16",
                     )}
                   >

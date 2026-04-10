@@ -165,14 +165,26 @@ function buildSignals(org: OrgEntry): SignalConfig[] {
   ];
 }
 
+// ─── Padding thresholds (must match methodology) ─────────────────────────────
+
+const PADDING_THRESHOLDS: Record<string, { above_1000: number; below_1000: number }> = {
+  github_stars:        { below_1000: 100, above_1000: 1_000 },
+  github_contributors: { below_1000: 5,   above_1000: 10 },
+  npm_downloads:       { below_1000: 100, above_1000: 1_000 },
+  pypi_downloads:      { below_1000: 100, above_1000: 1_000 },
+  cargo_downloads:     { below_1000: 100, above_1000: 1_000 },
+};
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function SignalCard({
   signal,
   weightPct,
+  tier,
 }: {
   signal: SignalConfig;
   weightPct: number;
+  tier: Tier;
 }) {
   const hasData = signal.end != null;
   const Icon = signal.icon;
@@ -195,24 +207,61 @@ function SignalCard({
         </span>
       </div>
 
-      {/* Value + rate */}
-      <div className="flex items-baseline gap-2.5 flex-wrap">
-        <span className="font-mono text-3xl font-bold text-foreground tabular-nums leading-none">
-          {hasData ? formatCompact(signal.end) : "—"}
-        </span>
-        {signal.rate != null && (
-          <span
-            className={cn(
-              "font-mono text-xs font-semibold px-2 py-0.5 rounded-sm tabular-nums",
-              isPositive
-                ? "bg-green/15 text-green"
-                : "bg-brand/15 text-brand"
+      {/* Value + real growth + score rate */}
+      {(() => {
+        const realRate =
+          signal.start == null || signal.start === 0
+            ? signal.end != null && signal.end > 0
+              ? Infinity
+              : null
+            : signal.end != null
+              ? (signal.end - signal.start) / signal.start
+              : null;
+        const realLabel =
+          realRate === Infinity
+            ? "+∞"
+            : realRate != null
+              ? `+${realRate.toFixed(1)}×`
+              : null;
+
+        // Check whether the score rate differs from the real rate
+        const padding = PADDING_THRESHOLDS[signal.key]?.[tier];
+        const scoreRateDiffers =
+          signal.rate != null &&
+          signal.start != null &&
+          padding != null &&
+          signal.start < padding;
+
+        return (
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-baseline gap-2.5 flex-wrap">
+              <span className="font-mono text-3xl font-bold text-foreground tabular-nums leading-none">
+                {hasData ? formatCompact(signal.end) : "—"}
+              </span>
+              {realLabel ? (
+                <span className="font-mono text-sm font-semibold px-2 py-0.5 rounded-sm tabular-nums bg-green/15 text-green">
+                  {realLabel}
+                </span>
+              ) : signal.rate != null ? (
+                <span
+                  className={cn(
+                    "font-mono text-sm font-semibold px-2 py-0.5 rounded-sm tabular-nums",
+                    isPositive ? "bg-green/15 text-green" : "bg-brand/15 text-brand"
+                  )}
+                >
+                  {formatGrowthRate(signal.rate)}
+                </span>
+              ) : null}
+            </div>
+            {scoreRateDiffers && (
+              <span className="font-mono text-[0.65rem] tabular-nums text-muted-foreground/40 leading-tight">
+                <span className="font-semibold text-green">{formatGrowthRate(signal.rate)}</span>
+                {" "}for ranking (min baseline {formatCompact(padding!)})
+              </span>
             )}
-          >
-            {formatGrowthRate(signal.rate)}
-          </span>
-        )}
-      </div>
+          </div>
+        );
+      })()}
 
       {/* Weight bar */}
       <div className="space-y-1.5 mt-auto pt-1">
@@ -537,6 +586,7 @@ export default async function OrgPage({ params }: Props) {
                       key={signal.key}
                       signal={signal}
                       weightPct={weightPct}
+                      tier={tier}
                     />
                   );
                 })}
@@ -593,15 +643,9 @@ export default async function OrgPage({ params }: Props) {
           <section className="border-t border-white/5 pt-10">
             <div className="flex flex-col sm:flex-row gap-6 sm:items-start sm:justify-between">
               <div className="space-y-2 max-w-lg">
-                <p className="font-mono text-[0.6rem] uppercase tracking-widest text-muted-foreground/35">
-                  Methodology
-                </p>
-                <p className="text-xs text-muted-foreground/45 leading-relaxed">
-                  Rankings are based on quarter-over-quarter growth across GitHub
-                  stars, contributors, npm, PyPI, and Cargo downloads. Each
-                  signal is normalized to a percentile rank within the tier and
-                  weighted by relevance to produce a composite score.
-                </p>
+                <a href="/methodology" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-green transition-colors font-mono">
+                  Read the methodology →
+                </a>
               </div>
               <div className="flex flex-col items-start sm:items-end gap-1 shrink-0">
                 <span className="font-mono text-[0.55rem] uppercase tracking-widest text-muted-foreground/30">

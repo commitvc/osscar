@@ -30,7 +30,7 @@ export default async function Home() {
               Ranked by composite growth across GitHub stars, contributors and package downloads. Updated quarterly by{" "}
               <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-foreground font-semibold hover:text-green transition-colors">Supabase</a>
               {" × "}
-              <a href="https://commit.fund" target="_blank" rel="noopener noreferrer" className="text-foreground font-semibold hover:text-green transition-colors">&gt;commit</a>.
+              <a href="https://commit.fund" target="_blank" rel="noopener noreferrer" className="text-foreground font-semibold hover:text-[#E73423] transition-colors">&gt;commit</a>.
             </p>
             <a href="/methodology" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-green transition-colors font-mono">
               Read the methodology →
