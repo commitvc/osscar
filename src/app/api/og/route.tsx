@@ -1,66 +1,14 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import { getAbove1000, getBelow1000, extractSlug } from "@/lib/data";
-import fs from "fs";
-import path from "path";
-
-// ─── Font loader ──────────────────────────────────────────────────────────────
-
-let interBoldData: ArrayBuffer | null = null;
-
-async function getInterBold(): Promise<ArrayBuffer | null> {
-  if (interBoldData) return interBoldData;
-  try {
-    const fontPath = path.join(
-      path.dirname(new URL(import.meta.url).pathname),
-      "Inter-Bold.ttf"
-    );
-    interBoldData = fs.readFileSync(fontPath).buffer as ArrayBuffer;
-    return interBoldData;
-  } catch {
-    return null;
-  }
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function getTopN(rank: number): number {
-  if (rank === 1) return 1;
-  if (rank === 2) return 2;
-  if (rank <= 3) return 3;
-  if (rank <= 10) return 10;
-  if (rank <= 20) return 20;
-  if (rank <= 50) return 50;
-  if (rank <= 100) return 100;
-  if (rank <= 500) return 500;
-  return 1000;
-}
-
-function getRankColor(rank: number): string {
-  if (rank === 1) return "#F0B429";   // amber
-  if (rank === 2) return "#C8D0DA";   // silver
-  if (rank === 3) return "#C87941";   // bronze
-  return "#D9D9D9";                     // white for the rest
-}
-
-function getOscarFile(rank: number): string {
-  if (rank === 1) return "oscar-amber.png";
-  if (rank === 2) return "oscar-silver.png";
-  if (rank === 3) return "oscar-bronze.png";
-  return "oscar-white.png";
-}
-
-async function fetchImageAsDataUrl(url: string): Promise<string | null> {
-  try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
-    if (!res.ok) return null;
-    const buffer = await res.arrayBuffer();
-    const contentType = res.headers.get("content-type") ?? "image/png";
-    return `data:${contentType};base64,${Buffer.from(buffer).toString("base64")}`;
-  } catch {
-    return null;
-  }
-}
+import {
+  getTopN,
+  getRankColor,
+  getOscarFile,
+  getInterBold,
+  readPublicAsBase64,
+  fetchImageAsDataUrl,
+} from "@/lib/og-helpers";
 
 // ─── Route ────────────────────────────────────────────────────────────────────
 
@@ -86,20 +34,12 @@ export async function GET(request: NextRequest) {
   const logoUrl = org.owner_logo;
 
   // Static assets
-  const supabasePng = fs.readFileSync(
-    path.join(process.cwd(), "public", "supabase-logo-wordmark--dark.png")
-  );
-  const supabaseDataUrl = `data:image/png;base64,${supabasePng.toString("base64")}`;
-
-  const commitSvg = fs.readFileSync(
-    path.join(process.cwd(), "public", "commit-logo-dark.svg")
-  );
-  const commitLogoDataUrl = `data:image/svg+xml;base64,${commitSvg.toString("base64")}`;
+  const supabaseDataUrl = readPublicAsBase64("supabase-logo-wordmark--dark.png", "image/png");
+  const commitLogoDataUrl = readPublicAsBase64("commit-logo-dark.svg", "image/svg+xml");
 
   // Oscar statue
   const oscarFile = rank ? getOscarFile(rank) : "oscar-white.png";
-  const oscarPng = fs.readFileSync(path.join(process.cwd(), "public", oscarFile));
-  const oscarDataUrl = `data:image/png;base64,${oscarPng.toString("base64")}`;
+  const oscarDataUrl = readPublicAsBase64(oscarFile, "image/png");
 
   // Org logo
   const orgLogoDataUrl = logoUrl ? await fetchImageAsDataUrl(logoUrl) : null;

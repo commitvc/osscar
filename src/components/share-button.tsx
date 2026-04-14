@@ -18,7 +18,7 @@ export function ShareButton({ name, rank, tierLabel, slug }: ShareButtonProps) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-brand/25 bg-brand/8 text-brand hover:border-brand/50 hover:bg-brand/15 transition-all font-mono text-[0.65rem] uppercase tracking-widest cursor-pointer group"
+        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-brand/25 bg-brand/8 text-brand hover:border-brand/50 hover:bg-brand/15 transition-all font-mono text-[0.65rem] uppercase tracking-widest cursor-pointer group"
       >
         <Share2
           size={13}

@@ -15,6 +15,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { OrgLogo } from "@/components/org-logo";
 import { GrowthChart, type MetricConfig } from "@/components/growth-chart";
 import { ShareButton } from "@/components/share-button";
+import { EmbedButton } from "@/components/embed-button";
 import { RepoTable } from "@/components/repo-table";
 import {
   getAbove1000,
@@ -441,7 +442,7 @@ export default async function OrgPage({ params }: Props) {
 
               {/* Rank + share panel */}
               {rank && (
-                <div className="flex flex-col items-center gap-5 lg:pl-12 lg:border-l lg:border-white/10 shrink-0 w-full lg:w-[220px]">
+                <div className="flex flex-col items-center gap-5 lg:pl-12 lg:border-l lg:border-white/10 shrink-0 w-full lg:w-[260px]">
                   <div className="text-center w-full">
                     <div
                       className="font-mono font-bold leading-none tabular-nums select-none"
@@ -459,13 +460,14 @@ export default async function OrgPage({ params }: Props) {
                     </div>
                   </div>
 
-                  <div className="border-t border-white/10 pt-4 w-full">
+                  <div className="border-t border-white/10 pt-4 w-full flex gap-2">
                     <ShareButton
                       name={name}
                       rank={rank}
                       tierLabel={tierLabel}
                       slug={slug}
                     />
+                    <EmbedButton name={name} slug={slug} />
                   </div>
                 </div>
               )}
