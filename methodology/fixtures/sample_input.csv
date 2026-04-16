@@ -1,0 +1,11 @@
+owner_id,owner_login,owner_name,owner_url,homepage_url,owner_description,owner_logo,quarter_start,quarter_end,github_stars_start,github_stars_end,github_contributors_start,github_contributors_end,npm_downloads_start,pypi_downloads_start,cargo_downloads_start,npm_downloads_end,pypi_downloads_end,cargo_downloads_end
+1,org-alpha,Org Alpha,https://github.com/org-alpha,https://alpha.dev,A fast-growing project,https://example.com/alpha.png,2026-01-01,2026-04-01,5000,7500,50,80,500000,,100000,900000,,200000
+2,org-beta,Org Beta,https://github.com/org-beta,https://beta.dev,Another growing org,https://example.com/beta.png,2026-01-01,2026-04-01,2000,2400,20,25,,,,,
+3,org-gamma,Org Gamma,https://github.com/org-gamma,,Steady growth,https://example.com/gamma.png,2026-01-01,2026-04-01,8000,9000,100,110,1000000,200000,,1200000,280000,
+4,org-delta,Org Delta,https://github.com/org-delta,https://delta.io,Explosive growth,https://example.com/delta.png,2026-01-01,2026-04-01,1500,4500,15,45,50000,,200000,200000,,800000
+5,org-epsilon,Org Epsilon,https://github.com/org-epsilon,,Small but growing,https://example.com/epsilon.png,2026-01-01,2026-04-01,200,600,3,10,,,,,
+6,org-zeta,Org Zeta,https://github.com/org-zeta,https://zeta.dev,Emerging project,https://example.com/zeta.png,2026-01-01,2026-04-01,50,300,2,8,5000,,,20000,,
+7,org-eta,Org Eta,https://github.com/org-eta,,New and popular,https://example.com/eta.png,2026-01-01,2026-04-01,100,800,5,25,,10000,,,50000,
+8,org-theta,Org Theta,https://github.com/org-theta,https://theta.org,Stable large org,https://example.com/theta.png,2026-01-01,2026-04-01,15000,15500,200,210,5000000,1000000,,5200000,1050000,
+9,org-iota,Org Iota,https://github.com/org-iota,,No package downloads,https://example.com/iota.png,2026-01-01,2026-04-01,3000,3600,30,40,,,,,
+10,org-kappa,Org Kappa,https://github.com/org-kappa,https://kappa.dev,Declining stars,https://example.com/kappa.png,2026-01-01,2026-04-01,4000,3800,40,42,200000,,,180000,,
