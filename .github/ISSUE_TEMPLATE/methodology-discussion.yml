@@ -1,0 +1,45 @@
+name: Methodology Discussion
+description: Propose a change to the ranking methodology
+labels: ["methodology"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a methodology improvement! Changes to the scoring algorithm affect rankings for thousands of organizations, so we ask that you provide reasoning and, ideally, data showing the impact of your proposal.
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: What would you like to change about the methodology?
+      placeholder: |
+        e.g., "Add HuggingFace downloads as a fourth signal" or
+        "Use percentile normalization instead of log-minmax"
+    validations:
+      required: true
+  - type: textarea
+    id: reasoning
+    attributes:
+      label: Reasoning
+      description: Why should this change be made? What problem does it solve?
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Expected impact
+      description: |
+        How would this change affect the rankings? If you have data (e.g., how the top 20 would shift), please include it.
+  - type: dropdown
+    id: signal
+    attributes:
+      label: Which part of the methodology?
+      options:
+        - New signal / data source
+        - Growth rate calculation
+        - Normalization / scoring
+        - Division thresholds
+        - Weighting / aggregation
+        - Eligibility criteria
+        - Other
+    validations:
+      required: true
