@@ -40,8 +40,8 @@ export async function GET(request: NextRequest) {
   const supabaseDataUrl = readPublicAsBase64("supabase-logo-wordmark--dark.png", "image/png");
   const commitLogoDataUrl = readPublicAsBase64("commit-logo-dark.svg", "image/svg+xml");
 
-  // Oscar statue — color-matched to rank
-  const oscarFile = rank ? getOscarFile(rank) : "oscar-white.png";
+  // OSSCAR icon — color-matched to rank
+  const oscarFile = rank ? getOscarFile(rank) : "osscar-logo-icon-white.png";
   const oscarDataUrl = readPublicAsBase64(oscarFile, "image/png");
 
   const fontData = await getInterBold();
@@ -90,8 +90,8 @@ export async function GET(request: NextRequest) {
             src={oscarDataUrl}
             alt="OSSCAR"
             style={{
-              height: "48px",
-              width: "24px",
+              height: "56px",
+              width: "43px",
               objectFit: "contain",
               opacity: rank ? 1 : 0.4,
             }}

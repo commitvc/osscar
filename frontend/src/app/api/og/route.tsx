@@ -38,8 +38,8 @@ export async function GET(request: NextRequest) {
   const supabaseDataUrl = readPublicAsBase64("supabase-logo-wordmark--dark.png", "image/png");
   const commitLogoDataUrl = readPublicAsBase64("commit-logo-dark.svg", "image/svg+xml");
 
-  // Oscar statue
-  const oscarFile = rank ? getOscarFile(rank) : "oscar-white.png";
+  // OSSCAR icon
+  const oscarFile = rank ? getOscarFile(rank) : "osscar-logo-icon-white.png";
   const oscarDataUrl = readPublicAsBase64(oscarFile, "image/png");
 
   // Org logo
@@ -244,14 +244,14 @@ export async function GET(request: NextRequest) {
                   minWidth: "540px",
                 }}
               >
-                {/* Oscar statue */}
+                {/* OSSCAR icon */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={oscarDataUrl}
                   alt="Award"
                   style={{
-                    height: "90px",
-                    width: "45px",
+                    height: "100px",
+                    width: "77px",
                     objectFit: "contain",
                     flexShrink: 0,
                   }}
@@ -269,7 +269,7 @@ export async function GET(request: NextRequest) {
                       display: "flex",
                     }}
                   >
-                    Top {topN}
+                    {rank <= 3 ? `#${rank}` : `Top ${topN}`}
                   </span>
                   <span
                     style={{

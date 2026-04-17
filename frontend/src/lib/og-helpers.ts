@@ -23,10 +23,10 @@ export function getRankColor(rank: number): string {
 }
 
 export function getOscarFile(rank: number): string {
-  if (rank === 1) return "oscar-amber.png";
-  if (rank === 2) return "oscar-silver.png";
-  if (rank === 3) return "oscar-bronze.png";
-  return "oscar-white.png";
+  if (rank === 1) return "osscar-logo-icon-gold.png";
+  if (rank === 2) return "osscar-logo-icon-silver.png";
+  if (rank === 3) return "osscar-logo-icon-bronze.png";
+  return "osscar-logo-icon-white.png";
 }
 
 /** Returns "#1", "#2", "#3" for top 3, "Top N" otherwise */
