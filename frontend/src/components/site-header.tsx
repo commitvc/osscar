@@ -7,13 +7,23 @@ export function SiteHeader() {
     <header className="border-b border-white/10 sticky top-0 z-50 bg-background/95 backdrop-blur">
       <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-1 font-bold tracking-[-0.02em] text-foreground hover:text-brand transition-colors">
-            <Image
-              src="/osscar-icon.svg"
-              alt="OSSCAR"
-              width={22}
-              height={22}
-              style={{ width: "22px", height: "22px" }}
+          <Link href="/" className="group flex items-center gap-1 font-bold tracking-[-0.02em] text-foreground hover:text-brand transition-colors">
+            <span
+              role="img"
+              aria-label="OSSCAR"
+              className="block bg-foreground group-hover:bg-brand transition-colors"
+              style={{
+                width: "20px",
+                height: "26px",
+                WebkitMaskImage: "url(/osscar-logo-icon-white.png)",
+                maskImage: "url(/osscar-logo-icon-white.png)",
+                WebkitMaskSize: "contain",
+                maskSize: "contain",
+                WebkitMaskRepeat: "no-repeat",
+                maskRepeat: "no-repeat",
+                WebkitMaskPosition: "center",
+                maskPosition: "center",
+              }}
             />
             OSSCAR
           </Link>
