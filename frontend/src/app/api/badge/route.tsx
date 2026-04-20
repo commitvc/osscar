@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
-import { getAbove1000, getBelow1000, extractSlug } from "@/lib/data";
+import { findOrgBySlug } from "@/lib/data";
 import {
   getRankColor,
   getOscarFile,
@@ -23,18 +23,10 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const slug = searchParams.get("slug")?.toLowerCase() ?? "";
 
-  const above = getAbove1000();
-  const below = getBelow1000();
-
-  const aboveOrg = above.find((o) => extractSlug(o.owner_url) === slug);
-  const belowOrg = below.find((o) => extractSlug(o.owner_url) === slug);
-  const org = aboveOrg ?? belowOrg;
-
+  const org = findOrgBySlug(slug);
   if (!org) return new Response("Not found", { status: 404 });
 
-  const tierData = aboveOrg ? above : below;
-  const rankIndex = tierData.findIndex((o) => extractSlug(o.owner_url) === slug);
-  const rank = rankIndex >= 0 ? rankIndex + 1 : null;
+  const rank: number | null = org.division_rank ?? null;
 
   // Static assets
   const supabaseDataUrl = readPublicAsBase64("supabase-logo-wordmark--dark.png", "image/png");

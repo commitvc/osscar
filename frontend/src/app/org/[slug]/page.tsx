@@ -18,9 +18,8 @@ import { ShareButton } from "@/components/share-button";
 import { EmbedButton } from "@/components/embed-button";
 import { RepoTable } from "@/components/repo-table";
 import {
-  getAbove1000,
-  getBelow1000,
-  getFrontendData,
+  getAllOrgs,
+  findOrgBySlug,
   extractSlug,
 } from "@/lib/data";
 import {
@@ -31,7 +30,7 @@ import {
   cn,
 } from "@/lib/utils";
 import { QUARTER_LABEL } from "@/lib/config";
-import type { OrgEntry, FrontendOrgData, Tier, TimeSeriesPoint } from "@/types";
+import type { Org, Division, TimeSeriesPoint } from "@/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,8 +41,7 @@ type Props = {
 // ─── Static params ─────────────────────────────────────────────────────────────
 
 export async function generateStaticParams() {
-  const [above, below] = [getAbove1000(), getBelow1000()];
-  return [...above, ...below]
+  return getAllOrgs()
     .filter((o) => o.owner_url)
     .map((o) => ({ slug: extractSlug(o.owner_url) ?? "" }))
     .filter((p) => p.slug);
@@ -54,19 +52,15 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug: rawSlug } = await params;
   const slug = rawSlug.toLowerCase();
-  const above = getAbove1000();
-  const below = getBelow1000();
-  const rankingOrg =
-    above.find((o) => extractSlug(o.owner_url) === slug) ??
-    below.find((o) => extractSlug(o.owner_url) === slug);
+  const org = findOrgBySlug(slug);
 
-  if (!rankingOrg) return { title: "OSS Growth Index" };
+  if (!org) return { title: "OSS Growth Index" };
 
-  const score = computeScore(rankingOrg);
+  const score = computeScore(org);
   const ogImageUrl = `/api/og?slug=${slug}`;
   return {
-    title: `${rankingOrg.owner_name} — OSS Growth Index ${QUARTER_LABEL}`,
-    description: `${rankingOrg.owner_name} on the OSS Growth Index ${QUARTER_LABEL} with a composite score of ${formatScore(score)}.`,
+    title: `${org.owner_name} — OSS Growth Index ${QUARTER_LABEL}`,
+    description: `${org.owner_name} on the OSS Growth Index ${QUARTER_LABEL} with a composite score of ${formatScore(score)}.`,
     openGraph: {
       images: [{ url: ogImageUrl, width: 1200, height: 630 }],
     },
@@ -105,7 +99,7 @@ type SignalConfig = {
   percentile: number | null;
 };
 
-function buildSignals(org: OrgEntry): SignalConfig[] {
+function buildSignals(org: Org): SignalConfig[] {
   return [
     {
       key: "github_stars",
@@ -142,20 +136,20 @@ function buildSignals(org: OrgEntry): SignalConfig[] {
 
 // ─── Padding thresholds (must match methodology) ─────────────────────────────
 
-const PADDING_THRESHOLDS: Record<string, { above_1000: number; below_1000: number }> = {
-  github_stars:        { below_1000: 100, above_1000: 1_000 },
-  github_contributors: { below_1000: 5,   above_1000: 10 },
-  package_downloads:   { below_1000: 100, above_1000: 1_000 },
+const PADDING_THRESHOLDS: Record<string, Record<Division, number>> = {
+  github_stars:        { emerging: 100, scaling: 1_000 },
+  github_contributors: { emerging: 5,   scaling: 10 },
+  package_downloads:   { emerging: 100, scaling: 1_000 },
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function SignalCard({
   signal,
-  tier,
+  division,
 }: {
   signal: SignalConfig;
-  tier: Tier;
+  division: Division;
 }) {
   const hasData = signal.end != null;
   const Icon = signal.icon;
@@ -180,7 +174,7 @@ function SignalCard({
 
       {/* Value + methodology rate + real growth note */}
       {(() => {
-        const padding = PADDING_THRESHOLDS[signal.key]?.[tier];
+        const padding = PADDING_THRESHOLDS[signal.key]?.[division];
         const isLowBaseline =
           signal.rate != null &&
           signal.start != null &&
@@ -235,47 +229,39 @@ function SignalCard({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+const DIVISION_LABELS: Record<Division, string> = {
+  emerging: "Emerging",
+  scaling: "Scaling",
+};
+
 export default async function OrgPage({ params }: Props) {
   const { slug: rawSlug } = await params;
   const slug = rawSlug.toLowerCase();
 
-  const above = getAbove1000();
-  const below = getBelow1000();
-  const frontendData = getFrontendData();
+  const org = findOrgBySlug(slug);
+  if (!org) notFound();
 
-  const aboveOrg = above.find((o) => extractSlug(o.owner_url) === slug);
-  const belowOrg = below.find((o) => extractSlug(o.owner_url) === slug);
-  const rankingOrg: OrgEntry | undefined = aboveOrg ?? belowOrg;
-
-  const frontendOrg: FrontendOrgData | undefined = frontendData.find(
-    (o) => extractSlug(o.github_url) === slug
-  );
-
-  if (!rankingOrg && !frontendOrg) notFound();
-
-  // Rank + tier
-  const tier: Tier = aboveOrg ? "above_1000" : "below_1000";
-  const tierData = tier === "above_1000" ? above : below;
-  const rankIndex = tierData.findIndex(
-    (o) => extractSlug(o.owner_url) === slug
-  );
-  const rank = rankIndex >= 0 ? rankIndex + 1 : null;
+  const division = org.division;
+  const rank = org.division_rank;
 
   // Score + signals
-  const score = rankingOrg ? computeScore(rankingOrg) : 0;
-  const signals = rankingOrg ? buildSignals(rankingOrg) : [];
+  const score = computeScore(org);
+  const signals = buildSignals(org);
   const hasAnySignal = signals.some((s) => s.end != null);
 
   // Display metadata
-  const name = rankingOrg?.owner_name ?? frontendOrg?.name ?? slug;
-  const description = rankingOrg?.owner_description ?? frontendOrg?.description ?? null;
-  const logoUrl = rankingOrg?.owner_logo ?? frontendOrg?.logo_url ?? null;
-  const githubUrl = rankingOrg?.owner_url ?? frontendOrg?.github_url ?? null;
-  const homepageUrl = rankingOrg?.homepage_url ?? frontendOrg?.homepage_url ?? null;
+  const name = org.owner_name ?? slug;
+  const description = org.owner_description;
+  const logoUrl = org.owner_logo;
+  const githubUrl = org.owner_url;
+  const homepageUrl = org.homepage_url;
 
-  const rankColor = rank ? getRankColor(rank) : "rgba(255,255,255,0.5)";
-  const rankGlow = rank ? getRankGlow(rank) : "none";
-  const tierLabel = tier === "above_1000" ? "Scaling" : "Emerging";
+  const rankColor = getRankColor(rank);
+  const rankGlow = getRankGlow(rank);
+  const divisionLabel = DIVISION_LABELS[division];
+
+  // Unused but kept for potential display
+  void score;
 
   // If the first data point is more than 14 days after the quarter start,
   // the signal didn't exist at the start of the quarter — prepend a zero so
@@ -291,52 +277,51 @@ export default async function OrgPage({ params }: Props) {
     return [{ date: zeroPrevDate, value: 0 }, ...data];
   }
 
-  const quarterStart = rankingOrg?.quarter_start ?? "2026-01-01";
+  const quarterStart = org.quarter_start ?? "2026-01-01";
+  const quarterEnd = org.quarter_end ?? "2026-03-31";
 
   // Chart metrics
   const BRAND = "#3ECF8E";
-  const chartMetrics: MetricConfig[] = frontendOrg
-    ? [
-        {
-          key: "stars",
-          label: "Stars",
-          data: withLeadingZero(frontendOrg.github_stars_weekly, quarterStart),
-          color: BRAND,
-          periodLabel: "cumulative stars",
-        },
-        {
-          key: "contributors",
-          label: "Contributors",
-          data: withLeadingZero(frontendOrg.github_contributors_weekly, quarterStart),
-          color: BRAND,
-          periodLabel: "cumulative contributors",
-        },
-        {
-          key: "npm",
-          label: "NPM",
-          data: withLeadingZero(frontendOrg.npm_weekly, quarterStart),
-          color: BRAND,
-          periodLabel: "weekly downloads",
-        },
-        {
-          key: "pypi",
-          label: "PyPI",
-          data: withLeadingZero(frontendOrg.pypi_weekly, quarterStart),
-          color: BRAND,
-          periodLabel: "weekly downloads",
-        },
-        {
-          key: "cargo",
-          label: "Cargo",
-          data: withLeadingZero(frontendOrg.cargo_weekly, quarterStart),
-          color: BRAND,
-          periodLabel: "weekly downloads",
-        },
-      ]
-    : [];
+  const chartMetrics: MetricConfig[] = [
+    {
+      key: "stars",
+      label: "Stars",
+      data: withLeadingZero(org.github_stars_weekly, quarterStart),
+      color: BRAND,
+      periodLabel: "cumulative stars",
+    },
+    {
+      key: "contributors",
+      label: "Contributors",
+      data: withLeadingZero(org.github_contributors_weekly, quarterStart),
+      color: BRAND,
+      periodLabel: "cumulative contributors",
+    },
+    {
+      key: "npm",
+      label: "NPM",
+      data: withLeadingZero(org.npm_weekly, quarterStart),
+      color: BRAND,
+      periodLabel: "weekly downloads",
+    },
+    {
+      key: "pypi",
+      label: "PyPI",
+      data: withLeadingZero(org.pypi_weekly, quarterStart),
+      color: BRAND,
+      periodLabel: "weekly downloads",
+    },
+    {
+      key: "cargo",
+      label: "Cargo",
+      data: withLeadingZero(org.cargo_weekly, quarterStart),
+      color: BRAND,
+      periodLabel: "weekly downloads",
+    },
+  ];
 
   const hasChartData = chartMetrics.some((m) => m.data.length > 0);
-  const hasRepos = !!frontendOrg && frontendOrg.repositories.length > 0;
+  const hasRepos = org.repositories.length > 0;
 
   return (
     <>
@@ -388,7 +373,7 @@ export default async function OrgPage({ params }: Props) {
                       <span
                         className="font-mono text-[0.6rem] uppercase tracking-widest font-semibold px-2 py-0.5 rounded-sm border border-green/30 bg-green/10 text-green"
                       >
-                        {tierLabel}
+                        {divisionLabel}
                       </span>
                       <span className="font-mono text-[0.6rem] uppercase tracking-widest text-muted-foreground/40">
                         {QUARTER_LABEL}
@@ -442,36 +427,34 @@ export default async function OrgPage({ params }: Props) {
               </div>
 
               {/* Rank + share panel */}
-              {rank && (
-                <div className="flex flex-col items-center gap-5 lg:pl-12 lg:border-l lg:border-white/10 shrink-0 w-full lg:w-[260px]">
-                  <div className="text-center w-full">
-                    <div
-                      className="font-mono font-bold leading-none tabular-nums select-none"
-                      style={{
-                        fontSize: "clamp(60px, 10vw, 96px)",
-                        color: rankColor,
-                        textShadow: rankGlow,
-                        letterSpacing: "-0.02em",
-                      }}
-                    >
-                      #{rank}
-                    </div>
-                    <div className="font-mono text-[0.55rem] uppercase tracking-[0.25em] text-muted-foreground/35 mt-2">
-                      rank · {tierLabel}
-                    </div>
+              <div className="flex flex-col items-center gap-5 lg:pl-12 lg:border-l lg:border-white/10 shrink-0 w-full lg:w-[260px]">
+                <div className="text-center w-full">
+                  <div
+                    className="font-mono font-bold leading-none tabular-nums select-none"
+                    style={{
+                      fontSize: "clamp(60px, 10vw, 96px)",
+                      color: rankColor,
+                      textShadow: rankGlow,
+                      letterSpacing: "-0.02em",
+                    }}
+                  >
+                    #{rank}
                   </div>
-
-                  <div className="border-t border-white/10 pt-4 w-full flex gap-2">
-                    <ShareButton
-                      name={name}
-                      rank={rank}
-                      tierLabel={tierLabel}
-                      slug={slug}
-                    />
-                    <EmbedButton name={name} slug={slug} />
+                  <div className="font-mono text-[0.55rem] uppercase tracking-[0.25em] text-muted-foreground/35 mt-2">
+                    rank · {divisionLabel}
                   </div>
                 </div>
-              )}
+
+                <div className="border-t border-white/10 pt-4 w-full flex gap-2">
+                  <ShareButton
+                    name={name}
+                    rank={rank}
+                    tierLabel={divisionLabel}
+                    slug={slug}
+                  />
+                  <EmbedButton name={name} slug={slug} />
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -496,7 +479,7 @@ export default async function OrgPage({ params }: Props) {
                   <SignalCard
                     key={signal.key}
                     signal={signal}
-                    tier={tier}
+                    division={division}
                   />
                 ))}
               </div>
@@ -511,11 +494,11 @@ export default async function OrgPage({ params }: Props) {
                   Growth Over Time
                 </h2>
                 <span className="font-mono text-[0.6rem] uppercase tracking-widest text-muted-foreground/35">
-                  2026
+                  {QUARTER_LABEL}
                 </span>
               </div>
               <div className="bg-card border border-white/10 rounded-xl p-6">
-                <GrowthChart metrics={chartMetrics} quarterStart={quarterStart} quarterEnd="2026-03-31" />
+                <GrowthChart metrics={chartMetrics} quarterStart={quarterStart} quarterEnd={quarterEnd} />
               </div>
             </section>
           )}
@@ -529,7 +512,7 @@ export default async function OrgPage({ params }: Props) {
                     Repositories
                   </h2>
                   <span className="font-mono text-[0.6rem] uppercase tracking-widest text-muted-foreground/35">
-                    {frontendOrg.repositories.length} public repos
+                    {org.repositories.length} public repos
                   </span>
                 </div>
                 {githubUrl && (
@@ -544,7 +527,7 @@ export default async function OrgPage({ params }: Props) {
                   </a>
                 )}
               </div>
-              <RepoTable repos={frontendOrg.repositories} />
+              <RepoTable repos={org.repositories} />
             </section>
           )}
 
@@ -558,7 +541,7 @@ export default async function OrgPage({ params }: Props) {
               </div>
               <div className="flex flex-col items-start sm:items-end gap-1 shrink-0">
                 <span className="font-mono text-[0.55rem] uppercase tracking-widest text-muted-foreground/30">
-                  Tier
+                  Division
                 </span>
                 <span
                   className={cn(
@@ -566,8 +549,8 @@ export default async function OrgPage({ params }: Props) {
                     "text-green"
                   )}
                 >
-                  {tierLabel} ·{" "}
-                  {tier === "above_1000" ? "≥1,000 stars" : "<1,000 stars"}
+                  {divisionLabel} ·{" "}
+                  {division === "scaling" ? "≥1,000 stars" : "<1,000 stars"}
                 </span>
               </div>
             </div>

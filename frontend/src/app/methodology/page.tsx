@@ -170,12 +170,12 @@ export default function MethodologyPage() {
               </p>
               <div className="grid grid-cols-2 gap-3 not-prose my-4">
                 <div className="border border-white/10 rounded p-4">
-                  <div className="font-mono text-xs text-muted-foreground mb-1">below_1000</div>
+                  <div className="font-mono text-xs text-muted-foreground mb-1">emerging</div>
                   <div className="text-foreground font-semibold">Emerging</div>
                   <div className="text-sm text-muted-foreground mt-1">stars_start &lt; 1,000</div>
                 </div>
                 <div className="border border-white/10 rounded p-4">
-                  <div className="font-mono text-xs text-muted-foreground mb-1">above_1000</div>
+                  <div className="font-mono text-xs text-muted-foreground mb-1">scaling</div>
                   <div className="text-foreground font-semibold">Scaling</div>
                   <div className="text-sm text-muted-foreground mt-1">stars_start ≥ 1,000</div>
                 </div>

@@ -14,7 +14,7 @@ import {
 } from "@tanstack/react-table"
 import { ExternalLink, Github, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react"
 import { Tooltip } from "@base-ui/react/tooltip"
-import type { OrgEntry, Tier } from "@/types"
+import type { Org, Division } from "@/types"
 import { formatCompact, formatGrowthRate, cn } from "@/lib/utils"
 import { OrgLogo } from "@/components/org-logo"
 import { Button } from "@/components/ui/button"
@@ -27,9 +27,9 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-const TIER_LABELS: Record<Tier, string> = {
-  above_1000: "Scaling",
-  below_1000: "Emerging",
+const DIVISION_LABELS: Record<Division, string> = {
+  scaling: "Scaling",
+  emerging: "Emerging",
 }
 
 const RANK_PIPS: Record<number, string> = {
@@ -38,7 +38,7 @@ const RANK_PIPS: Record<number, string> = {
   3: "#CD7F32",
 }
 
-function computePackageDownloads(org: OrgEntry): { value: number | null; rate: number | null } {
+function computePackageDownloads(org: Org): { value: number | null; rate: number | null } {
   if (org.package_downloads_end == null) return { value: null, rate: null }
   return {
     value: org.package_downloads_end,
@@ -132,7 +132,7 @@ function MetricCell({ value, rate, startValue, metricLabel = "stars" }: MetricCe
 type SortMode = "growth" | "absolute"
 
 function SortHeader({ column, label, align = "right", sortMode, onToggleMode }: {
-  column: Column<OrgEntry, unknown>
+  column: Column<Org, unknown>
   label: string
   align?: "left" | "right"
   sortMode?: SortMode
@@ -205,15 +205,15 @@ function compareMetric(a: number | null, b: number | null): number {
   return aNum - bNum
 }
 
-const columnHelper = createColumnHelper<OrgEntry>()
+const columnHelper = createColumnHelper<Org>()
 
 interface OrgTableProps {
-  above: OrgEntry[]
-  below: OrgEntry[]
+  emerging: Org[]
+  scaling: Org[]
 }
 
-export function OrgTable({ above, below }: OrgTableProps) {
-  const [activeTier, setActiveTier] = useState<Tier>("below_1000")
+export function OrgTable({ emerging, scaling }: OrgTableProps) {
+  const [activeDivision, setActiveDivision] = useState<Division>("emerging")
   const [sorting, setSorting] = useState<SortingState>([])
   const [starsSortMode, setStarsSortMode] = useState<SortMode>("growth")
   const [contribSortMode, setContribSortMode] = useState<SortMode>("growth")
@@ -232,7 +232,7 @@ export function OrgTable({ above, below }: OrgTableProps) {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const columns = useMemo(() => [
-    columnHelper.accessor((_row: OrgEntry) => 0 as number, {
+    columnHelper.accessor((_row: Org) => 0 as number, {
       id: "rank",
       enableSorting: true,
       sortingFn: (rowA, rowB) => rowA.index - rowB.index,
@@ -258,7 +258,7 @@ export function OrgTable({ above, below }: OrgTableProps) {
         )
       },
     }),
-    columnHelper.accessor((row: OrgEntry) => row.owner_name, {
+    columnHelper.accessor((row: Org) => row.owner_name, {
       id: "org",
       enableSorting: true,
       sortDescFirst: false,
@@ -437,7 +437,7 @@ export function OrgTable({ above, below }: OrgTableProps) {
   ], [starsSortMode, contribSortMode, pkgSortMode])
 
   const table = useReactTable({
-    data: activeTier === "above_1000" ? above : below,
+    data: activeDivision === "scaling" ? scaling : emerging,
     columns,
     state: { sorting },
     onSortingChange: setSorting,
@@ -449,29 +449,29 @@ export function OrgTable({ above, below }: OrgTableProps) {
 
   const { pageIndex, pageSize } = table.getState().pagination
   const pageCount = table.getPageCount()
-  const activeData = activeTier === "above_1000" ? above : below
+  const activeData = activeDivision === "scaling" ? scaling : emerging
 
-  function handleTierChange(tier: Tier) {
-    setActiveTier(tier)
+  function handleDivisionChange(division: Division) {
+    setActiveDivision(division)
     table.setPageIndex(0)
   }
 
   return (
     <div className="space-y-4">
-      {/* Tier selector */}
+      {/* Division selector */}
       <div className="flex gap-6 border-b border-white/10">
-        {(["below_1000", "above_1000"] as Tier[]).map((tier) => (
+        {(["emerging", "scaling"] as Division[]).map((division) => (
           <button
-            key={tier}
-            onClick={() => handleTierChange(tier)}
+            key={division}
+            onClick={() => handleDivisionChange(division)}
             className={cn(
               "pb-3 text-xs uppercase tracking-widest font-semibold transition-colors -mb-px cursor-pointer",
-              activeTier === tier
+              activeDivision === division
                 ? "border-b-2 border-green text-foreground"
                 : "text-muted-foreground hover:text-foreground/70"
             )}
           >
-            {TIER_LABELS[tier]}
+            {DIVISION_LABELS[division]}
           </button>
         ))}
       </div>
