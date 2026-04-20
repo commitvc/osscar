@@ -39,26 +39,26 @@ def scored_df(sample_df: pd.DataFrame) -> pd.DataFrame:
 
 
 class TestDivisionAssignment:
-    def test_below_1000_threshold(self, sample_df: pd.DataFrame):
+    def test_emerging_threshold(self, sample_df: pd.DataFrame):
         divisions = ci.assign_division(sample_df["github_stars_start"])
-        # org-epsilon (200 stars), org-zeta (50), org-eta (100) should be below_1000
-        below = sample_df[divisions == "below_1000"]["owner_login"].tolist()
-        assert "org-epsilon" in below
-        assert "org-zeta" in below
-        assert "org-eta" in below
+        # org-epsilon (200 stars), org-zeta (50), org-eta (100) should be emerging
+        emerging = sample_df[divisions == "emerging"]["owner_login"].tolist()
+        assert "org-epsilon" in emerging
+        assert "org-zeta" in emerging
+        assert "org-eta" in emerging
 
-    def test_above_1000_threshold(self, sample_df: pd.DataFrame):
+    def test_scaling_threshold(self, sample_df: pd.DataFrame):
         divisions = ci.assign_division(sample_df["github_stars_start"])
-        # org-alpha (5000), org-theta (15000) should be above_1000
-        above = sample_df[divisions == "above_1000"]["owner_login"].tolist()
-        assert "org-alpha" in above
-        assert "org-theta" in above
+        # org-alpha (5000), org-theta (15000) should be scaling
+        scaling = sample_df[divisions == "scaling"]["owner_login"].tolist()
+        assert "org-alpha" in scaling
+        assert "org-theta" in scaling
 
     def test_exact_threshold(self):
-        """Orgs with exactly 1000 stars go to above_1000."""
+        """Orgs with exactly 1000 stars go to scaling."""
         series = pd.Series([1000.0])
         result = ci.assign_division(series)
-        assert result.iloc[0] == "above_1000"
+        assert result.iloc[0] == "scaling"
 
 
 class TestPackageDownloadAggregation:
@@ -123,18 +123,18 @@ class TestLogMinmax:
 
 
 class TestPaddingThresholds:
-    def test_below_1000_stars_padding(self):
-        divisions = pd.Series(["below_1000"])
+    def test_emerging_stars_padding(self):
+        divisions = pd.Series(["emerging"])
         result = ci.padding_threshold_for_metric("github_stars", divisions)
         assert result.iloc[0] == 100.0
 
-    def test_above_1000_stars_padding(self):
-        divisions = pd.Series(["above_1000"])
+    def test_scaling_stars_padding(self):
+        divisions = pd.Series(["scaling"])
         result = ci.padding_threshold_for_metric("github_stars", divisions)
         assert result.iloc[0] == 1000.0
 
-    def test_above_1000_contributors_padding(self):
-        divisions = pd.Series(["above_1000"])
+    def test_scaling_contributors_padding(self):
+        divisions = pd.Series(["scaling"])
         result = ci.padding_threshold_for_metric("github_contributors", divisions)
         assert result.iloc[0] == 10.0
 
@@ -201,50 +201,70 @@ class TestRanking:
 class TestQuarterLabel:
     def test_infers_q1(self):
         df = pd.DataFrame({"quarter_start": ["2026-01-01"]})
-        assert ci.infer_quarter_label(df) == "Q12026"
+        assert ci.infer_quarter_label(df) == "Q1_2026"
 
     def test_missing_column(self):
         df = pd.DataFrame({"other": [1]})
         assert ci.infer_quarter_label(df) == "unknown_quarter"
 
 
+@pytest.fixture
+def sample_parquet(tmp_path: Path) -> Path:
+    """Materialise the CSV fixture as parquet so ci.run can consume it."""
+    df = pd.read_csv(SAMPLE_INPUT, low_memory=False)
+    path = tmp_path / "sample_input.parquet"
+    df.to_parquet(path, index=False)
+    return path
+
+
 class TestEndToEnd:
-    def test_run_produces_output(self, tmp_path: Path):
-        """Full pipeline run on fixture data should produce two output files."""
-        ci.run(input_csv=SAMPLE_INPUT, output_dir=tmp_path)
+    def test_run_produces_single_output(self, tmp_path: Path, sample_parquet: Path):
+        """Full pipeline run should produce exactly one ranking parquet file."""
+        ci.run(input_path=sample_parquet, output_dir=tmp_path)
 
-        above = list(tmp_path.glob("*above_1000*"))
-        below = list(tmp_path.glob("*below_1000*"))
-        assert len(above) == 1, f"Expected 1 above_1000 file, got {len(above)}"
-        assert len(below) == 1, f"Expected 1 below_1000 file, got {len(below)}"
+        files = list(tmp_path.glob("osscar_ranking_*.parquet"))
+        assert len(files) == 1, f"Expected 1 ranking file, got {len(files)}"
 
-        # Both files should have data
-        above_df = pd.read_csv(above[0])
-        below_df = pd.read_csv(below[0])
-        assert len(above_df) > 0
-        assert len(below_df) > 0
+        out_df = pd.read_parquet(files[0])
+        assert len(out_df) > 0
+        # Both divisions should be represented.
+        assert set(out_df["division"].unique()) == {"emerging", "scaling"}
 
-    def test_output_is_sorted_by_score(self, tmp_path: Path):
-        """Output files should be sorted by composite_score descending."""
-        ci.run(input_csv=SAMPLE_INPUT, output_dir=tmp_path)
+    def test_output_has_required_columns(self, tmp_path: Path, sample_parquet: Path):
+        ci.run(input_path=sample_parquet, output_dir=tmp_path)
+        out_df = pd.read_parquet(next(tmp_path.glob("osscar_ranking_*.parquet")))
 
-        for csv_file in tmp_path.glob("*.csv"):
-            df = pd.read_csv(csv_file)
-            scores = df["composite_score"].tolist()
-            assert scores == sorted(scores, reverse=True), (
-                f"{csv_file.name} is not sorted by composite_score"
-            )
+        # Input columns are preserved.
+        for col in ["owner_id", "owner_login", "owner_name", "owner_url", "quarter_start"]:
+            assert col in out_df.columns, f"Missing input column {col}"
 
-    def test_deterministic_output(self, tmp_path: Path):
+        # Derived scoring columns used by the frontend are present.
+        for metric in ["github_stars", "github_contributors", "package_downloads"]:
+            for suffix in ["start", "end", "growth_rate", "growth_percentile", "final_weight"]:
+                col = f"{metric}_{suffix}"
+                assert col in out_df.columns, f"Missing derived column {col}"
+
+        assert "division" in out_df.columns
+        assert "division_rank" in out_df.columns
+
+    def test_output_is_sorted_by_rank_within_division(self, tmp_path: Path, sample_parquet: Path):
+        ci.run(input_path=sample_parquet, output_dir=tmp_path)
+        out_df = pd.read_parquet(next(tmp_path.glob("osscar_ranking_*.parquet")))
+
+        for division, group in out_df.groupby("division"):
+            ranks = group["division_rank"].tolist()
+            assert ranks == sorted(ranks), f"{division} not sorted by division_rank"
+
+    def test_deterministic_output(self, tmp_path: Path, sample_parquet: Path):
         """Running twice should produce identical output."""
         dir1 = tmp_path / "run1"
         dir2 = tmp_path / "run2"
-        ci.run(input_csv=SAMPLE_INPUT, output_dir=dir1)
-        ci.run(input_csv=SAMPLE_INPUT, output_dir=dir2)
+        ci.run(input_path=sample_parquet, output_dir=dir1)
+        ci.run(input_path=sample_parquet, output_dir=dir2)
 
-        for f1 in sorted(dir1.glob("*.csv")):
+        for f1 in sorted(dir1.glob("*.parquet")):
             f2 = dir2 / f1.name
             assert f2.exists(), f"Missing {f1.name} in second run"
-            df1 = pd.read_csv(f1)
-            df2 = pd.read_csv(f2)
+            df1 = pd.read_parquet(f1)
+            df2 = pd.read_parquet(f2)
             pd.testing.assert_frame_equal(df1, df2)

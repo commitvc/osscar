@@ -1,4 +1,4 @@
-import { getAbove1000, getBelow1000 } from "@/lib/data"
+import { getEmerging, getScaling } from "@/lib/data"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { OrgTable } from "@/components/org-table"
@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge"
 import { QUARTER_LABEL } from "@/lib/config"
 
 export default async function Home() {
-  const above = getAbove1000().slice(0, 100)
-  const below = getBelow1000().slice(0, 100)
+  const emerging = getEmerging()
+  const scaling = getScaling()
 
   return (
     <>
@@ -42,7 +42,7 @@ export default async function Home() {
         {/* Rankings */}
         <section className="px-6 py-10">
           <div className="max-w-6xl mx-auto">
-            <OrgTable above={above} below={below} />
+            <OrgTable emerging={emerging} scaling={scaling} />
           </div>
         </section>
       </main>

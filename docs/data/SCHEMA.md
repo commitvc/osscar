@@ -1,10 +1,48 @@
 # Data Schema
 
-## Rankings files
+The OSSCAr project publishes two Parquet files per quarter on GitHub Releases:
 
-Files: `oss_growth_index_{above,below}_1000_Q*_top200_clean.csv`
+- **`osscar_input_data_Q*_*.parquet`** — raw organization metrics, the input to the scoring pipeline.
+- **`osscar_ranking_Q*_*.parquet`** — the input columns passed through, plus division assignment, rank, and the derived scoring columns used by the frontend.
 
-These files contain the scored and ranked organizations for each division.
+The repository also ships two trimmed CSVs in [`frontend/data/`](../../frontend/data/) that power the website table (top 200 orgs per division), plus a frontend enrichment CSV. Those are documented at the bottom of this file.
+
+## Ranking parquet
+
+File: `osscar_ranking_Q*_*.parquet` (GitHub Releases)
+
+Contains every organization that was eligible for ranking in a given quarter. Column set = every column from the input parquet, plus the derived columns listed below.
+
+### Derived columns added by the scoring pipeline
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `division` | string | `emerging` (<1,000 stars at quarter start) or `scaling` (>=1,000) |
+| `division_rank` | integer | 1-based rank within the division, ordered by composite score descending |
+| `package_downloads_start` | integer | Combined npm + PyPI + Cargo downloads at quarter start (nullable) — summed from per-registry columns |
+| `package_downloads_end` | integer | Combined downloads at quarter end (nullable) |
+| `github_stars_growth_rate` | float | Padded growth rate for stars: `(end - padded_start) / padded_start` |
+| `github_stars_growth_percentile` | float | Percentile rank of growth rate within the division (0–100) |
+| `github_stars_final_weight` | float | Weight used in the composite score (1.0 in sum mode) |
+| `github_contributors_growth_rate` | float | Padded growth rate for contributors (nullable) |
+| `github_contributors_growth_percentile` | float | Percentile rank within division (nullable) |
+| `github_contributors_final_weight` | float | Weight used in composite score (nullable) |
+| `package_downloads_growth_rate` | float | Padded growth rate for combined downloads (nullable) |
+| `package_downloads_growth_percentile` | float | Percentile rank within division (nullable) |
+| `package_downloads_final_weight` | float | Weight used in composite score (nullable) |
+
+### Notes on growth rates
+
+- **Padding**: Growth rates are computed against a padded start value: `max(actual_start, padding_threshold)`. This prevents small absolute changes at low baselines from producing misleadingly high growth rates.
+- **Eligibility**: An organization is eligible for a metric only if both start and end values exist, the end value meets the padding threshold, and growth is non-negative.
+- **Nullable fields**: Package download columns are null for organizations that don't publish to npm, PyPI, or Cargo.
+
+## Input parquet
+
+File: `osscar_input_data_Q*_*.parquet` (GitHub Releases)
+
+Raw per-organization metrics for a given quarter. This is the file
+`methodology/compute_index.py` consumes.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -15,29 +53,45 @@ These files contain the scored and ranked organizations for each division.
 | `homepage_url` | string | Organization's website URL (nullable) |
 | `owner_description` | string | GitHub organization bio (nullable) |
 | `owner_logo` | string | URL to the organization's avatar image |
-| `quarter_start` | date | Start date of the measurement quarter (e.g., `2026-01-01`) |
-| `quarter_end` | date | End date of the measurement quarter (e.g., `2026-04-01`) |
-| `github_stars_start` | integer | Total GitHub stars at quarter start |
-| `github_stars_end` | integer | Total GitHub stars at quarter end |
-| `github_stars_growth_rate` | float | Growth rate for stars (padded). `(end - padded_start) / padded_start` |
-| `github_stars_growth_percentile` | float | Percentile rank of growth rate within the division (0-100) |
-| `github_stars_final_weight` | float | Weight used in composite score (1.0 in sum mode) |
-| `github_contributors_start` | integer | Total unique contributors at quarter start |
-| `github_contributors_end` | integer | Total unique contributors at quarter end |
-| `github_contributors_growth_rate` | float | Growth rate for contributors (padded) |
-| `github_contributors_growth_percentile` | float | Percentile rank within division (0-100) |
-| `github_contributors_final_weight` | float | Weight used in composite score |
-| `package_downloads_start` | integer | Combined npm + PyPI + Cargo downloads at quarter start (nullable) |
-| `package_downloads_end` | integer | Combined downloads at quarter end (nullable) |
-| `package_downloads_growth_rate` | float | Growth rate for downloads (padded, nullable) |
-| `package_downloads_growth_percentile` | float | Percentile rank within division (nullable) |
-| `package_downloads_final_weight` | float | Weight used in composite score (nullable) |
+| `quarter_start` | string | Start date of the measurement quarter (e.g., `2026-01-01`) |
+| `quarter_end` | string | End date of the measurement quarter (e.g., `2026-04-01`) |
+| `github_stars_start` | float | Total GitHub stars at quarter start |
+| `github_stars_end` | float | Total GitHub stars at quarter end |
+| `github_contributors_start` | float | Total unique contributors at quarter start |
+| `github_contributors_end` | float | Total unique contributors at quarter end |
+| `npm_downloads_start` | float | npm downloads at quarter start (nullable) |
+| `npm_downloads_end` | float | npm downloads at quarter end (nullable) |
+| `pypi_downloads_start` | float | PyPI downloads at quarter start (nullable) |
+| `pypi_downloads_end` | float | PyPI downloads at quarter end (nullable) |
+| `cargo_downloads_start` | float | Cargo downloads at quarter start (nullable) |
+| `cargo_downloads_end` | float | Cargo downloads at quarter end (nullable) |
+| `github_repo_count` | float | Number of repositories owned by the organization |
+| `github_is_new_this_quarter` | bool | Whether the organization first appeared on GitHub this quarter |
+| `npm_is_new_this_quarter` | bool | Whether the organization first published to npm this quarter |
+| `pypi_is_new_this_quarter` | bool | Whether the organization first published to PyPI this quarter |
+| `cargo_is_new_this_quarter` | bool | Whether the organization first published to Cargo this quarter |
+| `github_stars_weekly` | list<struct> | Weekly star time series — array of `{date, value}` points |
+| `github_contributors_weekly` | list<struct> | Weekly contributor time series |
+| `npm_weekly` | list<struct> | Weekly npm download time series |
+| `pypi_weekly` | list<struct> | Weekly PyPI download time series |
+| `cargo_weekly` | list<struct> | Weekly Cargo download time series |
 
-### Notes on growth rates
+### Weekly time-series point schema
 
-- **Padding**: Growth rates are computed against a padded start value: `max(actual_start, padding_threshold)`. This prevents small absolute changes at low baselines from producing misleadingly high growth rates.
-- **Eligibility**: An organization is eligible for a metric only if both start and end values exist, the end value meets the padding threshold, and growth is non-negative.
-- **Nullable fields**: Package download columns are null for organizations that don't publish to npm, PyPI, or Cargo.
+| Field | Type | Description |
+|-------|------|-------------|
+| `date` | string | ISO date (e.g., `2026-01-06`) |
+| `value` | number | Metric value at that point |
+
+## In-repo ranking CSVs (frontend)
+
+Files: `frontend/data/oss_growth_index_{above,below}_1000_Q*_top200_clean.csv`
+
+Top-200 trimmed subsets of the ranking parquet, in CSV form, committed to the
+repo so the statically-generated frontend can read them without any release
+dependency. Columns mirror the ranking parquet: org identity fields,
+`*_start`/`*_end` for each metric, and the derived `growth_rate` /
+`growth_percentile` / `final_weight` columns.
 
 ## Frontend enrichment file
 
@@ -85,17 +139,3 @@ Each element in the weekly JSON arrays:
 | `date` | string | ISO date (e.g., `2026-01-06`) |
 | `value` | number | Metric value at that point |
 
-## Base data (full dataset, in GitHub Releases)
-
-The base data CSV (`base_data_Q*_*.csv`) contains the raw input data before scoring. It includes all the columns above plus per-registry download columns:
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `npm_downloads_start` | integer | npm downloads at quarter start (nullable) |
-| `npm_downloads_end` | integer | npm downloads at quarter end (nullable) |
-| `pypi_downloads_start` | integer | PyPI downloads at quarter start (nullable) |
-| `pypi_downloads_end` | integer | PyPI downloads at quarter end (nullable) |
-| `cargo_downloads_start` | integer | Cargo downloads at quarter start (nullable) |
-| `cargo_downloads_end` | integer | Cargo downloads at quarter end (nullable) |
-
-These per-registry columns are aggregated into `package_downloads_start` and `package_downloads_end` by the scoring pipeline.

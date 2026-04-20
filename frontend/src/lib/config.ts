@@ -4,19 +4,22 @@
  * This is the single source of truth for quarter-specific strings
  * used across the frontend. When publishing a new quarterly release:
  * 1. Update the values below
- * 2. Replace the CSV files in data/
+ * 2. Re-run `python methodology/extract_frontend_data.py` to regenerate
+ *    the per-division JSON files in `frontend/data/`
  * 3. Rebuild and deploy
  */
 
 /** Display label for the current quarter (e.g., "Q1 2026") */
 export const QUARTER_LABEL = "Q1 2026";
 
-/** Compact quarter identifier used in filenames (e.g., "Q12026") */
-export const QUARTER_ID = "Q12026";
+/** Compact quarter identifier used in data filenames (e.g., "Q1_2026") */
+export const QUARTER_ID = "Q1_2026";
 
-/** CSV filenames for each division */
+/** How many orgs per division are published to the frontend */
+export const FRONTEND_TOP_N = 100;
+
+/** JSON filenames for each division — produced by methodology/extract_frontend_data.py */
 export const DATA_FILES = {
-  above_1000: `oss_growth_index_above_1000_${QUARTER_ID}_top200_clean.csv`,
-  below_1000: `oss_growth_index_below_1000_${QUARTER_ID}_top200_clean.csv`,
-  frontend: "oss_index_prototype_frontend_data.csv",
+  emerging: `osscar_emerging_top${FRONTEND_TOP_N}_${QUARTER_ID}.json`,
+  scaling: `osscar_scaling_top${FRONTEND_TOP_N}_${QUARTER_ID}.json`,
 } as const;

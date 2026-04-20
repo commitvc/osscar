@@ -14,28 +14,54 @@ The `frontend/data/` directory contains the **top 200 organizations per division
 
 ### In GitHub Releases
 
-Each quarterly release includes the **full dataset** (all scored organizations, not just the top 200) as downloadable assets:
+Each quarterly release publishes the **full dataset** (all organizations, not just the top 200) as Parquet assets:
 
 | File | Description |
 |------|-------------|
-| `base_data_Q1_2026.csv` | Raw input data for all organizations |
-| `rankings_above_1000_Q1_2026.csv` | Full rankings for scaling division |
-| `rankings_below_1000_Q1_2026.csv` | Full rankings for emerging division |
-| `*.parquet` | Parquet versions of the above (smaller, typed) |
+| `osscar_input_data_Q1_2026.parquet` | Raw input data for every tracked organization — the file the scoring pipeline consumes |
+| `osscar_ranking_Q1_2026.parquet` | Full ranking output: input columns + `division`, `division_rank`, and per-metric `growth_rate` / `growth_percentile` / `final_weight` |
+
+Parquet is used throughout for its compact, strongly-typed encoding (arrays of
+weekly time-series points are preserved as native list columns instead of JSON
+strings).
 
 ## How to download
 
-Using the GitHub CLI:
+Using the GitHub CLI, download the input parquet into the conventional
+location expected by the scoring pipeline:
 
 ```bash
-# Download all assets from a release
-gh release download v2026.Q1
+mkdir -p methodology/data
+gh release download v2026.Q1 \
+    -p "osscar_input_data_Q1_2026.parquet" \
+    -D methodology/data/
+```
 
-# Download a specific file
-gh release download v2026.Q1 -p "base_data_Q1_2026.csv"
+The `methodology/data/` directory is gitignored and is where
+`methodology/compute_index.py` looks for input by default. To also download the
+published rankings so you can compare against your reproduction:
+
+```bash
+gh release download v2026.Q1 -p "osscar_ranking_Q1_2026.parquet"
 ```
 
 Or download directly from the [Releases page](../../releases).
+
+## Reproducing the rankings
+
+Once the input parquet is in `methodology/data/`, run the pipeline from the
+repo root:
+
+```bash
+pip install -r methodology/requirements.txt
+python methodology/compute_index.py
+```
+
+This produces `methodology/results/osscar_ranking_Q1_2026.parquet`, which
+should match the published `osscar_ranking_Q1_2026.parquet` release asset
+byte-for-byte given the same input. See
+[`methodology/README.md`](../../methodology/README.md) for details on flags and
+configuration.
 
 ## Schema
 

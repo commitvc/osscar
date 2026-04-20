@@ -20,30 +20,45 @@ For a detailed explanation, see [docs/methodology.md](../docs/methodology.md) or
 
 ### 1. Download the base data
 
-From the latest GitHub Release:
+From the latest GitHub Release into `methodology/data/` (the default input location):
 
 ```bash
-gh release download v2026.Q1 -p "base_data_Q1_2026.csv"
+mkdir -p methodology/data
+gh release download v2026.Q1 \
+    -p "osscar_input_data_Q1_2026.parquet" \
+    -D methodology/data/
 ```
+
+The `methodology/data/` directory is gitignored — it is the conventional drop
+zone for quarterly input parquets downloaded from GitHub Releases.
 
 ### 2. Install dependencies
 
 ```bash
-pip install -r requirements.txt
+pip install -r methodology/requirements.txt
 ```
 
 ### 3. Run the pipeline
 
-```bash
-python compute_index.py --input base_data_Q1_2026.csv --output-dir results/
-```
-
-### 4. Compare with published rankings
+From the repo root:
 
 ```bash
-diff results/oss_growth_index_above_1000_Q12026.csv \
-     ../frontend/data/oss_growth_index_above_1000_Q12026_top200_clean.csv
+python methodology/compute_index.py
 ```
+
+This picks up `methodology/data/osscar_input_data_Q1_2026.parquet` by default
+and writes `methodology/results/osscar_ranking_Q1_2026.parquet`. You can
+override either side:
+
+```bash
+python methodology/compute_index.py \
+    --input path/to/input.parquet \
+    --output-dir path/to/out/
+```
+
+The ranking file contains every input column plus `division` (`emerging` or
+`scaling`), `division_rank`, and the per-metric `growth_rate`,
+`growth_percentile`, and `final_weight` columns consumed by the frontend.
 
 ## Running tests
 

@@ -33,7 +33,7 @@ class MetricSpec:
     family: str
 
 
-DIVISION_ORDER = ["below_1000", "above_1000"]
+DIVISION_ORDER = ["emerging", "scaling"]
 DIVISION_STARS_THRESHOLD = 1000.0
 DIVISION_SOURCE_COLUMN = "github_stars_start"
 GROWTH_SCORE_TRANSFORM = "log_minmax"
@@ -62,12 +62,12 @@ ALL_METRICS: List[MetricSpec] = [
 ]
 
 PADDING_THRESHOLDS_BY_DIVISION: dict[str, dict[str, float]] = {
-    "below_1000": {
+    "emerging": {
         "github_stars": 100.0,
         "github_contributors": 5.0,
         "package_downloads": 1000.0,
     },
-    "above_1000": {
+    "scaling": {
         "github_stars": 1000.0,
         "github_contributors": 10.0,
         "package_downloads": 10000.0,
@@ -92,16 +92,20 @@ def preprocess_package_downloads(df: pd.DataFrame) -> pd.DataFrame:
       - If at least one is non-null -> sum of available values, treating the
         absent ones as 0.  This avoids penalising orgs that only publish to
         one or two registries.
-    """
-    start_cols_present = [c for c in PACKAGE_DOWNLOAD_START_COLS if c in df.columns]
-    end_cols_present   = [c for c in PACKAGE_DOWNLOAD_END_COLS   if c in df.columns]
 
-    df["package_downloads_start"] = (
-        df[start_cols_present].sum(axis=1, min_count=1) if start_cols_present else np.nan
-    )
-    df["package_downloads_end"] = (
-        df[end_cols_present].sum(axis=1, min_count=1) if end_cols_present else np.nan
-    )
+    If the input already provides `package_downloads_start`/`_end` (e.g. the
+    released parquet), those are kept as-is.
+    """
+    if "package_downloads_start" not in df.columns:
+        start_cols_present = [c for c in PACKAGE_DOWNLOAD_START_COLS if c in df.columns]
+        df["package_downloads_start"] = (
+            df[start_cols_present].sum(axis=1, min_count=1) if start_cols_present else np.nan
+        )
+    if "package_downloads_end" not in df.columns:
+        end_cols_present = [c for c in PACKAGE_DOWNLOAD_END_COLS if c in df.columns]
+        df["package_downloads_end"] = (
+            df[end_cols_present].sum(axis=1, min_count=1) if end_cols_present else np.nan
+        )
     return df
 
 
@@ -174,7 +178,7 @@ def infer_quarter_label(df: pd.DataFrame) -> str:
     if pd.isna(ts):
         return "unknown_quarter"
     quarter = ((int(ts.month) - 1) // 3) + 1
-    return f"Q{quarter}{ts.year}"
+    return f"Q{quarter}_{ts.year}"
 
 
 def add_metric_growth_scores(df: pd.DataFrame, metrics: List[MetricSpec]) -> pd.DataFrame:
@@ -325,64 +329,50 @@ def add_ranks(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def make_output_columns(base_columns: List[str], metrics: List[MetricSpec]) -> List[str]:
-    cols: List[str] = []
+    """Input columns pass through unchanged, then append frontend-consumed scoring columns.
+
+    Columns added per metric: growth_rate, growth_percentile, final_weight.
+    Plus the aggregated package_downloads_start/end (if not already in input),
+    plus division and division_rank.
+    """
+    cols = list(base_columns)
+
+    for metric in metrics:
+        if metric.start_col not in cols:
+            cols.append(metric.start_col)
+        if metric.end_col not in cols:
+            cols.append(metric.end_col)
 
     for metric in metrics:
         cols.extend(
             [
-                f"{metric.key}_padding_threshold",
-                f"{metric.key}_start_for_growth",
                 f"{metric.key}_growth_rate",
-                f"{metric.key}_growth_z_score",
-                f"{metric.key}_eligible_for_scoring",
                 f"{metric.key}_growth_percentile",
-                f"{metric.key}_size_percentile",
-                f"{metric.key}_score_for_aggregation",
-                f"{metric.key}_weight_magnitude",
-                f"{metric.key}_is_family_winner",
                 f"{metric.key}_final_weight",
             ]
         )
 
-    cols.extend(
-        [
-            "metric_count",
-            "family_count",
-            "division",
-            "eligible_for_ranking",
-            "composite_score",
-            "division_rank",
-        ]
-    )
+    cols.extend(["division", "division_rank"])
 
-    return base_columns + cols
+    return cols
 
 
-def export_division_files(
+def export_ranking_file(
     df: pd.DataFrame,
-    output_dir: Path,
-    quarter_label: str,
+    output_path: Path,
     output_cols: List[str],
 ) -> None:
-    output_dir.mkdir(parents=True, exist_ok=True)
-    eligible_df = df[df["eligible_for_ranking"]].copy()
-
-    division_to_frame = {
-        "below_1000": eligible_df[eligible_df["division"] == "below_1000"].sort_values(
-            ["composite_score", "owner_login"], ascending=[False, True]
-        ),
-        "above_1000": eligible_df[eligible_df["division"] == "above_1000"].sort_values(
-            ["composite_score", "owner_login"], ascending=[False, True]
-        ),
-    }
-
-    for division, frame in division_to_frame.items():
-        out_path = output_dir / f"oss_growth_index_{division}_{quarter_label}.csv"
-        frame.loc[:, output_cols].to_csv(out_path, index=False)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    ranked = df[df["eligible_for_ranking"]].copy()
+    ranked = ranked.sort_values(
+        ["division", "division_rank", "owner_login"],
+        ascending=[True, True, True],
+    )
+    ranked.loc[:, output_cols].to_parquet(output_path, index=False)
 
 
-def run(input_csv: Path, output_dir: Path) -> None:
-    df = pd.read_csv(input_csv, low_memory=False)
+def run(input_path: Path, output_dir: Path) -> None:
+    df = pd.read_parquet(input_path)
     metrics = active_metrics()
 
     # Aggregate npm/pypi/cargo into a single package_downloads metric.
@@ -399,19 +389,19 @@ def run(input_csv: Path, output_dir: Path) -> None:
 
     output_cols = make_output_columns(base_columns, metrics=metrics)
     quarter_label = infer_quarter_label(df)
-    export_division_files(
-        df=df,
-        output_dir=output_dir,
-        quarter_label=quarter_label,
-        output_cols=output_cols,
-    )
+    output_path = output_dir / f"osscar_ranking_{quarter_label}.parquet"
+    export_ranking_file(df=df, output_path=output_path, output_cols=output_cols)
 
 
-def default_input_csv_path() -> Path:
+DEFAULT_INPUT_FILENAME = "osscar_input_data_Q1_2026.parquet"
+
+
+def default_input_path() -> Path:
     script_dir = Path(__file__).resolve().parent
     candidates = [
-        script_dir / "oss_index_basetable_Q12026_v4.csv",
-        script_dir.parent / "oss_index_basetable_Q12026_v4.csv",
+        script_dir / "data" / DEFAULT_INPUT_FILENAME,
+        script_dir / DEFAULT_INPUT_FILENAME,
+        script_dir.parent / DEFAULT_INPUT_FILENAME,
     ]
     for candidate in candidates:
         if candidate.exists():
@@ -424,21 +414,21 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--input",
         type=Path,
-        default=default_input_csv_path(),
-        help="Path to input basetable CSV.",
+        default=default_input_path(),
+        help="Path to input basetable parquet.",
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
         default=Path(__file__).resolve().parent / "results",
-        help="Directory where division CSV outputs are written.",
+        help="Directory where the ranking parquet is written.",
     )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    run(input_csv=args.input, output_dir=args.output_dir)
+    run(input_path=args.input, output_dir=args.output_dir)
 
 
 if __name__ == "__main__":

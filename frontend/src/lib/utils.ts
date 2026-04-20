@@ -1,12 +1,12 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import type { OrgEntry } from "@/types"
+import type { Org } from "@/types"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function computeScore(org: OrgEntry): number {
+export function computeScore(org: Org): number {
   return [
     org.github_stars_final_weight,
     org.github_contributors_final_weight,

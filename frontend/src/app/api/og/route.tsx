@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
-import { getAbove1000, getBelow1000, extractSlug } from "@/lib/data";
+import { findOrgBySlug } from "@/lib/data";
 import {
   getTopN,
   getRankColor,
@@ -17,19 +17,12 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const slug = searchParams.get("slug")?.toLowerCase() ?? "";
 
-  const above = getAbove1000();
-  const below = getBelow1000();
-
-  const aboveOrg = above.find((o) => extractSlug(o.owner_url) === slug);
-  const belowOrg = below.find((o) => extractSlug(o.owner_url) === slug);
-  const org = aboveOrg ?? belowOrg;
-
+  const org = findOrgBySlug(slug);
   if (!org) return new Response("Not found", { status: 404 });
 
-  const tierData = aboveOrg ? above : below;
-  const rankIndex = tierData.findIndex((o) => extractSlug(o.owner_url) === slug);
-  const rank = rankIndex >= 0 ? rankIndex + 1 : null;
-  const tierLabel = aboveOrg ? "Scaling" : "Emerging";
+  const isScaling = org.division === "scaling";
+  const rank: number | null = org.division_rank ?? null;
+  const tierLabel = isScaling ? "Scaling" : "Emerging";
 
   const name = org.owner_name;
   const logoUrl = org.owner_logo;
@@ -61,16 +54,16 @@ export async function GET(request: NextRequest) {
   const topN = rank ? getTopN(rank) : null;
 
   // Tier badge colors
-  const tierColor = aboveOrg ? "#3ECF8E" : "#60A5FA";
-  const tierBg = aboveOrg ? "rgba(62,207,142,0.12)" : "rgba(96,165,250,0.12)";
-  const tierBorder = aboveOrg ? "rgba(62,207,142,0.3)" : "rgba(96,165,250,0.3)";
+  const tierColor = isScaling ? "#3ECF8E" : "#60A5FA";
+  const tierBg = isScaling ? "rgba(62,207,142,0.12)" : "rgba(96,165,250,0.12)";
+  const tierBorder = isScaling ? "rgba(62,207,142,0.3)" : "rgba(96,165,250,0.3)";
 
   // Glow color behind logo — rank 1 gets amber glow, rank 2 silver, rank 3 bronze, rest: tier color
   const glowColor =
     rank === 1 ? "rgba(240,180,41,0.18)"
     : rank === 2 ? "rgba(200,208,218,0.14)"
     : rank === 3 ? "rgba(200,121,65,0.18)"
-    : aboveOrg  ? "rgba(62,207,142,0.14)"
+    : isScaling  ? "rgba(62,207,142,0.14)"
     : "rgba(96,165,250,0.14)";
 
   return new ImageResponse(
