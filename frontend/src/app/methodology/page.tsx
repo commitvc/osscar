@@ -126,7 +126,7 @@ export default function MethodologyPage() {
             </h1>
             <p className="text-lg text-muted-foreground leading-relaxed">
               A transparent ranking of the fastest-growing open source organizations.
-              Each quarter, we measure growth across three signals, score them on a common scale within peer groups, and sum the scores into a single composite.
+              Each quarter, we measure growth across three signals, score them on a common scale within peer groups, and combine the scores into a single composite via an L² norm.
             </p>
           </div>
         </section>
@@ -273,21 +273,21 @@ export default function MethodologyPage() {
 
           {/* Step 5: Composite */}
           <Section id="composite">
-            <SectionTitle step="05">Sum eligible scores into a composite</SectionTitle>
+            <SectionTitle step="05">Combine eligible scores via the L² norm</SectionTitle>
             <Prose>
               <p>
-                Each eligible signal contributes its score directly to the composite — no normalization, no cross-signal weighting:
+                Eligible per-signal scores are combined into a single composite using the L² (Euclidean) norm — the square root of the sum of squared scores:
               </p>
             </Prose>
             <Formula>
-              composite_score = Σ score<sub>i</sub>{"  "}(for each eligible signal i)
+              composite_score = √(Σ score<sub>i</sub>²){"  "}(for each eligible signal i)
             </Formula>
             <Prose>
               <p>
-                This is deliberately <em className="text-foreground not-italic font-medium">breadth-rewarding</em>: an org growing across GitHub stars, contributors, and package downloads will outscore an org that only excels on one signal, even if that one signal score is high. Being genuinely multi-dimensional is treated as a stronger signal of health.
+                The L² norm is still <em className="text-foreground not-italic font-medium">breadth-rewarding</em> — because per-signal scores are non-negative, an additional eligible signal can only raise the composite. But compared to a plain sum, it weights <em className="text-foreground not-italic font-medium">standout performance</em> on a single signal more heavily: a score of (100, 0, 0) still maps to 100, while (50, 50, 50) maps to ≈86.6 rather than 150. Exceptional growth on one signal is no longer outranked by merely average growth on three.
               </p>
               <p>
-                Signals with no data simply don't appear in the sum. An org that only publishes to GitHub is evaluated on two signals; one active across all three is evaluated on all three. The maximum possible composite is 300 (three signals each scoring 100).
+                Signals with no data simply don't contribute to the sum of squares. An org that only publishes to GitHub is evaluated on two signals; one active across all three is evaluated on all three. The maximum possible composite is √(3 × 100²) ≈ 173.2 (three signals each scoring 100).
               </p>
             </Prose>
           </Section>
