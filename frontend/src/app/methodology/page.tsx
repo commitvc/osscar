@@ -76,7 +76,7 @@ function MetricTable() {
 function PaddingTable() {
   const rows = [
     { metric: "github_stars", below: "100", above: "1,000" },
-    { metric: "github_contributors", below: "5", above: "10" },
+    { metric: "github_contributors", below: "1", above: "5" },
     { metric: "package_downloads", below: "1,000", above: "10,000" },
   ]
 

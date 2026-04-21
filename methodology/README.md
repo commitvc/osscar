@@ -84,5 +84,5 @@ These constants at the top of `compute_index.py` control the methodology:
 | Metric | Below 1,000 | Above 1,000 |
 |--------|-------------|-------------|
 | GitHub stars | 100 | 1,000 |
-| Contributors | 5 | 10 |
+| Contributors | 1 | 5 |
 | Package downloads | 1,000 | 10,000 |
