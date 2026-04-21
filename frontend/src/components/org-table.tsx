@@ -15,7 +15,7 @@ import {
 import { ExternalLink, Github, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react"
 import { Tooltip } from "@base-ui/react/tooltip"
 import type { Org, Division } from "@/types"
-import { formatCompact, formatGrowthRate, cn } from "@/lib/utils"
+import { formatCompact, formatGrowthRate, formatPercentile, formatTopPct, cn } from "@/lib/utils"
 import { OrgLogo } from "@/components/org-logo"
 import { Button } from "@/components/ui/button"
 import {
@@ -38,11 +38,12 @@ const RANK_PIPS: Record<number, string> = {
   3: "#CD7F32",
 }
 
-function computePackageDownloads(org: Org): { value: number | null; rate: number | null } {
-  if (org.package_downloads_end == null) return { value: null, rate: null }
+function computePackageDownloads(org: Org): { value: number | null; rate: number | null; percentile: number | null } {
+  if (org.package_downloads_end == null) return { value: null, rate: null, percentile: null }
   return {
     value: org.package_downloads_end,
     rate: org.package_downloads_growth_rate,
+    percentile: org.package_downloads_growth_percentile,
   }
 }
 
@@ -52,10 +53,24 @@ interface MetricCellProps {
   value: number | null
   rate: number | null
   startValue?: number | null
+  percentile?: number | null
   metricLabel?: string
 }
 
-function MetricCell({ value, rate, startValue, metricLabel = "stars" }: MetricCellProps) {
+function PercentileLine({ percentile, metricLabel }: { percentile: number | null | undefined; metricLabel: string }) {
+  const pct = formatPercentile(percentile ?? null)
+  const top = formatTopPct(percentile ?? null)
+  if (!pct) return null
+  return (
+    <p className="text-muted-foreground">
+      {metricLabel[0].toUpperCase() + metricLabel.slice(1)} growth ranks in the{" "}
+      <span className="font-semibold text-foreground">{pct}</span>
+      {top ? <> (<span className="text-foreground">{top}</span>)</> : null} of the division sample.
+    </p>
+  )
+}
+
+function MetricCell({ value, rate, startValue, percentile, metricLabel = "stars" }: MetricCellProps) {
   const hasData = value != null || rate != null
   if (!hasData) {
     return (
@@ -66,6 +81,7 @@ function MetricCell({ value, rate, startValue, metricLabel = "stars" }: MetricCe
   }
 
   const isLowBaseline = startValue != null && startValue < LOW_BASELINE_THRESHOLD && rate != null
+  const hasPercentile = percentile != null
 
   // Low-baseline orgs: show methodology rate in table, real growth in tooltip
   if (isLowBaseline) {
@@ -93,6 +109,7 @@ function MetricCell({ value, rate, startValue, metricLabel = "stars" }: MetricCe
               <p>
                 Real growth is <span className="font-semibold text-green">{realRateLabel}</span> ({formatCompact(startValue ?? 0)} → {formatCompact(value)}). Our methodology uses a minimum baseline of 100 {metricLabel}, so the displayed rate is computed as 100 → {formatCompact(value)}, giving <span className="font-semibold text-green">{formatGrowthRate(rate)}</span>.
               </p>
+              <PercentileLine percentile={percentile} metricLabel={metricLabel} />
               <a href="/methodology" className="inline-flex items-center gap-1 text-[0.65rem] text-muted-foreground hover:text-green transition-colors font-mono">
                 Read the methodology →
               </a>
@@ -108,7 +125,7 @@ function MetricCell({ value, rate, startValue, metricLabel = "stars" }: MetricCe
     ? (rate > 0 ? "positive" : rate < 0 ? "negative" : "zero")
     : "none"
 
-  return (
+  const cellContent = (
     <div className="flex items-center justify-end gap-1.5">
       <span className="font-mono text-sm font-semibold text-foreground tabular-nums leading-none">
         {value != null ? formatCompact(value) : "—"}
@@ -126,6 +143,26 @@ function MetricCell({ value, rate, startValue, metricLabel = "stars" }: MetricCe
         <span className="text-[0.7rem] leading-none text-muted-foreground/25">—</span>
       )}
     </div>
+  )
+
+  if (!hasPercentile) return cellContent
+
+  return (
+    <Tooltip.Root>
+      <Tooltip.Trigger className="cursor-default w-full">
+        {cellContent}
+      </Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Positioner side="top" sideOffset={6}>
+          <Tooltip.Popup className="z-50 max-w-xs rounded-md border border-white/10 bg-popover px-3 py-2 text-xs text-popover-foreground shadow-lg space-y-1.5">
+            <PercentileLine percentile={percentile} metricLabel={metricLabel} />
+            <a href="/methodology" className="inline-flex items-center gap-1 text-[0.65rem] text-muted-foreground hover:text-green transition-colors font-mono">
+              Read the methodology →
+            </a>
+          </Tooltip.Popup>
+        </Tooltip.Positioner>
+      </Tooltip.Portal>
+    </Tooltip.Root>
   )
 }
 
@@ -327,6 +364,7 @@ export function OrgTable({ emerging, scaling }: OrgTableProps) {
             value={row.original.github_stars_end}
             rate={row.original.github_stars_growth_rate}
             startValue={row.original.github_stars_start}
+            percentile={row.original.github_stars_growth_percentile}
           />
         ),
       },
@@ -360,6 +398,7 @@ export function OrgTable({ emerging, scaling }: OrgTableProps) {
             value={row.original.github_contributors_end}
             rate={row.original.github_contributors_growth_rate}
             startValue={row.original.github_contributors_start}
+            percentile={row.original.github_contributors_growth_percentile}
             metricLabel="contributors"
           />
         ),
@@ -396,8 +435,8 @@ export function OrgTable({ emerging, scaling }: OrgTableProps) {
           />
         ),
         cell: ({ row }) => {
-          const { value, rate } = computePackageDownloads(row.original)
-          return <MetricCell value={value} rate={rate} startValue={row.original.package_downloads_start} metricLabel="downloads" />
+          const { value, rate, percentile } = computePackageDownloads(row.original)
+          return <MetricCell value={value} rate={rate} startValue={row.original.package_downloads_start} percentile={percentile} metricLabel="downloads" />
         },
       },
     ),
