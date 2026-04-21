@@ -25,19 +25,24 @@ All scoring and ranking happens independently within each division. This prevent
 
 ## Step 2: Growth rate computation
 
-For each metric, we compute a quarterly growth rate:
+For each metric, we compute the real quarterly growth rate:
 
 ```
-growth_rate = (end_value - padded_start) / padded_start
+growth_rate = (end_value - start_value) / start_value
 ```
 
-### Padding thresholds
+This is the rate surfaced in the published data and the UI.
 
-To prevent distortion at small baselines (e.g., going from 2 to 4 stars showing 100% growth), the start value is padded to a minimum threshold:
+### Padding thresholds (scoring only)
+
+For scoring, we use a padded start value to prevent distortion at small baselines (e.g., going from 2 to 4 stars showing 100% growth):
 
 ```
-padded_start = max(actual_start, padding_threshold)
+padded_start     = max(start_value, padding_threshold)
+scoring_rate     = (end_value - padded_start) / padded_start
 ```
+
+The padded rate is an internal intermediate — it feeds the scoring transform and eligibility check below, but is not exposed as the displayed growth rate.
 
 | Metric | Emerging (<1K stars) | Scaling (>=1K stars) |
 |--------|---------------------|---------------------|
@@ -50,7 +55,7 @@ padded_start = max(actual_start, padding_threshold)
 An organization is eligible for scoring on a given metric only if:
 - Both start and end values are present
 - End value meets or exceeds the padding threshold
-- Growth rate is non-negative (we measure growth, not decline)
+- The padded scoring rate is non-negative (we measure growth, not decline)
 
 Organizations that don't publish packages (no npm/PyPI/Cargo data) are simply not scored on that metric — they aren't penalized.
 

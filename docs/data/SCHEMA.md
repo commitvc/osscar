@@ -21,21 +21,21 @@ Contains every organization that was eligible for ranking in a given quarter. Co
 | `division_rank` | integer | 1-based rank within the division, ordered by composite score descending |
 | `package_downloads_start` | integer | Combined npm + PyPI + Cargo downloads at quarter start (nullable) — summed from per-registry columns |
 | `package_downloads_end` | integer | Combined downloads at quarter end (nullable) |
-| `github_stars_growth_rate` | float | Padded growth rate for stars: `(end - padded_start) / padded_start` |
+| `github_stars_growth_rate` | float | Real growth rate for stars: `(end - start) / start` (null when start is 0) |
 | `github_stars_growth_percentile` | float | Percentile rank of growth rate within the division (0–100) |
 | `github_stars_final_weight` | float | Weight used in the composite score (1.0 in sum mode) |
-| `github_contributors_growth_rate` | float | Padded growth rate for contributors (nullable) |
+| `github_contributors_growth_rate` | float | Real growth rate for contributors (nullable) |
 | `github_contributors_growth_percentile` | float | Percentile rank within division (nullable) |
 | `github_contributors_final_weight` | float | Weight used in composite score (nullable) |
-| `package_downloads_growth_rate` | float | Padded growth rate for combined downloads (nullable) |
+| `package_downloads_growth_rate` | float | Real growth rate for combined downloads (nullable) |
 | `package_downloads_growth_percentile` | float | Percentile rank within division (nullable) |
 | `package_downloads_final_weight` | float | Weight used in composite score (nullable) |
 
 ### Notes on growth rates
 
-- **Padding**: Growth rates are computed against a padded start value: `max(actual_start, padding_threshold)`. This prevents small absolute changes at low baselines from producing misleadingly high growth rates.
-- **Eligibility**: An organization is eligible for a metric only if both start and end values exist, the end value meets the padding threshold, and growth is non-negative.
-- **Nullable fields**: Package download columns are null for organizations that don't publish to npm, PyPI, or Cargo.
+- **Real vs. padded rate**: The `_growth_rate` column is the **real** rate `(end - start) / start`. Padding (`max(start, padding_threshold)`) is applied internally for scoring only — it prevents low-baseline outliers from dominating the ranked scores, but is never surfaced as a displayed rate.
+- **Eligibility**: An organization is eligible for a metric only if both start and end values exist, the end value meets the padding threshold, and the padded growth rate is non-negative.
+- **Nullable fields**: `_growth_rate` is null when `start` is 0 (rate undefined). Package download columns are null for organizations that don't publish to npm, PyPI, or Cargo.
 
 ## Input parquet
 
