@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-"""Compute OSS Growth Index results (org-based, Q1 2026, v7).
+"""Compute OSS Growth Index results (org-based, Q1 2026, v6).
 
-Changes vs v6:
-  - Composite aggregation switches from arithmetic sum to the L^2 norm over
-    eligible per-metric scores: composite = sqrt(sum_i score_i^2).
-    Per-metric scoring (log(1+growth) min-max scaled to [0, 100]) is unchanged.
-    Still breadth-rewarding (an extra eligible signal can only raise the
-    composite, since scores are non-negative), but the L^2 norm weights
-    standout performance on a single signal more heavily than the plain sum
-    did: e.g. a score of (100, 0, 0) now scores the same as the sum (100),
-    while (50, 50, 50) drops from 150 to ~86.6.
+Changes vs v5:
+  - Growth score = log-clip-minmax scaled to [0, 100] instead of raw percentile.
+    Steps per metric per division:
+      1. log(1 + growth_rate)
+      2. clip at 99th percentile of the log-transformed distribution
+      3. min-max scale to [0, 100]
+    This highlights outliers (unlike percentiles) while preventing a single
+    extreme value from compressing everyone else toward 0 (unlike raw log).
+  - Composite = sum of eligible scores (same as v5, breadth-rewarding).
 """
 
 from __future__ import annotations
 
-METHODOLOGY_VERSION = "v7"
+METHODOLOGY_VERSION = "v6"
 
 import argparse
 from dataclasses import dataclass
@@ -39,7 +39,7 @@ DIVISION_SOURCE_COLUMN = "github_stars_start"
 GROWTH_SCORE_TRANSFORM = "log_minmax"
 INCLUDE_WEB_METRIC = False
 INCLUDE_HUGGINGFACE_METRICS = False
-WEIGHTING_MODE = "l2_norm"
+WEIGHTING_MODE = "sum"
 
 # npm/pypi/cargo are aggregated into package_downloads before scoring.
 PACKAGE_DOWNLOAD_START_COLS = ["npm_downloads_start", "pypi_downloads_start", "cargo_downloads_start"]
@@ -273,9 +273,6 @@ def add_metric_weights_and_score(df: pd.DataFrame, metrics: List[MetricSpec]) ->
         elif WEIGHTING_MODE == "sum":
             valid = df[growth_score_col].notna()
             df.loc[valid, magnitude_col] = 1.0
-        elif WEIGHTING_MODE == "l2_norm":
-            valid = df[growth_score_col].notna()
-            df.loc[valid, magnitude_col] = 1.0
         else:
             raise ValueError(f"Unknown weighting mode: {WEIGHTING_MODE}")
 
@@ -290,32 +287,23 @@ def add_metric_weights_and_score(df: pd.DataFrame, metrics: List[MetricSpec]) ->
         magnitude_col = f"{metric.key}_weight_magnitude"
         final_weight_col = f"{metric.key}_final_weight"
         mask = valid_denominator & df[magnitude_col].notna()
-        if WEIGHTING_MODE in ("sum", "l2_norm"):
+        if WEIGHTING_MODE == "sum":
             df.loc[mask, final_weight_col] = 1.0
         else:
             df.loc[mask, final_weight_col] = df.loc[mask, magnitude_col] / mag_sum[mask]
 
-    if WEIGHTING_MODE == "l2_norm":
-        sum_sq = pd.Series(0.0, index=df.index)
-        for metric in metrics:
-            growth_score_col = f"{metric.key}_score_for_aggregation"
-            mask = valid_denominator & df[growth_score_col].notna()
-            clipped = df.loc[mask, growth_score_col].clip(lower=0.0)
-            sum_sq.loc[mask] = sum_sq.loc[mask] + clipped.pow(2)
-        composite = np.sqrt(sum_sq)
-    else:
-        composite = pd.Series(0.0, index=df.index)
-        for metric in metrics:
-            growth_score_col = f"{metric.key}_score_for_aggregation"
-            final_weight_col = f"{metric.key}_final_weight"
-            mask = valid_denominator & df[final_weight_col].notna() & df[growth_score_col].notna()
-            composite.loc[mask] = (
-                composite.loc[mask]
-                + (df.loc[mask, final_weight_col] * df.loc[mask, growth_score_col])
-            )
+    weighted_score = pd.Series(0.0, index=df.index)
+    for metric in metrics:
+        growth_score_col = f"{metric.key}_score_for_aggregation"
+        final_weight_col = f"{metric.key}_final_weight"
+        mask = valid_denominator & df[final_weight_col].notna() & df[growth_score_col].notna()
+        weighted_score.loc[mask] = (
+            weighted_score.loc[mask]
+            + (df.loc[mask, final_weight_col] * df.loc[mask, growth_score_col])
+        )
 
     df["composite_score"] = np.nan
-    df.loc[valid_denominator, "composite_score"] = composite.loc[valid_denominator]
+    df.loc[valid_denominator, "composite_score"] = weighted_score.loc[valid_denominator]
     df["metric_count"] = df[[f"{metric.key}_score_for_aggregation" for metric in metrics]].notna().sum(axis=1)
     df["family_count"] = df["metric_count"]
     return df
