@@ -51,7 +51,6 @@ dist/
 # methodology data & outputs (download from GitHub Releases, or generate locally)
 methodology/data/
 methodology/results/
-methodology/experiments/results/
 
 # IDE / tooling
 .claude/
