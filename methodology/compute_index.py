@@ -187,7 +187,10 @@ def add_metric_growth_scores(df: pd.DataFrame, metrics: List[MetricSpec]) -> pd.
     for metric in metrics:
         padding_col = f"{metric.key}_padding_threshold"
         padded_start_col = f"{metric.key}_start_for_growth"
+        # Real rate (end - start) / start — shown to users; never negative for
+        # monotonic metrics. Padded rate is kept for scoring only.
         growth_col = f"{metric.key}_growth_rate"
+        padded_growth_col = f"{metric.key}_padded_growth_rate"
         eligible_col = f"{metric.key}_eligible_for_scoring"
         z_col = f"{metric.key}_growth_z_score"
         pct_col = f"{metric.key}_growth_percentile"
@@ -203,15 +206,22 @@ def add_metric_growth_scores(df: pd.DataFrame, metrics: List[MetricSpec]) -> pd.
                 df.loc[start_and_threshold, padding_col],
             )
 
-        df[growth_col] = quarter_growth(df[padded_start_col], df[metric.end_col])
+        df[growth_col] = quarter_growth(df[metric.start_col], df[metric.end_col])
+        df[padded_growth_col] = quarter_growth(df[padded_start_col], df[metric.end_col])
+        # When start == 0 the real rate is undefined; fall back to the padded rate so
+        # brand-new orgs (that grew from nothing this quarter) still get a displayed
+        # multiplier, bounded by the padding baseline.
+        zero_start = df[metric.start_col].eq(0) & df[padded_growth_col].notna()
+        if zero_start.any():
+            df.loc[zero_start, growth_col] = df.loc[zero_start, padded_growth_col]
         df[eligible_col] = (
             df[metric.start_col].notna()
             & df[metric.end_col].notna()
             & df[padding_col].notna()
             & df[padded_start_col].notna()
             & (df[metric.end_col] >= df[padding_col])
-            & df[growth_col].notna()
-            & (df[growth_col] >= 0)
+            & df[padded_growth_col].notna()
+            & (df[padded_growth_col] >= 0)
         )
         df[z_col] = np.nan
         df[pct_col] = np.nan
@@ -226,7 +236,7 @@ def add_metric_growth_scores(df: pd.DataFrame, metrics: List[MetricSpec]) -> pd.
         grouped = df.loc[valid_mask].groupby(group_cols, dropna=False)
         for _, idx in grouped.groups.items():
             idx_list = list(idx)
-            values = df.loc[idx_list, growth_col]
+            values = df.loc[idx_list, padded_growth_col]
             size_values = df.loc[idx_list, metric.end_col]
             growth_percentiles = percentile_rank(values)
             if GROWTH_SCORE_TRANSFORM == "z_score":
