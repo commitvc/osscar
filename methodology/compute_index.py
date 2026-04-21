@@ -64,12 +64,12 @@ ALL_METRICS: List[MetricSpec] = [
 PADDING_THRESHOLDS_BY_DIVISION: dict[str, dict[str, float]] = {
     "emerging": {
         "github_stars": 100.0,
-        "github_contributors": 5.0,
+        "github_contributors": 1.0,
         "package_downloads": 1000.0,
     },
     "scaling": {
         "github_stars": 1000.0,
-        "github_contributors": 10.0,
+        "github_contributors": 5.0,
         "package_downloads": 10000.0,
     },
 }

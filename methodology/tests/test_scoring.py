@@ -136,7 +136,12 @@ class TestPaddingThresholds:
     def test_scaling_contributors_padding(self):
         divisions = pd.Series(["scaling"])
         result = ci.padding_threshold_for_metric("github_contributors", divisions)
-        assert result.iloc[0] == 10.0
+        assert result.iloc[0] == 5.0
+
+    def test_emerging_contributors_padding(self):
+        divisions = pd.Series(["emerging"])
+        result = ci.padding_threshold_for_metric("github_contributors", divisions)
+        assert result.iloc[0] == 1.0
 
 
 class TestEligibility:

@@ -138,7 +138,7 @@ function buildSignals(org: Org): SignalConfig[] {
 
 const PADDING_THRESHOLDS: Record<string, Record<Division, number>> = {
   github_stars:        { emerging: 100, scaling: 1_000 },
-  github_contributors: { emerging: 5,   scaling: 10 },
+  github_contributors: { emerging: 1,   scaling: 5 },
   package_downloads:   { emerging: 100, scaling: 1_000 },
 };
 
