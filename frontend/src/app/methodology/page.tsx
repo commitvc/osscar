@@ -204,16 +204,15 @@ export default function MethodologyPage() {
                 Package downloads aggregate npm, PyPI, and Cargo. If an org only publishes to one or two registries, we sum the available values rather than penalizing for missing ones. An org with no data across all three registries receives a null for this signal.
               </p>
               <p>
-                The raw quarterly growth rate for a signal is:
+                The quarterly growth rate shown in the table is the real rate:
               </p>
             </Prose>
             <Formula>
-              growth_rate = (end − start) / padded_start
+              growth_rate = (end − start) / start
             </Formula>
             <Prose>
               <p>
-                Rather than dividing by the raw start value, we divide by a <em className="text-foreground not-italic font-medium">padded start</em>: the larger of the actual start value and a minimum threshold.
-                This prevents tiny absolute changes from producing enormous growth rates (e.g., going from 2 to 4 stars shouldn't outrank a project going from 5,000 to 8,000 stars).
+                For ranking, we divide instead by a <em className="text-foreground not-italic font-medium">padded start</em>: the larger of the actual start value and a minimum threshold. This prevents tiny absolute changes from producing outsized rank gains (e.g., going from 2 to 4 stars shouldn&rsquo;t outrank a project going from 5,000 to 8,000 stars). The padded rate only feeds the scoring step below — it&rsquo;s never shown as the displayed growth.
               </p>
             </Prose>
             <Formula>
@@ -233,7 +232,7 @@ export default function MethodologyPage() {
                 {[
                   "Both start and end values are present (not null)",
                   "The end value meets or exceeds the padding threshold",
-                  "The computed growth rate is ≥ 0 (we only reward growth, not decline)",
+                  "The padded growth rate is ≥ 0 (we only reward growth, not decline)",
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
                     <span className="font-mono text-green mt-0.5 shrink-0">✓</span>

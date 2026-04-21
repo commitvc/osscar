@@ -65,16 +65,11 @@ function MetricCell({ value, rate, startValue, metricLabel = "stars" }: MetricCe
     )
   }
 
-  const isLowBaseline = startValue != null && startValue < LOW_BASELINE_THRESHOLD && rate != null
+  const showRate = rate != null && rate > 0
+  const isLowBaseline =
+    showRate && startValue != null && startValue < LOW_BASELINE_THRESHOLD
 
-  // Low-baseline orgs: show methodology rate in table, real growth in tooltip
   if (isLowBaseline) {
-    const realRateLabel = startValue === 0 || startValue == null
-      ? "+∞"
-      : value != null && startValue > 0
-        ? `+${((value - startValue) / startValue).toFixed(1)}×`
-        : "—"
-
     return (
       <Tooltip.Root>
         <Tooltip.Trigger className="cursor-default w-full">
@@ -91,7 +86,7 @@ function MetricCell({ value, rate, startValue, metricLabel = "stars" }: MetricCe
           <Tooltip.Positioner side="top" sideOffset={6}>
             <Tooltip.Popup className="z-50 max-w-xs rounded-md border border-white/10 bg-popover px-3 py-2 text-xs text-popover-foreground shadow-lg space-y-1.5">
               <p>
-                Real growth is <span className="font-semibold text-green">{realRateLabel}</span> ({formatCompact(startValue ?? 0)} → {formatCompact(value)}). Our methodology uses a minimum baseline of 100 {metricLabel}, so the displayed rate is computed as 100 → {formatCompact(value)}, giving <span className="font-semibold text-green">{formatGrowthRate(rate)}</span>.
+                Displayed rate is real growth: <span className="font-semibold text-green">{formatGrowthRate(rate)}</span> ({formatCompact(startValue ?? 0)} → {formatCompact(value)}). For ranking, our methodology uses a minimum baseline of 100 {metricLabel} to avoid low-baseline distortion, so this org is ranked as if it had grown from 100 → {formatCompact(value)}.
               </p>
               <a href="/methodology" className="inline-flex items-center gap-1 text-[0.65rem] text-muted-foreground hover:text-green transition-colors font-mono">
                 Read the methodology →
@@ -103,23 +98,13 @@ function MetricCell({ value, rate, startValue, metricLabel = "stars" }: MetricCe
     )
   }
 
-  // Normal display
-  const rateSign = rate != null
-    ? (rate > 0 ? "positive" : rate < 0 ? "negative" : "zero")
-    : "none"
-
   return (
     <div className="flex items-center justify-end gap-1.5">
       <span className="font-mono text-sm font-semibold text-foreground tabular-nums leading-none">
         {value != null ? formatCompact(value) : "—"}
       </span>
-      {rate != null && rate > 0 ? (
-        <span className={cn(
-          "font-mono text-[0.7rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm",
-          rateSign === "positive" && "bg-green/15 text-green",
-          rateSign === "negative" && "bg-brand/15 text-brand",
-          rateSign === "zero" && "text-muted-foreground/40",
-        )}>
+      {showRate ? (
+        <span className="font-mono text-[0.7rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm bg-green/15 text-green">
           {formatGrowthRate(rate)}
         </span>
       ) : (
