@@ -36,3 +36,25 @@ export function formatGrowthRate(rate: number | null): string {
   const sign = rate >= 0 ? "+" : ""
   return `${sign}${rate.toFixed(1)}×`
 }
+
+function ordinalSuffix(n: number): string {
+  const mod100 = n % 100
+  if (mod100 >= 11 && mod100 <= 13) return "th"
+  const mod10 = n % 10
+  if (mod10 === 1) return "st"
+  if (mod10 === 2) return "nd"
+  if (mod10 === 3) return "rd"
+  return "th"
+}
+
+export function formatPercentile(p: number | null): string | null {
+  if (p == null) return null
+  const rounded = Math.max(1, Math.min(100, Math.round(p)))
+  return `${rounded}${ordinalSuffix(rounded)} percentile`
+}
+
+export function formatTopPct(p: number | null): string | null {
+  if (p == null) return null
+  const top = Math.max(1, Math.round(100 - p))
+  return `top ${top}%`
+}
