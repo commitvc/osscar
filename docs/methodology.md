@@ -1,6 +1,6 @@
 # Methodology
 
-This document describes the scoring methodology used in the OSS Growth Index (v6). For the executable implementation, see [`methodology/compute_index.py`](../methodology/compute_index.py).
+This document describes the scoring methodology used in the OSS Growth Index (v7). For the executable implementation, see [`methodology/compute_index.py`](../methodology/compute_index.py).
 
 ## Overview
 
@@ -10,7 +10,7 @@ The OSS Growth Index measures quarterly growth across three signals for GitHub o
 2. **GitHub Contributors** — a proxy for community engagement and project health
 3. **Package Downloads** — a proxy for real-world usage (npm + PyPI + Cargo combined)
 
-Each signal produces a growth score on a [0, 100] scale. These are summed into a composite score used for ranking.
+Each signal produces a growth score on a [0, 100] scale. These are combined into a composite score via the L² (Euclidean) norm — `sqrt(Σ score_i²)` — which is then used for ranking.
 
 ## Step 1: Division assignment
 
@@ -75,15 +75,15 @@ Where `min` and `max` are computed within each division for each metric.
 
 ## Step 4: Composite score
 
-The composite score is the **sum** of all eligible metric scores:
+The composite score is the **L² (Euclidean) norm** of all eligible metric scores — the square root of the sum of squared scores:
 
 ```
-composite = stars_score + contributors_score + downloads_score
+composite = sqrt(stars_score² + contributors_score² + downloads_score²)
 ```
 
-Maximum possible: 300 (if all three metrics score 100).
+Maximum possible: `sqrt(3 × 100²) ≈ 173.2` (if all three metrics score 100).
 
-This is **breadth-rewarding**: an organization growing across all three signals will generally outscore one excelling on just one metric. This reflects the intuition that broad growth across multiple dimensions is a stronger signal of overall momentum.
+This is still **breadth-rewarding** — because per-signal scores are non-negative, adding another eligible signal can only raise the composite. But compared to a plain sum, the L² norm weights **standout performance** on a single signal more heavily: a score profile of `(100, 0, 0)` maps to `100`, while `(50, 50, 50)` maps to `≈86.6` rather than `150`. Exceptional growth on one dimension is no longer outranked by merely average growth on three.
 
 ## Step 5: Ranking
 

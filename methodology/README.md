@@ -2,7 +2,7 @@
 
 This directory contains the scoring pipeline used to compute the OSS Growth Index rankings. The methodology is designed to be fully reproducible: given the same input data, it produces identical results.
 
-**Current version:** v6 (log-minmax scoring with sum-based composite)
+**Current version:** v7 (log-minmax scoring with L² norm composite)
 
 ## How it works
 
@@ -11,7 +11,7 @@ This directory contains the scoring pipeline used to compute the OSS Growth Inde
 3. **Aggregate package downloads**: npm + PyPI + Cargo combined into one metric
 4. **Compute growth rates** with padding thresholds to prevent distortion at small baselines
 5. **Score** each metric via log(1 + growth_rate), then min-max scale to [0, 100]
-6. **Composite score** = sum of eligible metric scores (breadth-rewarding)
+6. **Composite score** = L² norm of eligible metric scores: `sqrt(Σ score_i²)` (breadth-rewarding, with extra weight on standout performance)
 7. **Rank** within each division by composite score
 
 For a detailed explanation, see [docs/methodology.md](../docs/methodology.md) or the [methodology page](https://osscar.dev/methodology) on the website.
@@ -74,10 +74,10 @@ These constants at the top of `compute_index.py` control the methodology:
 
 | Constant | Value | Description |
 |----------|-------|-------------|
-| `METHODOLOGY_VERSION` | `v6` | Version identifier for this methodology |
+| `METHODOLOGY_VERSION` | `v7` | Version identifier for this methodology |
 | `DIVISION_STARS_THRESHOLD` | `1000` | Star count boundary between divisions |
 | `GROWTH_SCORE_TRANSFORM` | `log_minmax` | Scoring function applied to growth rates |
-| `WEIGHTING_MODE` | `sum` | How metric scores are aggregated |
+| `WEIGHTING_MODE` | `l2_norm` | How metric scores are aggregated |
 
 ### Padding thresholds
 

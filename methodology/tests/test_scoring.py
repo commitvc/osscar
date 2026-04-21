@@ -157,14 +157,15 @@ class TestEligibility:
 
 
 class TestCompositeScoring:
-    def test_composite_is_sum_of_eligible_scores(self, scored_df: pd.DataFrame):
-        """In sum mode, composite = sum of eligible metric scores."""
+    def test_composite_is_l2_norm_of_eligible_scores(self, scored_df: pd.DataFrame):
+        """In l2_norm mode, composite = sqrt(sum of squared eligible metric scores)."""
         for _, row in scored_df[scored_df["eligible_for_ranking"]].iterrows():
-            expected = 0.0
+            sum_sq = 0.0
             for metric in ci.active_metrics():
                 score = row[f"{metric.key}_score_for_aggregation"]
                 if pd.notna(score):
-                    expected += score
+                    sum_sq += max(score, 0.0) ** 2
+            expected = sum_sq ** 0.5
             assert row["composite_score"] == pytest.approx(expected, abs=1e-6), (
                 f"Composite mismatch for {row['owner_login']}"
             )
