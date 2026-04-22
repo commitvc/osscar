@@ -2,6 +2,7 @@ import { getEmerging, getScaling, extractSlug } from "@/lib/data"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { OrgTable } from "@/components/org-table"
+import { ScoreRequestCta } from "@/components/score-request-cta"
 import { Badge } from "@/components/ui/badge"
 import { QUARTER_LABEL } from "@/lib/config"
 
@@ -54,8 +55,9 @@ export default async function Home() {
 
         {/* Rankings */}
         <section className="px-6 py-10">
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-6xl mx-auto space-y-8">
             <OrgTable emerging={emerging} scaling={scaling} packageSources={packageSources} />
+            <ScoreRequestCta />
           </div>
         </section>
       </main>
