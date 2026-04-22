@@ -224,7 +224,9 @@ async function findOrg(
       "owner_id, owner_login, owner_name, owner_url, owner_logo, owner_description, homepage_url, division, division_rank, division_size, github_stars_end, github_stars_growth_rate, github_contributors_end, github_contributors_growth_rate, package_downloads_end, package_downloads_growth_rate",
     )
     .eq("quarter_id", quarterId)
-    .eq("owner_login", login)
+    // GitHub logins are case-insensitive; owner_login is stored as reported
+    // by GitHub (mixed case), while `login` is normalized to lowercase.
+    .ilike("owner_login", login)
     .limit(1)
     .maybeSingle();
   if (error) {
