@@ -147,9 +147,11 @@ const PADDING_THRESHOLDS: Record<string, Record<Division, number>> = {
 function SignalCard({
   signal,
   division,
+  sources,
 }: {
   signal: SignalConfig;
   division: Division;
+  sources?: string[];
 }) {
   const hasData = signal.end != null;
   const Icon = signal.icon;
@@ -169,6 +171,12 @@ function SignalCard({
         <Icon size={13} className="text-muted-foreground/50 shrink-0" />
         <span className="font-mono text-[0.6rem] uppercase tracking-widest text-muted-foreground/60">
           {signal.label}
+          {sources && sources.length > 0 && (
+            <>
+              <span className="text-muted-foreground/25"> · </span>
+              <span className="text-green/90">{sources.join(" · ")}</span>
+            </>
+          )}
         </span>
       </div>
 
@@ -227,6 +235,13 @@ export default async function OrgPage({ params }: Props) {
   const score = computeScore(org);
   const signals = buildSignals(org);
   const hasAnySignal = signals.some((s) => s.end != null);
+
+  // Active package managers for the Package Downloads signal card
+  const packageSources = [
+    org.npm_weekly.some((p) => p.value > 0) ? "NPM" : null,
+    org.pypi_weekly.some((p) => p.value > 0) ? "PyPI" : null,
+    org.cargo_weekly.some((p) => p.value > 0) ? "Cargo" : null,
+  ].filter((s): s is string => s !== null);
 
   // Display metadata
   const name = org.owner_name ?? slug;
@@ -459,6 +474,9 @@ export default async function OrgPage({ params }: Props) {
                     key={signal.key}
                     signal={signal}
                     division={division}
+                    sources={
+                      signal.key === "package_downloads" ? packageSources : undefined
+                    }
                   />
                 ))}
               </div>
