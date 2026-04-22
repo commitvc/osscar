@@ -1,4 +1,4 @@
-import { getEmerging, getScaling } from "@/lib/data"
+import { getEmerging, getScaling, extractSlug } from "@/lib/data"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { OrgTable } from "@/components/org-table"
@@ -8,6 +8,19 @@ import { QUARTER_LABEL } from "@/lib/config"
 export default async function Home() {
   const emerging = getEmerging()
   const scaling = getScaling()
+
+  // Build slug → active package managers map from per-manager weekly series
+  const packageSources: Record<string, string[]> = {}
+  for (const org of [...emerging, ...scaling]) {
+    const slug = extractSlug(org.owner_url)
+    if (!slug) continue
+    const sources = [
+      org.npm_weekly.some((p) => p.value > 0) ? "NPM" : null,
+      org.pypi_weekly.some((p) => p.value > 0) ? "PyPI" : null,
+      org.cargo_weekly.some((p) => p.value > 0) ? "Cargo" : null,
+    ].filter((s): s is string => s !== null)
+    if (sources.length > 0) packageSources[slug] = sources
+  }
 
   return (
     <>
@@ -42,7 +55,7 @@ export default async function Home() {
         {/* Rankings */}
         <section className="px-6 py-10">
           <div className="max-w-6xl mx-auto">
-            <OrgTable emerging={emerging} scaling={scaling} />
+            <OrgTable emerging={emerging} scaling={scaling} packageSources={packageSources} />
           </div>
         </section>
       </main>

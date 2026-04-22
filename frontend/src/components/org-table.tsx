@@ -65,6 +65,7 @@ interface MetricCellProps {
   percentile?: number | null
   metric: MetricKey
   division: Division
+  sources?: string[]
 }
 
 function PercentileLine({ percentile, metricLabel }: { percentile: number | null | undefined; metricLabel: string }) {
@@ -80,7 +81,7 @@ function PercentileLine({ percentile, metricLabel }: { percentile: number | null
   )
 }
 
-function MetricCell({ value, rate, startValue, percentile, metric, division }: MetricCellProps) {
+function MetricCell({ value, rate, startValue, percentile, metric, division, sources }: MetricCellProps) {
   const hasData = value != null || rate != null
   if (!hasData) {
     return (
@@ -98,11 +99,25 @@ function MetricCell({ value, rate, startValue, percentile, metric, division }: M
   const hasPercentile = percentile != null
   const baselineLabel = baseline === 1 ? singularize(metricLabel) : metricLabel
 
+  const SourceBadges = sources && sources.length > 0 ? (
+    <>
+      {sources.map((s) => (
+        <span
+          key={s}
+          className="font-mono text-[0.6rem] font-semibold uppercase tracking-wider leading-none px-1.5 py-0.5 rounded-sm border border-white/10 bg-white/4 text-muted-foreground/65"
+        >
+          {s}
+        </span>
+      ))}
+    </>
+  ) : null
+
   if (isLowBaseline) {
     return (
       <Tooltip.Root>
         <Tooltip.Trigger className="cursor-default w-full">
-          <div className="flex items-center justify-end gap-1.5">
+          <div className="flex items-center justify-end gap-1.5 flex-wrap">
+            {SourceBadges}
             <span className="font-mono text-sm font-semibold text-foreground tabular-nums leading-none">
               {value != null ? formatCompact(value) : "—"}
             </span>
@@ -129,7 +144,8 @@ function MetricCell({ value, rate, startValue, percentile, metric, division }: M
   }
 
   const cellContent = (
-    <div className="flex items-center justify-end gap-1.5">
+    <div className="flex items-center justify-end gap-1.5 flex-wrap">
+      {SourceBadges}
       <span className="font-mono text-sm font-semibold text-foreground tabular-nums leading-none">
         {value != null ? formatCompact(value) : "—"}
       </span>
@@ -245,9 +261,10 @@ const columnHelper = createColumnHelper<Org>()
 interface OrgTableProps {
   emerging: Org[]
   scaling: Org[]
+  packageSources?: Record<string, string[]>
 }
 
-export function OrgTable({ emerging, scaling }: OrgTableProps) {
+export function OrgTable({ emerging, scaling, packageSources = {} }: OrgTableProps) {
   const [activeDivision, setActiveDivision] = useState<Division>("emerging")
   const [sorting, setSorting] = useState<SortingState>([])
   const [starsSortMode, setStarsSortMode] = useState<SortMode>("growth")
@@ -437,6 +454,10 @@ export function OrgTable({ emerging, scaling }: OrgTableProps) {
         ),
         cell: ({ row }) => {
           const { value, rate, percentile } = computePackageDownloads(row.original)
+          const slug = row.original.owner_url
+            ? row.original.owner_url.trim().replace(/\/$/, "").split("/").pop()?.toLowerCase()
+            : undefined
+          const sources = slug ? packageSources[slug] : undefined
           return (
             <MetricCell
               value={value}
@@ -445,6 +466,7 @@ export function OrgTable({ emerging, scaling }: OrgTableProps) {
               percentile={percentile}
               metric="package_downloads"
               division={row.original.division}
+              sources={sources}
             />
           )
         },
@@ -540,7 +562,7 @@ export function OrgTable({ emerging, scaling }: OrgTableProps) {
                       header.id === "org" && "w-60",
                       header.id === "gh_stars" && "w-36 pl-4",
                       header.id === "gh_contrib" && "w-40",
-                      header.id === "packages" && "w-48",
+                      header.id === "packages" && "w-56",
                       header.id === "links" && "w-16",
                     )}
                   >
