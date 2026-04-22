@@ -30,6 +30,7 @@ import {
   cn,
 } from "@/lib/utils";
 import { QUARTER_LABEL } from "@/lib/config";
+import { PADDING_THRESHOLDS, type MetricKey } from "@/lib/padding-thresholds";
 import type { Org, Division, TimeSeriesPoint } from "@/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -89,7 +90,7 @@ function getRankGlow(rank: number): string {
 }
 
 type SignalConfig = {
-  key: string;
+  key: MetricKey;
   label: string;
   icon: React.ComponentType<{ className?: string; size?: number }>;
   color: string;
@@ -134,14 +135,6 @@ function buildSignals(org: Org): SignalConfig[] {
   ];
 }
 
-// ─── Padding thresholds (must match methodology) ─────────────────────────────
-
-const PADDING_THRESHOLDS: Record<string, Record<Division, number>> = {
-  github_stars:        { emerging: 100, scaling: 1_000 },
-  github_contributors: { emerging: 1,   scaling: 5 },
-  package_downloads:   { emerging: 100, scaling: 1_000 },
-};
-
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function SignalCard({
@@ -182,11 +175,10 @@ function SignalCard({
 
       {/* Value + real growth rate + padding-for-ranking note */}
       {(() => {
-        const padding = PADDING_THRESHOLDS[signal.key]?.[division];
+        const padding = PADDING_THRESHOLDS[signal.key][division];
         const isLowBaseline =
           showRate &&
           signal.start != null &&
-          padding != null &&
           signal.start < padding;
 
         return (
@@ -203,7 +195,7 @@ function SignalCard({
             </div>
             {isLowBaseline && (
               <span className="font-mono text-[0.65rem] tabular-nums text-muted-foreground/40 leading-tight">
-                {formatCompact(signal.start)} → {formatCompact(signal.end)}. Min baseline {formatCompact(padding!)} used for ranking.
+                {formatCompact(signal.start)} → {formatCompact(signal.end)}. Min baseline {formatCompact(padding)} used for ranking.
               </span>
             )}
           </div>

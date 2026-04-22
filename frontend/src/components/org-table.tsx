@@ -16,6 +16,7 @@ import { ExternalLink, Github, ChevronLeft, ChevronRight, ChevronUp, ChevronDown
 import { Tooltip } from "@base-ui/react/tooltip"
 import type { Org, Division } from "@/types"
 import { formatCompact, formatGrowthRate, formatPercentile, formatTopPct, cn } from "@/lib/utils"
+import { PADDING_THRESHOLDS, type MetricKey } from "@/lib/padding-thresholds"
 import { OrgLogo } from "@/components/org-logo"
 import { Button } from "@/components/ui/button"
 import {
@@ -47,14 +48,23 @@ function computePackageDownloads(org: Org): { value: number | null; rate: number
   }
 }
 
-const LOW_BASELINE_THRESHOLD = 100
+const METRIC_LABELS: Record<MetricKey, string> = {
+  github_stars: "stars",
+  github_contributors: "contributors",
+  package_downloads: "downloads",
+}
+
+function singularize(label: string): string {
+  return label.endsWith("s") ? label.slice(0, -1) : label
+}
 
 interface MetricCellProps {
   value: number | null
   rate: number | null
   startValue?: number | null
   percentile?: number | null
-  metricLabel?: string
+  metric: MetricKey
+  division: Division
   sources?: string[]
 }
 
@@ -71,7 +81,7 @@ function PercentileLine({ percentile, metricLabel }: { percentile: number | null
   )
 }
 
-function MetricCell({ value, rate, startValue, percentile, metricLabel = "stars", sources }: MetricCellProps) {
+function MetricCell({ value, rate, startValue, percentile, metric, division, sources }: MetricCellProps) {
   const hasData = value != null || rate != null
   if (!hasData) {
     return (
@@ -81,10 +91,13 @@ function MetricCell({ value, rate, startValue, percentile, metricLabel = "stars"
     )
   }
 
+  const metricLabel = METRIC_LABELS[metric]
+  const baseline = PADDING_THRESHOLDS[metric][division]
   const showRate = rate != null && rate > 0
   const isLowBaseline =
-    showRate && startValue != null && startValue < LOW_BASELINE_THRESHOLD
+    showRate && startValue != null && startValue < baseline
   const hasPercentile = percentile != null
+  const baselineLabel = baseline === 1 ? singularize(metricLabel) : metricLabel
 
   const SourceBadges = sources && sources.length > 0 ? (
     <>
@@ -117,7 +130,7 @@ function MetricCell({ value, rate, startValue, percentile, metricLabel = "stars"
           <Tooltip.Positioner side="top" sideOffset={6}>
             <Tooltip.Popup className="z-50 max-w-xs rounded-md border border-white/10 bg-popover px-3 py-2 text-xs text-popover-foreground shadow-lg space-y-1.5">
               <p>
-                Displayed rate is real growth: <span className="font-semibold text-green">{formatGrowthRate(rate)}</span> ({formatCompact(startValue ?? 0)} → {formatCompact(value)}). For ranking, our methodology uses a minimum baseline of 100 {metricLabel} to avoid low-baseline distortion, so this org is ranked as if it had grown from 100 → {formatCompact(value)}.
+                Displayed rate is real growth: <span className="font-semibold text-green">{formatGrowthRate(rate)}</span> ({formatCompact(startValue ?? 0)} → {formatCompact(value)}). For ranking, our methodology uses a minimum baseline of {formatCompact(baseline)} {baselineLabel} to avoid low-baseline distortion, so this org is ranked as if it had grown from {formatCompact(baseline)} → {formatCompact(value)}.
               </p>
               <PercentileLine percentile={percentile} metricLabel={metricLabel} />
               <a href="/methodology" className="inline-flex items-center gap-1 text-[0.65rem] text-muted-foreground hover:text-green transition-colors font-mono">
@@ -367,6 +380,8 @@ export function OrgTable({ emerging, scaling, packageSources = {} }: OrgTablePro
             rate={row.original.github_stars_growth_rate}
             startValue={row.original.github_stars_start}
             percentile={row.original.github_stars_growth_percentile}
+            metric="github_stars"
+            division={row.original.division}
           />
         ),
       },
@@ -401,7 +416,8 @@ export function OrgTable({ emerging, scaling, packageSources = {} }: OrgTablePro
             rate={row.original.github_contributors_growth_rate}
             startValue={row.original.github_contributors_start}
             percentile={row.original.github_contributors_growth_percentile}
-            metricLabel="contributors"
+            metric="github_contributors"
+            division={row.original.division}
           />
         ),
       },
@@ -448,7 +464,8 @@ export function OrgTable({ emerging, scaling, packageSources = {} }: OrgTablePro
               rate={rate}
               startValue={row.original.package_downloads_start}
               percentile={percentile}
-              metricLabel="downloads"
+              metric="package_downloads"
+              division={row.original.division}
               sources={sources}
             />
           )
