@@ -210,9 +210,9 @@ export function RepoTable({ repos }: RepoTableProps) {
                   key={header.id}
                   className={cn(
                     "text-[0.6rem] uppercase tracking-widest text-muted-foreground/60 font-semibold py-3",
-                    header.id === "stars" && "w-24 text-right",
-                    header.id === "forks" && "w-24 text-right",
-                    header.id === "language" && "w-32",
+                    header.id === "stars" && "w-20 text-right sm:w-24",
+                    header.id === "forks" && "w-20 text-right sm:w-24",
+                    header.id === "language" && "w-32 hidden sm:table-cell",
                     header.id === "description" && "hidden md:table-cell"
                   )}
                 >
@@ -235,6 +235,7 @@ export function RepoTable({ repos }: RepoTableProps) {
                     "py-3",
                     cell.column.id === "stars" && "text-right",
                     cell.column.id === "forks" && "text-right",
+                    cell.column.id === "language" && "hidden sm:table-cell",
                     cell.column.id === "description" && "hidden md:table-cell"
                   )}
                 >
