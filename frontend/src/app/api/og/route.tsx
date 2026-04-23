@@ -2,14 +2,60 @@ import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import { findOrgBySlug } from "@/lib/data";
 import {
-  getTopN,
-  getRankColor,
-  getOscarFile,
   getInterBold,
   readPublicAsBase64,
   fetchImageAsDataUrl,
 } from "@/lib/og-helpers";
 import { QUARTER_LABEL } from "@/lib/config";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** "+5.9k", "+1.2M", "+240" */
+function formatDelta(start: number | null, end: number | null): string | null {
+  if (start == null || end == null) return null;
+  const delta = end - start;
+  const abs = Math.abs(delta);
+  let value: number;
+  let suffix = "";
+  if (abs >= 1_000_000) {
+    value = delta / 1_000_000;
+    suffix = "M";
+  } else if (abs >= 1_000) {
+    value = delta / 1_000;
+    suffix = "k";
+  } else {
+    value = delta;
+  }
+  let str = Math.abs(value) >= 100 ? value.toFixed(0) : value.toFixed(1);
+  if (str.endsWith(".0")) str = str.slice(0, -2);
+  const sign = delta > 0 ? "+" : "";
+  return `${sign}${str}${suffix}`;
+}
+
+/** Rank display logic for the share card: #1-10 with medal, Top 25/50/100 otherwise. */
+function getRankMeta(rank: number) {
+  if (rank === 1) return { label: "#1", color: "#F4C430", isTop: false };
+  if (rank === 2) return { label: "#2", color: "#D7D7D7", isTop: false };
+  if (rank === 3) return { label: "#3", color: "#CD7F32", isTop: false };
+  if (rank <= 10) return { label: `#${rank}`, color: "#FFFFFF", isTop: false };
+  if (rank <= 25) return { label: "25", color: "#FFFFFF", isTop: true };
+  if (rank <= 50) return { label: "50", color: "#D0D0D0", isTop: true };
+  if (rank <= 100) return { label: "100", color: "#AEAEAE", isTop: true };
+  return { label: `${rank}`, color: "#AEAEAE", isTop: false };
+}
+
+/** Scale project name font-size so it never overflows the left column.
+ *  Column content area after logo + gap is ~330px, so we ladder down aggressively. */
+function getNameFontSize(name: string): number {
+  const len = name.length;
+  if (len <= 8) return 62;
+  if (len <= 11) return 50;
+  if (len <= 14) return 40;
+  if (len <= 18) return 32;
+  if (len <= 24) return 26;
+  if (len <= 32) return 22;
+  return 18;
+}
 
 // ─── Route ────────────────────────────────────────────────────────────────────
 
@@ -21,109 +67,131 @@ export async function GET(request: NextRequest) {
   if (!org) return new Response("Not found", { status: 404 });
 
   const isScaling = org.division === "scaling";
-  const rank: number | null = org.division_rank ?? null;
-  const tierLabel = isScaling ? "Scaling" : "Emerging";
+  const rank: number = org.division_rank;
+  const tierLabel = isScaling ? "Scaling tier" : "Emerging tier";
 
   const name = org.owner_name;
   const logoUrl = org.owner_logo;
 
   // Static assets
-  const supabaseDataUrl = readPublicAsBase64("supabase-logo-wordmark--dark.png", "image/png");
-  const commitLogoDataUrl = readPublicAsBase64("commit-logo-dark.svg", "image/svg+xml");
-
-  const oscarFile = rank ? getOscarFile(rank) : "osscar-logo-icon-white.png";
-  const oscarDataUrl = readPublicAsBase64(oscarFile, "image/png");
+  const supabaseDataUrl = readPublicAsBase64(
+    "supabase-logo-wordmark--dark.png",
+    "image/png"
+  );
+  const rrwDataUrl = readPublicAsBase64("brand-rrw.png", "image/png");
+  const osscarIconDataUrl = readPublicAsBase64("osscar-icon.png", "image/png");
 
   const orgLogoDataUrl = logoUrl ? await fetchImageAsDataUrl(logoUrl) : null;
 
   const fontData = await getInterBold();
 
-  // Name sizing
-  const displayName = name.length > 22 ? name.slice(0, 21) + "…" : name;
-  const nameFontSize =
-    displayName.length <= 6   ? 80
-    : displayName.length <= 9  ? 68
-    : displayName.length <= 13 ? 56
-    : displayName.length <= 17 ? 46
-    : displayName.length <= 22 ? 38
-    : 32;
+  const { label: rankLabel, color: rankColor, isTop } = getRankMeta(rank);
+  const nameFontSize = getNameFontSize(name);
+  // Big rank font scales down a bit when the number is longer.
+  const rankFontSize = isTop
+    ? rankLabel.length >= 3
+      ? 150
+      : 170
+    : 180;
 
-  const rankColor = rank ? getRankColor(rank) : "rgba(255,255,255,0.55)";
-  const topN = rank ? getTopN(rank) : null;
-  const rankDisplay = rank && rank <= 3 ? `#${rank}` : topN ? `Top ${topN}` : "—";
-  // Size rank font to string length so it never overflows its column
-  const rankFontSize = (() => {
-    const len = rankDisplay.length;
-    if (len <= 2) return 168;  // #1, #2, #3
-    if (len <= 5) return 112;  // Top 3
-    if (len <= 6) return 96;   // Top 10, Top 20, Top 50
-    if (len <= 7) return 82;   // Top 100, Top 500
-    return 72;                  // Top 1000
-  })();
-  const trophyHeight = rank && rank <= 3 ? 170 : 138;
-  const trophyWidth = Math.round(trophyHeight * 131 / 170);
+  // Deltas (may be null)
+  const starsDelta = formatDelta(
+    org.github_stars_start,
+    org.github_stars_end
+  );
+  const contribDelta = formatDelta(
+    org.github_contributors_start,
+    org.github_contributors_end
+  );
+  const downloadsDelta = formatDelta(
+    org.package_downloads_start,
+    org.package_downloads_end
+  );
 
-  // Tier badge colors
-  const tierColor = isScaling ? "#3ECF8E" : "#60A5FA";
-  const tierBg = isScaling ? "rgba(62,207,142,0.10)" : "rgba(96,165,250,0.10)";
-  const tierBorder = isScaling ? "rgba(62,207,142,0.32)" : "rgba(96,165,250,0.32)";
+  const hasStats = !!(starsDelta || contribDelta || downloadsDelta);
 
-  const glowColor =
-    rank === 1 ? "rgba(240,180,41,0.22)"
-    : rank === 2 ? "rgba(200,208,218,0.18)"
-    : rank === 3 ? "rgba(200,121,65,0.22)"
-    : isScaling  ? "rgba(62,207,142,0.18)"
-    : "rgba(96,165,250,0.18)";
+  // Tier chip palette — brand green for both (matches design system)
+  const chipBorder = "rgba(62,207,142,0.35)";
+  const chipBg = "rgba(62,207,142,0.10)";
+  const chipText = "#3ECF8E";
 
-  const rankGlow =
-    rank === 1 ? "rgba(240,180,41,0.35)"
-    : rank === 2 ? "rgba(200,208,218,0.28)"
-    : rank === 3 ? "rgba(200,121,65,0.35)"
-    : `${rankColor}40`;
-
-  const accentColor = rank && rank <= 3 ? rankColor : tierColor;
-  const bracketColor = rank && rank <= 3 ? `${rankColor}55` : "rgba(255,255,255,0.12)";
-
-  const CORNER_SIZE = 22;
-  const CORNER_THICKNESS = 1.5;
-  const CORNER_INSET = 32;
-
-  function CornerBracket({ pos }: { pos: "tl" | "tr" | "bl" | "br" }) {
-    const isTop = pos === "tl" || pos === "tr";
-    const isLeft = pos === "tl" || pos === "bl";
+  // Corner crosshair helper
+  const CORNER = 18;
+  function Corner({ pos }: { pos: "tl" | "tr" | "bl" | "br" }) {
+    const top = pos === "tl" || pos === "tr";
+    const left = pos === "tl" || pos === "bl";
     return (
       <div
         style={{
           position: "absolute",
-          ...(isTop ? { top: `${CORNER_INSET}px` } : { bottom: `${CORNER_INSET}px` }),
-          ...(isLeft ? { left: `${CORNER_INSET}px` } : { right: `${CORNER_INSET}px` }),
-          width: `${CORNER_SIZE}px`,
-          height: `${CORNER_SIZE}px`,
+          ...(top ? { top: "12px" } : { bottom: "12px" }),
+          ...(left ? { left: "12px" } : { right: "12px" }),
+          width: `${CORNER}px`,
+          height: `${CORNER}px`,
           display: "flex",
         }}
       >
         <div
           style={{
             position: "absolute",
-            ...(isTop ? { top: 0 } : { bottom: 0 }),
-            ...(isLeft ? { left: 0 } : { right: 0 }),
-            width: `${CORNER_SIZE}px`,
-            height: `${CORNER_THICKNESS}px`,
-            backgroundColor: bracketColor,
+            ...(top ? { top: 0 } : { bottom: 0 }),
+            ...(left ? { left: 0 } : { right: 0 }),
+            width: `${CORNER}px`,
+            height: "1px",
+            backgroundColor: "rgba(255,255,255,0.12)",
             display: "flex",
           }}
         />
         <div
           style={{
             position: "absolute",
-            ...(isTop ? { top: 0 } : { bottom: 0 }),
-            ...(isLeft ? { left: 0 } : { right: 0 }),
-            width: `${CORNER_THICKNESS}px`,
-            height: `${CORNER_SIZE}px`,
-            backgroundColor: bracketColor,
+            ...(top ? { top: 0 } : { bottom: 0 }),
+            ...(left ? { left: 0 } : { right: 0 }),
+            width: "1px",
+            height: `${CORNER}px`,
+            backgroundColor: "rgba(255,255,255,0.12)",
             display: "flex",
           }}
         />
+      </div>
+    );
+  }
+
+  // Little stat row (icon + value)
+  function Stat({
+    icon,
+    value,
+    isLast,
+  }: {
+    icon: React.ReactNode;
+    value: string;
+    isLast?: boolean;
+  }) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "11px",
+          flex: 1,
+          paddingRight: "22px",
+          borderRight: isLast ? "0" : "1px solid #2A2A2A",
+          paddingLeft: "22px",
+        }}
+      >
+        {icon}
+        <span
+          style={{
+            fontSize: "24px",
+            fontWeight: 700,
+            color: "#EDEDED",
+            letterSpacing: "-0.015em",
+            lineHeight: 1,
+            display: "flex",
+          }}
+        >
+          {value}
+        </span>
       </div>
     );
   }
@@ -136,388 +204,510 @@ export async function GET(request: NextRequest) {
           flexDirection: "column",
           width: "1200px",
           height: "630px",
-          background:
-            "radial-gradient(ellipse 120% 80% at 50% 0%, #171717 0%, #0a0a0a 55%, #050505 100%)",
+          backgroundColor: "#1c1c1c",
           fontFamily: "Inter, sans-serif",
-          overflow: "hidden",
           position: "relative",
+          color: "#EDEDED",
+          border: "1px solid #1f1f1f",
         }}
       >
-        {/* ── Hairline top accent ── */}
-        <div
-          style={{
-            height: "2px",
-            background: `linear-gradient(90deg, transparent 0%, ${accentColor}88 20%, ${accentColor} 50%, ${accentColor}88 80%, transparent 100%)`,
-            display: "flex",
-            flexShrink: 0,
-          }}
-        />
-
-        {/* ── Ambient glows, one per column ── */}
+        {/* Atmospheric accent on the rank side */}
         <div
           style={{
             position: "absolute",
-            top: "80px",
-            left: "-40px",
-            width: "680px",
-            height: "520px",
-            background: `radial-gradient(ellipse at center, rgba(255,255,255,0.06) 0%, transparent 65%)`,
-            display: "flex",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            top: "60px",
-            right: "-120px",
-            width: "740px",
-            height: "540px",
-            background: `radial-gradient(ellipse at center, ${glowColor} 0%, transparent 60%)`,
+            top: 0,
+            right: 0,
+            bottom: 0,
+            width: "58%",
+            background:
+              "radial-gradient(ellipse 70% 70% at 60% 55%, rgba(62,207,142,0.055), transparent 65%)",
             display: "flex",
           }}
         />
 
-        {/* ── Certificate corner brackets ── */}
-        <CornerBracket pos="tl" />
-        <CornerBracket pos="tr" />
+        {/* Corner crosshairs */}
+        <Corner pos="tl" />
+        <Corner pos="tr" />
+        <Corner pos="bl" />
+        <Corner pos="br" />
 
-        {/* ── Top header label ── */}
+        {/* ── Top bar with OSSCAR pill ── */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            paddingTop: "34px",
-            gap: "14px",
+            height: "74px",
+            borderBottom: "1px solid rgba(255,255,255,0.05)",
             flexShrink: 0,
             position: "relative",
           }}
         >
           <div
             style={{
-              width: "28px",
-              height: "1px",
-              backgroundColor: "rgba(255,255,255,0.22)",
               display: "flex",
-            }}
-          />
-          <span
-            style={{
-              color: "rgba(255,255,255,0.55)",
-              fontSize: "15px",
-              fontWeight: 700,
-              letterSpacing: "0.22em",
-              textTransform: "uppercase",
-              display: "flex",
-            }}
-          >
-            Index of fastest growing Open Source organizations · {QUARTER_LABEL}
-          </span>
-          <div
-            style={{
-              width: "28px",
-              height: "1px",
-              backgroundColor: "rgba(255,255,255,0.22)",
-              display: "flex",
-            }}
-          />
-        </div>
-
-        {/* ── Two-column body ── */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            flex: 1,
-            padding: "0 72px",
-            gap: "40px",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          {/* ── LEFT column: identity ── */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-start",
-              justifyContent: "center",
-              gap: "22px",
-              flex: "1 1 0",
-              minWidth: 0,
-            }}
-          >
-            {orgLogoDataUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={orgLogoDataUrl}
-                alt={displayName}
-                style={{
-                  width: "104px",
-                  height: "104px",
-                  borderRadius: "24px",
-                  objectFit: "contain",
-                  backgroundColor: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.14)",
-                  display: "flex",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: "104px",
-                  height: "104px",
-                  borderRadius: "24px",
-                  backgroundColor: "rgba(255,255,255,0.07)",
-                  border: "1px solid rgba(255,255,255,0.14)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "rgba(255,255,255,0.72)",
-                  fontSize: "48px",
-                  fontWeight: 800,
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-                }}
-              >
-                {name.charAt(0).toUpperCase()}
-              </div>
-            )}
-
-            <span
-              style={{
-                color: "white",
-                fontSize: `${nameFontSize}px`,
-                fontWeight: 800,
-                letterSpacing: "-0.04em",
-                lineHeight: 1.15,
-                display: "flex",
-                paddingBottom: "4px",
-              }}
-            >
-              {displayName}
-            </span>
-
-            {/* Tier badge */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                padding: "6px 14px",
-                borderRadius: "100px",
-                backgroundColor: tierBg,
-                border: `1px solid ${tierBorder}`,
-              }}
-            >
-              <div
-                style={{
-                  width: "5px",
-                  height: "5px",
-                  borderRadius: "100px",
-                  backgroundColor: tierColor,
-                  marginRight: "9px",
-                  display: "flex",
-                }}
-              />
-              <span
-                style={{
-                  color: tierColor,
-                  fontSize: "10px",
-                  fontWeight: 700,
-                  letterSpacing: "0.28em",
-                  textTransform: "uppercase",
-                  display: "flex",
-                }}
-              >
-                {tierLabel} Tier
-              </span>
-            </div>
-          </div>
-
-          {/* ── Vertical divider with diamond ── */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
               alignItems: "center",
-              justifyContent: "center",
               gap: "12px",
-              flexShrink: 0,
-              alignSelf: "stretch",
-              paddingTop: "30px",
-              paddingBottom: "30px",
-            }}
-          >
-            <div
-              style={{
-                width: "1px",
-                flex: 1,
-                background:
-                  "linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.22) 100%)",
-                display: "flex",
-              }}
-            />
-            <div
-              style={{
-                width: "6px",
-                height: "6px",
-                backgroundColor: accentColor,
-                transform: "rotate(45deg)",
-                opacity: 0.6,
-                display: "flex",
-              }}
-            />
-            <div
-              style={{
-                width: "1px",
-                flex: 1,
-                background:
-                  "linear-gradient(180deg, rgba(255,255,255,0.22) 0%, transparent 100%)",
-                display: "flex",
-              }}
-            />
-          </div>
-
-          {/* ── RIGHT column: rank ── */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "flex-start",
-              gap: "20px",
-              flex: "1 1 0",
-              minWidth: 0,
-              overflow: "hidden",
+              padding: "10px 20px",
+              border: "1px solid #2A2A2A",
+              borderRadius: "999px",
+              backgroundColor: "rgba(255,255,255,0.02)",
             }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={oscarDataUrl}
-              alt="Award"
-              style={{
-                height: `${trophyHeight}px`,
-                width: `${trophyWidth}px`,
-                objectFit: "contain",
-                display: "flex",
-                flexShrink: 0,
-              }}
+              src={osscarIconDataUrl}
+              alt=""
+              style={{ height: "18px", width: "18px", display: "flex" }}
             />
-
-            <div
+            <span
               style={{
+                fontSize: "14px",
+                letterSpacing: "0.26em",
+                textTransform: "uppercase",
+                color: "#A0A0A0",
+                fontWeight: 600,
                 display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-start",
-                gap: "6px",
               }}
             >
-              <span
-                style={{
-                  color: "rgba(255,255,255,0.5)",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  letterSpacing: "0.38em",
-                  textTransform: "uppercase",
-                  display: "flex",
-                }}
-              >
-                Ranked
-              </span>
-              <span
-                style={{
-                  color: rankColor,
-                  fontSize: `${rankFontSize}px`,
-                  fontWeight: 800,
-                  letterSpacing: "-0.06em",
-                  lineHeight: 1.05,
-                  display: "flex",
-                  textShadow: `0 0 48px ${rankGlow}`,
-                  paddingBottom: "3px",
-                }}
-              >
-                {rankDisplay}
-              </span>
-              <span
-                style={{
-                  color: "rgba(255,255,255,0.4)",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  letterSpacing: "0.04em",
-                  display: "flex",
-                  marginTop: "5px",
-                }}
-              >
-                of 80,000+ OSS organizations
-              </span>
-            </div>
+              OSSCAR
+            </span>
+            <span
+              style={{
+                color: "#6F6F6F",
+                opacity: 0.55,
+                display: "flex",
+              }}
+            >
+              ·
+            </span>
+            <span
+              style={{
+                fontSize: "14px",
+                letterSpacing: "0.26em",
+                textTransform: "uppercase",
+                color: "#A0A0A0",
+                fontWeight: 600,
+                display: "flex",
+              }}
+            >
+              {QUARTER_LABEL}
+            </span>
           </div>
         </div>
 
-        {/* ── Footer bar ── */}
+        {/* ── Body: two columns with divider ── */}
         <div
           style={{
             display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 64px",
-            height: "76px",
-            borderTop: "1px solid rgba(255,255,255,0.06)",
-            backgroundColor: "rgba(0,0,0,0.35)",
-            flexShrink: 0,
+            flex: 1,
             position: "relative",
+            zIndex: 1,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {/* LEFT — project identity */}
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              gap: "28px",
+              padding: "0 64px 0 72px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+              {orgLogoDataUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={orgLogoDataUrl}
+                  alt={name}
+                  style={{
+                    width: "104px",
+                    height: "104px",
+                    borderRadius: "22px",
+                    objectFit: "cover",
+                    border: "1px solid #2A2A2A",
+                    backgroundColor: "#181818",
+                    display: "flex",
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "104px",
+                    height: "104px",
+                    borderRadius: "22px",
+                    backgroundColor: "#181818",
+                    border: "1px solid #2A2A2A",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "rgba(255,255,255,0.72)",
+                    fontSize: "48px",
+                    fontWeight: 800,
+                  }}
+                >
+                  {name.charAt(0).toUpperCase()}
+                </div>
+              )}
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "14px",
+                  minWidth: 0,
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: `${nameFontSize}px`,
+                    fontWeight: 800,
+                    color: "#EDEDED",
+                    letterSpacing: "-0.035em",
+                    lineHeight: 0.95,
+                    maxWidth: "340px",
+                    display: "flex",
+                  }}
+                >
+                  {name}
+                </span>
+
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "9px",
+                    padding: "7px 13px",
+                    border: `1px solid ${chipBorder}`,
+                    backgroundColor: chipBg,
+                    borderRadius: "999px",
+                    alignSelf: "flex-start",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "6px",
+                      height: "6px",
+                      borderRadius: "999px",
+                      backgroundColor: chipText,
+                      display: "flex",
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      letterSpacing: "0.18em",
+                      textTransform: "uppercase",
+                      color: chipText,
+                      display: "flex",
+                    }}
+                  >
+                    {tierLabel}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <span
+              style={{
+                color: "#A0A0A0",
+                fontSize: "16px",
+                fontWeight: 500,
+                lineHeight: 1.5,
+                letterSpacing: "-0.005em",
+                maxWidth: "440px",
+                display: "flex",
+              }}
+            >
+              Ranked among the fastest-growing open source organizations of the
+              quarter.
+            </span>
+          </div>
+
+          {/* divider with centered brand dot */}
+          <div
+            style={{
+              width: "7px",
+              margin: "36px 0",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              position: "relative",
+            }}
+          >
+            <div
+              style={{
+                width: "1px",
+                flex: 1,
+                background:
+                  "linear-gradient(180deg, transparent, rgba(255,255,255,0.09) 30%, rgba(255,255,255,0.09) 100%)",
+                display: "flex",
+              }}
+            />
             <div
               style={{
                 width: "7px",
                 height: "7px",
-                borderRadius: "100px",
+                borderRadius: "999px",
                 backgroundColor: "#3ECF8E",
-                boxShadow: "0 0 10px #3ECF8Eaa",
+                boxShadow:
+                  "0 0 0 4px rgba(62,207,142,0.14), 0 0 18px rgba(62,207,142,0.4)",
+                display: "flex",
+                flexShrink: 0,
+              }}
+            />
+            <div
+              style={{
+                width: "1px",
+                flex: 1,
+                background:
+                  "linear-gradient(180deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.09) 70%, transparent)",
                 display: "flex",
               }}
             />
+          </div>
+
+          {/* RIGHT — rank + stats */}
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              gap: "36px",
+              padding: "0 72px 0 64px",
+            }}
+          >
+            {/* Rank block */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+              }}
+            >
+              {isTop ? (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "4px",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "28px",
+                      fontWeight: 700,
+                      letterSpacing: "0.2em",
+                      textTransform: "uppercase",
+                      color: "rgba(255,255,255,0.55)",
+                      display: "flex",
+                      lineHeight: 1,
+                    }}
+                  >
+                    TOP
+                  </span>
+                  <span
+                    style={{
+                      fontSize: `${rankFontSize}px`,
+                      fontWeight: 800,
+                      letterSpacing: "-0.06em",
+                      lineHeight: 1,
+                      color: rankColor,
+                      display: "flex",
+                      paddingBottom: "6px",
+                    }}
+                  >
+                    {rankLabel}
+                  </span>
+                </div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <span
+                    style={{
+                      fontSize: "68px",
+                      fontWeight: 600,
+                      color: "#6F6F6F",
+                      letterSpacing: "-0.02em",
+                      marginRight: "8px",
+                      lineHeight: 1,
+                      display: "flex",
+                    }}
+                  >
+                    #
+                  </span>
+                  <span
+                    style={{
+                      fontSize: `${rankFontSize}px`,
+                      fontWeight: 800,
+                      letterSpacing: "-0.065em",
+                      lineHeight: 1,
+                      color: rankColor,
+                      display: "flex",
+                      paddingBottom: "6px",
+                    }}
+                  >
+                    {rankLabel.replace("#", "")}
+                  </span>
+                </div>
+              )}
+              <span
+                style={{
+                  color: "#A0A0A0",
+                  fontSize: "16px",
+                  fontWeight: 500,
+                  lineHeight: 1.4,
+                  display: "flex",
+                }}
+              >
+                of 40,000+ Open Source GitHub organizations
+              </span>
+            </div>
+
+            {/* Stats */}
+            {hasStats && (
+              <div
+                style={{
+                  display: "flex",
+                  borderTop: "1px solid #2A2A2A",
+                  paddingTop: "22px",
+                  maxWidth: "500px",
+                }}
+              >
+                {starsDelta && (
+                  <Stat
+                    icon={
+                      <svg
+                        width="22"
+                        height="22"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#A0A0A0"
+                        strokeWidth="1.7"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polygon points="12 2 15 9 22 9.5 16.5 14 18.5 21 12 17 5.5 21 7.5 14 2 9.5 9 9" />
+                      </svg>
+                    }
+                    value={starsDelta}
+                  />
+                )}
+                {contribDelta && (
+                  <Stat
+                    icon={
+                      <svg
+                        width="22"
+                        height="22"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#A0A0A0"
+                        strokeWidth="1.7"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="9" cy="8" r="3.2" />
+                        <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
+                        <circle cx="17" cy="7" r="2.6" />
+                        <path d="M15.5 13.2c3.2.6 5.5 3.1 5.5 6.3" />
+                      </svg>
+                    }
+                    value={contribDelta}
+                  />
+                )}
+                {downloadsDelta && (
+                  <Stat
+                    icon={
+                      <svg
+                        width="22"
+                        height="22"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#A0A0A0"
+                        strokeWidth="1.7"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M12 3v12" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <path d="M4 19h16" />
+                      </svg>
+                    }
+                    value={downloadsDelta}
+                    isLast
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Footer ── */}
+        <div
+          style={{
+            height: "72px",
+            padding: "0 48px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderTop: "1px solid #2A2A2A",
+            backgroundColor: "rgba(10,10,10,0.4)",
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={osscarIconDataUrl}
+              alt=""
+              style={{ height: "18px", opacity: 0.6 }}
+            />
             <span
               style={{
-                color: "rgba(255,255,255,0.68)",
-                fontSize: "17px",
-                fontWeight: 700,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
+                color: "#A0A0A0",
+                letterSpacing: "0.22em",
+                fontWeight: 600,
+                fontSize: "12px",
                 display: "flex",
               }}
             >
-              osscar.dev
+              OSSCAR.DEV
             </span>
           </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: "18px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={supabaseDataUrl}
-              alt="Supabase"
-              style={{ height: "30px", opacity: 0.75 }}
+              alt="supabase"
+              style={{ height: "22px", opacity: 0.9 }}
             />
-            <span
-              style={{
-                color: "rgba(255,255,255,0.28)",
-                fontSize: "15px",
-                fontWeight: 400,
-                display: "flex",
-              }}
-            >
+            <span style={{ color: "#6F6F6F", fontSize: "14px", display: "flex" }}>
               ×
             </span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={commitLogoDataUrl}
-              alt=">commit"
-              style={{ height: "32px", opacity: 0.78 }}
-            />
+            <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={rrwDataUrl}
+                alt=""
+                style={{ height: "20px", display: "flex" }}
+              />
+              <span
+                style={{
+                  color: "#EDEDED",
+                  fontWeight: 700,
+                  fontSize: "14px",
+                  letterSpacing: "-0.01em",
+                  display: "flex",
+                }}
+              >
+                &gt;commit
+              </span>
+            </div>
           </div>
         </div>
       </div>

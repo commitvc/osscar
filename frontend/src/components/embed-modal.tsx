@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { X, Check, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -11,25 +11,36 @@ interface EmbedModalProps {
 }
 
 type Tab = "html" | "markdown";
+type Variant = "default" | "light" | "compact" | "compact-light";
+
+const VARIANTS: { key: Variant; label: string; size: string }[] = [
+  { key: "default", label: "Default", size: "360 × 100" },
+  { key: "light", label: "Light", size: "360 × 100" },
+  { key: "compact", label: "Compact", size: "260 × 64" },
+  { key: "compact-light", label: "Compact Light", size: "260 × 64" },
+];
 
 export function EmbedModal({ name, slug, onClose }: EmbedModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>("html");
+  const [variant, setVariant] = useState<Variant>("default");
   const [copyState, setCopyState] = useState<"idle" | "copied">("idle");
-  const [badgeLoaded, setBadgeLoaded] = useState(false);
+  const [loadedVariants, setLoadedVariants] = useState<Set<Variant>>(new Set());
   const overlayRef = useRef<HTMLDivElement>(null);
+  // Stable cache-buster so the preview images don't reload on every keystroke
+  const nonce = useRef(Date.now()).current;
 
-  const badgeUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/api/badge?slug=${slug}`
-      : `/api/badge?slug=${slug}`;
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : "";
 
-  // Preview uses a cache-busted URL so the modal always reflects the live badge
-  const badgePreviewUrl = `${badgeUrl}&_t=${Date.now()}`;
+  const badgeUrl = useMemo(
+    () =>
+      variant === "default"
+        ? `${origin}/api/badge?slug=${slug}`
+        : `${origin}/api/badge?slug=${slug}&variant=${variant}`,
+    [origin, slug, variant]
+  );
 
-  const pageUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/org/${slug}`
-      : `/org/${slug}`;
+  const pageUrl = `${origin}/org/${slug}`;
 
   const snippets: Record<Tab, string> = {
     html: `<a href="${pageUrl}" target="_blank" rel="noopener noreferrer">\n  <img src="${badgeUrl}" alt="Featured on OSSCAR" />\n</a>`,
@@ -48,10 +59,10 @@ export function EmbedModal({ name, slug, onClose }: EmbedModalProps) {
     }
   }
 
-  // Reset copy state when tab changes
+  // Reset copy state when tab or variant changes
   useEffect(() => {
     setCopyState("idle");
-  }, [activeTab]);
+  }, [activeTab, variant]);
 
   // Close on Escape + lock body scroll
   useEffect(() => {
@@ -66,6 +77,9 @@ export function EmbedModal({ name, slug, onClose }: EmbedModalProps) {
     };
   }, [onClose]);
 
+  const activeVariant = VARIANTS.find((v) => v.key === variant)!;
+  const isCompact = variant === "compact" || variant === "compact-light";
+
   return (
     <div
       ref={overlayRef}
@@ -76,7 +90,7 @@ export function EmbedModal({ name, slug, onClose }: EmbedModalProps) {
       }}
     >
       <div
-        className="relative w-full max-w-[560px] rounded-2xl border border-white/10 bg-[#111111]"
+        className="relative w-full max-w-[620px] rounded-2xl border border-white/10 bg-[#111111]"
         style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.04), 0 32px 64px rgba(0,0,0,0.6)" }}
       >
         {/* Header */}
@@ -99,19 +113,24 @@ export function EmbedModal({ name, slug, onClose }: EmbedModalProps) {
 
         {/* Badge preview */}
         <div className="px-6 pt-5 pb-4">
-          <p className="font-mono text-[0.55rem] uppercase tracking-widest text-muted-foreground/35 mb-3">
-            Preview
-          </p>
+          <div className="flex items-baseline justify-between mb-3">
+            <p className="font-mono text-[0.55rem] uppercase tracking-widest text-muted-foreground/35">
+              Preview · {activeVariant.label}
+            </p>
+            <p className="font-mono text-[0.55rem] uppercase tracking-widest text-muted-foreground/25">
+              {activeVariant.size}
+            </p>
+          </div>
           <div
             className="flex items-center justify-center rounded-xl border border-white/8 bg-white/2 py-6"
             style={{ minHeight: "112px" }}
           >
-            {!badgeLoaded && (
+            {!loadedVariants.has(variant) && (
               <div className="flex gap-1.5">
                 {[0, 1, 2].map((i) => (
                   <div
                     key={i}
-                    className="w-1.5 h-1.5 rounded-full bg-brand/40 animate-pulse"
+                    className="w-1.5 h-1.5 rounded-full animate-pulse bg-brand/40"
                     style={{ animationDelay: `${i * 0.15}s` }}
                   />
                 ))}
@@ -119,16 +138,53 @@ export function EmbedModal({ name, slug, onClose }: EmbedModalProps) {
             )}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={badgePreviewUrl}
-              alt="OSSCAR badge preview"
-              width={340}
-              height={100}
+              src={`${badgeUrl}${badgeUrl.includes("?") ? "&" : "?"}_t=${nonce}`}
+              alt={`OSSCAR badge — ${activeVariant.label}`}
+              width={isCompact ? 260 : 360}
+              height={isCompact ? 64 : 100}
               className={cn(
                 "rounded-lg transition-opacity duration-300",
-                badgeLoaded ? "opacity-100" : "opacity-0 absolute"
+                loadedVariants.has(variant) ? "opacity-100" : "opacity-0 absolute"
               )}
-              onLoad={() => setBadgeLoaded(true)}
+              onLoad={() =>
+                setLoadedVariants((prev) => {
+                  if (prev.has(variant)) return prev;
+                  const next = new Set(prev);
+                  next.add(variant);
+                  return next;
+                })
+              }
             />
+          </div>
+
+          {/* Variant picker */}
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            {VARIANTS.map((v) => (
+              <button
+                key={v.key}
+                onClick={() => setVariant(v.key)}
+                className={cn(
+                  "flex items-center justify-between gap-2 px-3 py-2 rounded-lg border transition-all cursor-pointer text-left",
+                  variant === v.key
+                    ? "border-white/25 bg-white/8"
+                    : "border-white/8 bg-white/3 hover:border-white/15 hover:bg-white/5"
+                )}
+              >
+                <span
+                  className={cn(
+                    "font-mono text-[0.65rem] uppercase tracking-widest",
+                    variant === v.key
+                      ? "text-foreground"
+                      : "text-muted-foreground/60"
+                  )}
+                >
+                  {v.label}
+                </span>
+                <span className="font-mono text-[0.55rem] tracking-wider text-muted-foreground/30">
+                  {v.size}
+                </span>
+              </button>
+            ))}
           </div>
         </div>
 
