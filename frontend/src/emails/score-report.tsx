@@ -38,30 +38,62 @@ export type ScoreReportEmailProps = {
 };
 
 type Metric = {
-  value: number | null;
+  /** Quarter-start value; paired with `end` to compute the displayed delta. */
+  start: number | null;
+  /** Quarter-end value; paired with `start` to compute the displayed delta. */
+  end: number | null;
   /** Methodology growth rate (e.g. 0.25 → "+0.3×"). */
   growthRate: number | null;
 };
 
 // ─── Helpers (inlined; email bundle is self-contained) ───────────────────────
 
-function formatCompact(n: number | null): string {
-  if (n == null) return "—";
-  if (n >= 1_000_000) {
-    const v = n / 1_000_000;
-    return v % 1 === 0 ? `${v}M` : `${v.toFixed(1)}M`;
+/** "+5.9k", "+1.2M", "+240" — mirrors the share-image delta format. */
+function formatDelta(start: number | null, end: number | null): string | null {
+  if (start == null || end == null) return null;
+  const delta = end - start;
+  const abs = Math.abs(delta);
+  let value: number;
+  let suffix = "";
+  if (abs >= 1_000_000) {
+    value = delta / 1_000_000;
+    suffix = "M";
+  } else if (abs >= 1_000) {
+    value = delta / 1_000;
+    suffix = "k";
+  } else {
+    value = delta;
   }
-  if (n >= 1_000) {
-    const v = n / 1_000;
-    return v % 1 === 0 ? `${v}K` : `${v.toFixed(1)}K`;
-  }
-  return String(Math.round(n));
+  let str = Math.abs(value) >= 100 ? value.toFixed(0) : value.toFixed(1);
+  if (str.endsWith(".0")) str = str.slice(0, -2);
+  const sign = delta > 0 ? "+" : "";
+  return `${sign}${str}${suffix}`;
 }
 
-function formatGrowthRate(rate: number | null): string {
-  if (rate == null) return "—";
-  const sign = rate >= 0 ? "+" : "";
-  return `${sign}${rate.toFixed(1)}×`;
+function formatGrowthRate(rate: number): string {
+  return `+${rate.toFixed(1)}×`;
+}
+
+/**
+ * Bucketed "Top N%" label — more share-worthy than a raw rank. Buckets are
+ * 0.1%, 1%, 5%, then every 10% up to 100%. Actual percentile is rounded up
+ * to the next bucket, so rank 7 of 1,000 (0.7%) → "Top 1%".
+ */
+const TOP_PCT_BUCKETS = [0.1, 1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100] as const;
+
+function formatTopPercentile(rank: number, total: number): string {
+  if (!total || total <= 0) return `#${rank.toLocaleString("en-US")}`;
+  const pct = (rank / total) * 100;
+  const bucket = TOP_PCT_BUCKETS.find((b) => pct <= b) ?? 100;
+  const pretty = bucket < 1 ? String(bucket) : String(Math.round(bucket));
+  return `Top ${pretty}%`;
+}
+
+/** Font size for the hero rank number — varies so the label fits the column. */
+function topLabelFontSize(label: string): number {
+  if (label.length <= 6) return 44; // "Top 1%", "Top 5%"
+  if (label.length === 7) return 38; // "Top 10%" … "Top 90%"
+  return 32;                         // "Top 0.1%", "Top 100%"
 }
 
 function rankColor(rank: number): string {
@@ -180,19 +212,24 @@ function LinkPill({
 
 function MetricCard({
   label,
-  value,
+  start,
+  end,
   growth,
   iconSvg,
 }: {
   label: string;
-  value: number | null;
+  start: number | null;
+  end: number | null;
   growth: number | null;
   iconSvg: React.ReactNode;
 }) {
-  const hasData = value != null;
-  const isPositive = (growth ?? 0) >= 0;
-  const pillBg = growth == null ? "transparent" : isPositive ? COLORS.brandPillBg : COLORS.dangerDim;
-  const pillFg = growth == null ? COLORS.fgSubtle : isPositive ? COLORS.brand : COLORS.danger;
+  // Mirror the share-image metric section: show the quarterly change, not the
+  // cumulative total. The growth pill is hidden unless the real (non-padded)
+  // rate is strictly positive — same guard as the org detail page, so we
+  // never surface negative multipliers for cumulative metrics.
+  const delta = formatDelta(start, end);
+  const hasData = delta != null;
+  const showRate = growth != null && growth > 0;
 
   return (
     <td
@@ -234,7 +271,7 @@ function MetricCard({
         </span>
       </div>
 
-      {/* Value */}
+      {/* Quarterly change */}
       <div
         style={{
           fontFamily: MONO_STACK,
@@ -245,19 +282,19 @@ function MetricCard({
           letterSpacing: "-0.01em",
         }}
       >
-        {formatCompact(value)}
+        {delta ?? "—"}
       </div>
 
       {/* Growth pill */}
-      {growth != null && (
+      {showRate && (
         <div style={{ marginTop: 10 }}>
           <span
             style={{
               display: "inline-block",
               padding: "3px 7px",
               borderRadius: 4,
-              backgroundColor: pillBg,
-              color: pillFg,
+              backgroundColor: COLORS.brandPillBg,
+              color: COLORS.brand,
               fontFamily: MONO_STACK,
               fontSize: 12,
               fontWeight: 600,
@@ -279,6 +316,7 @@ export default function ScoreReportEmail(props: ScoreReportEmailProps) {
     quarterLabel,
     division,
     divisionRank,
+    divisionSize,
     ownerLogin,
     ownerName,
     ownerLogo,
@@ -289,12 +327,12 @@ export default function ScoreReportEmail(props: ScoreReportEmailProps) {
     contributors,
     downloads,
   } = props;
-  // divisionSize is still accepted for forward-compat (the Supabase row and
-  // the API pass it through) but we no longer display the "out of N" phrase.
 
   const displayName = ownerName?.trim() || ownerLogin;
   const rankHex = rankColor(divisionRank);
   const divisionLabel = division === "scaling" ? "Scaling" : "Emerging";
+  const topPctLabel = formatTopPercentile(divisionRank, divisionSize);
+  const topPctFontSize = topLabelFontSize(topPctLabel);
 
   return (
     <EmailFrame
@@ -367,7 +405,7 @@ export default function ScoreReportEmail(props: ScoreReportEmailProps) {
             style={{
               verticalAlign: "top",
               textAlign: "right",
-              width: 120,
+              width: 160,
               paddingLeft: 16,
               borderLeft: `1px solid ${COLORS.border}`,
             }}
@@ -376,14 +414,15 @@ export default function ScoreReportEmail(props: ScoreReportEmailProps) {
               className="osscar-hero-rank-num"
               style={{
                 fontFamily: MONO_STACK,
-                fontSize: 44,
+                fontSize: topPctFontSize,
                 fontWeight: 700,
                 color: rankHex,
                 lineHeight: 1,
                 letterSpacing: "-0.02em",
+                whiteSpace: "nowrap",
               }}
             >
-              #{divisionRank.toLocaleString("en-US")}
+              {topPctLabel}
             </div>
             <div
               style={{
@@ -395,7 +434,7 @@ export default function ScoreReportEmail(props: ScoreReportEmailProps) {
                 color: COLORS.fgFaint,
               }}
             >
-              rank · {divisionLabel}
+              percentile · {divisionLabel}
             </div>
           </Column>
         </Row>
@@ -443,11 +482,8 @@ export default function ScoreReportEmail(props: ScoreReportEmailProps) {
             color: COLORS.fgSubtle,
           }}
         >
-          Ranked #{divisionRank.toLocaleString("en-US")} in the{" "}
-          <span style={{ color: COLORS.brand, fontWeight: 600 }}>
-            {divisionLabel}
-          </span>{" "}
-          division for {quarterLabel}.
+          Ranked #{divisionRank.toLocaleString("en-US")} out of 40,000+
+          organizations for {quarterLabel}.
         </Text>
       </Section>
 
@@ -489,19 +525,22 @@ export default function ScoreReportEmail(props: ScoreReportEmailProps) {
             <tr>
               <MetricCard
                 label="GitHub Stars"
-                value={stars.value}
+                start={stars.start}
+                end={stars.end}
                 growth={stars.growthRate}
                 iconSvg={StarIcon}
               />
               <MetricCard
                 label="Contributors"
-                value={contributors.value}
+                start={contributors.start}
+                end={contributors.end}
                 growth={contributors.growthRate}
                 iconSvg={UsersIcon}
               />
               <MetricCard
                 label="Pkg Downloads"
-                value={downloads.value}
+                start={downloads.start}
+                end={downloads.end}
                 growth={downloads.growthRate}
                 iconSvg={PackageIcon}
               />
@@ -563,7 +602,7 @@ ScoreReportEmail.PreviewProps = {
     "The open-source Firebase alternative — Postgres, Auth, Storage, and Edge Functions.",
   ownerUrl: "https://github.com/supabase",
   homepageUrl: "https://supabase.com",
-  stars: { value: 92_100, growthRate: 0.18 },
-  contributors: { value: 2_410, growthRate: 0.21 },
-  downloads: { value: 1_230_000, growthRate: 0.35 },
+  stars: { start: 78_000, end: 92_100, growthRate: 0.18 },
+  contributors: { start: 1_990, end: 2_410, growthRate: 0.21 },
+  downloads: { start: 912_000, end: 1_230_000, growthRate: 0.35 },
 } satisfies ScoreReportEmailProps;
