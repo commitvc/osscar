@@ -115,19 +115,21 @@
         "url": "https://github.com/paperclipai/paperclip",
         "name": "paperclip",
         "forks": 9479,
-        "stars": 55804,
+        "stars": 47294,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Open-source orchestration for zero-human companies"
+        "description": "Open-source orchestration for zero-human companies",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/paperclipai/companies",
         "name": "companies",
         "forks": 39,
-        "stars": 130,
+        "stars": 292,
         "license": null,
         "language": null,
-        "description": null
+        "description": null,
+        "stars_start": 0
       }
     ]
   },
@@ -251,10 +253,11 @@
         "url": "https://github.com/zeroclaw-labs/zeroclaw",
         "name": "zeroclaw",
         "forks": 4394,
-        "stars": 30325,
+        "stars": 29271,
         "license": "Apache License 2.0",
         "language": "Rust",
-        "description": "Fast, small, and fully autonomous AI personal assistant infrastructure, ANY OS, ANY PLATFORM — deploy anywhere, swap anything 🦀"
+        "description": "Fast, small, and fully autonomous AI personal assistant infrastructure, ANY OS, ANY PLATFORM — deploy anywhere, swap anything 🦀",
+        "stars_start": 0
       }
     ]
   },
@@ -426,28 +429,31 @@
         "url": "https://github.com/lukilabs/beautiful-mermaid",
         "name": "beautiful-mermaid",
         "forks": 251,
-        "stars": 8244,
+        "stars": 4140,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": null
+        "description": null,
+        "stars_start": 0
       },
       {
         "url": "https://github.com/lukilabs/craft-agents-oss",
         "name": "craft-agents-oss",
         "forks": 645,
-        "stars": 4373,
+        "stars": 3522,
         "license": "Apache License 2.0",
         "language": "TypeScript",
-        "description": null
+        "description": null,
+        "stars_start": 0
       },
       {
         "url": "https://github.com/lukilabs/beautiful-mermaid-swift",
         "name": "beautiful-mermaid-swift",
         "forks": 11,
-        "stars": 291,
+        "stars": 296,
         "license": "MIT License",
         "language": "Swift",
-        "description": "Native Mermaid diagram renderer for Swift"
+        "description": "Native Mermaid diagram renderer for Swift",
+        "stars_start": 0
       }
     ]
   },
@@ -586,10 +592,11 @@
         "url": "https://github.com/aden-hive/hive",
         "name": "hive",
         "forks": 5609,
-        "stars": 10089,
+        "stars": 10444,
         "license": "Apache License 2.0",
         "language": "Python",
-        "description": "Multi-Agent Harness for Production AI"
+        "description": "Multi-Agent Harness for Production AI",
+        "stars_start": 0
       }
     ]
   },
@@ -789,28 +796,31 @@
         "url": "https://github.com/gsd-build/get-shit-done",
         "name": "get-shit-done",
         "forks": 4593,
-        "stars": 54693,
+        "stars": 48272,
         "license": "MIT License",
         "language": "JavaScript",
-        "description": "A light-weight and powerful meta-prompting, context engineering and spec-driven development system for Claude Code by TÂCHES."
+        "description": "A light-weight and powerful meta-prompting, context engineering and spec-driven development system for Claude Code by TÂCHES.",
+        "stars_start": 225
       },
       {
         "url": "https://github.com/gsd-build/gsd-2",
         "name": "gsd-2",
         "forks": 625,
-        "stars": 6126,
+        "stars": 4405,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "A powerful meta-prompting, context engineering and spec-driven development system that enables agents to work for long periods of time autonomously without losing track of the big picture"
+        "description": "A powerful meta-prompting, context engineering and spec-driven development system that enables agents to work for long periods of time autonomously without losing track of the big picture",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/gsd-build/gsd-browser",
         "name": "gsd-browser",
         "forks": 12,
-        "stars": 186,
+        "stars": 136,
         "license": "Apache License 2.0",
         "language": "Rust",
-        "description": "A fast, native browser automation CLI built from the ground up for AI agents, powered by Chrome DevTools Protocol. 63 commands covering navigation, interaction, screenshots, accessibility, network mocking, visual diffing, test generation, and more — all from a single binary."
+        "description": "A fast, native browser automation CLI built from the ground up for AI agents, powered by Chrome DevTools Protocol. 63 commands covering navigation, interaction, screenshots, accessibility, network mocking, visual diffing, test generation, and more — all from a single binary.",
+        "stars_start": 0
       }
     ]
   },
@@ -933,10 +943,11 @@
         "url": "https://github.com/qwibitai/nanoclaw",
         "name": "nanoclaw",
         "forks": 12303,
-        "stars": 27487,
+        "stars": 26851,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "A lightweight alternative to OpenClaw that runs in containers for security. Connects to WhatsApp, Telegram, Slack, Discord, Gmail and other messaging apps,, has memory, scheduled jobs, and runs directly on Anthropic's Agents SDK"
+        "description": "A lightweight alternative to OpenClaw that runs in containers for security. Connects to WhatsApp, Telegram, Slack, Discord, Gmail and other messaging apps,, has memory, scheduled jobs, and runs directly on Anthropic's Agents SDK",
+        "stars_start": 0
       }
     ]
   },
@@ -1112,10 +1123,11 @@
         "url": "https://github.com/npmx-dev/npmx.dev",
         "name": "npmx.dev",
         "forks": 425,
-        "stars": 3147,
+        "stars": 3042,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "a fast, modern browser for the npm registry"
+        "description": "a fast, modern browser for the npm registry",
+        "stars_start": 0
       }
     ]
   },
@@ -1246,19 +1258,21 @@
         "url": "https://github.com/rorkai/App-Store-Connect-CLI",
         "name": "App-Store-Connect-CLI",
         "forks": 337,
-        "stars": 3973,
+        "stars": 3650,
         "license": "MIT License",
         "language": "Go",
-        "description": "Fast, scriptable CLI for the App Store Connect API. Automate TestFlight, builds, submissions, signing, analytics, screenshots, subscriptions, and more. JSON-first, no interactive prompts"
+        "description": "Fast, scriptable CLI for the App Store Connect API. Automate TestFlight, builds, submissions, signing, analytics, screenshots, subscriptions, and more. JSON-first, no interactive prompts",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/rorkai/app-store-connect-cli-skills",
         "name": "app-store-connect-cli-skills",
         "forks": 41,
-        "stars": 751,
+        "stars": 689,
         "license": "MIT License",
         "language": null,
-        "description": "Skills to automate app store deployed and everything related to it using the asc cli"
+        "description": "Skills to automate app store deployed and everything related to it using the asc cli",
+        "stars_start": 0
       }
     ]
   },
@@ -1357,28 +1371,31 @@
         "url": "https://github.com/RightNow-AI/openfang",
         "name": "openfang",
         "forks": 2120,
-        "stars": 16774,
+        "stars": 16259,
         "license": "Apache License 2.0",
         "language": "Rust",
-        "description": "Open-source Agent Operating System"
+        "description": "Open-source Agent Operating System",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/RightNow-AI/picolm",
         "name": "picolm",
         "forks": 114,
-        "stars": 1071,
+        "stars": 1471,
         "license": "MIT License",
         "language": "C",
-        "description": "Run a 1-billion parameter LLM on a $10 board with 256MB RAM"
+        "description": "Run a 1-billion parameter LLM on a $10 board with 256MB RAM",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/RightNow-AI/autokernel",
         "name": "autokernel",
         "forks": 63,
-        "stars": 741,
+        "stars": 925,
         "license": "MIT License",
         "language": "Python",
-        "description": "Autoresearch for GPU kernels. Give it any PyTorch model, go to sleep, wake up to optimized Triton kernels."
+        "description": "Autoresearch for GPU kernels. Give it any PyTorch model, go to sleep, wake up to optimized Triton kernels.",
+        "stars_start": 0
       }
     ]
   },
@@ -1485,10 +1502,11 @@
         "url": "https://github.com/PeonPing/peon-ping",
         "name": "peon-ping",
         "forks": 317,
-        "stars": 4511,
+        "stars": 4354,
         "license": "MIT License",
         "language": "Shell",
-        "description": "Warcraft III Peon voice notifications (+ more!) for Claude Code, Codex, IDEs, and any AI agent. Stop babysitting your terminal. Employ a Peon today."
+        "description": "Warcraft III Peon voice notifications (+ more!) for Claude Code, Codex, IDEs, and any AI agent. Stop babysitting your terminal. Employ a Peon today.",
+        "stars_start": 0
       }
     ]
   },
@@ -1636,19 +1654,21 @@
         "url": "https://github.com/rtk-ai/rtk",
         "name": "rtk",
         "forks": 1701,
-        "stars": 29200,
+        "stars": 17684,
         "license": "Apache License 2.0",
         "language": "Rust",
-        "description": "CLI proxy that reduces LLM token consumption by 60-90% on common dev commands. Single Rust binary, zero dependencies"
+        "description": "CLI proxy that reduces LLM token consumption by 60-90% on common dev commands. Single Rust binary, zero dependencies",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/rtk-ai/icm",
         "name": "icm",
         "forks": 15,
-        "stars": 208,
+        "stars": 143,
         "license": "Apache License 2.0",
         "language": "Rust",
-        "description": "Permanent memory for AI agents. Single binary, zero dependencies, MCP native."
+        "description": "Permanent memory for AI agents. Single binary, zero dependencies, MCP native.",
+        "stars_start": 0
       }
     ]
   },
@@ -1800,19 +1820,21 @@
         "url": "https://github.com/DingTalk-Real-AI/dingtalk-openclaw-connector",
         "name": "dingtalk-openclaw-connector",
         "forks": 186,
-        "stars": 2015,
+        "stars": 2012,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Official OpenClaw DingTalk channel plugin | 钉钉官方 OpenClaw 插件"
+        "description": "Official OpenClaw DingTalk channel plugin | 钉钉官方 OpenClaw 插件",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/DingTalk-Real-AI/dingtalk-workspace-cli",
         "name": "dingtalk-workspace-cli",
         "forks": 90,
-        "stars": 1599,
+        "stars": 1642,
         "license": "Apache License 2.0",
         "language": "Go",
-        "description": "DingTalk Workspace is an officially open-sourced cross-platform CLI tool from DingTalk. It unifies DingTalk’s full suite of product capabilities into a single package, is designed for both human users and AI agent scenarios."
+        "description": "DingTalk Workspace is an officially open-sourced cross-platform CLI tool from DingTalk. It unifies DingTalk’s full suite of product capabilities into a single package, is designed for both human users and AI agent scenarios.",
+        "stars_start": 0
       }
     ]
   },
@@ -1928,19 +1950,21 @@
         "url": "https://github.com/CortexReach/memory-lancedb-pro",
         "name": "memory-lancedb-pro",
         "forks": 697,
-        "stars": 4226,
+        "stars": 3969,
         "license": null,
         "language": "TypeScript",
-        "description": "Enhanced LanceDB memory plugin for OpenClaw — Hybrid Retrieval (Vector + BM25), Cross-Encoder Rerank, Multi-Scope Isolation, Management CLI"
+        "description": "Enhanced LanceDB memory plugin for OpenClaw — Hybrid Retrieval (Vector + BM25), Cross-Encoder Rerank, Multi-Scope Isolation, Management CLI",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/CortexReach/memory-lancedb-pro-skill",
         "name": "memory-lancedb-pro-skill",
         "forks": 22,
-        "stars": 192,
+        "stars": 213,
         "license": null,
         "language": null,
-        "description": "Claude Code skill for memory-lancedb-pro — production-grade long-term memory plugin for OpenClaw"
+        "description": "Claude Code skill for memory-lancedb-pro — production-grade long-term memory plugin for OpenClaw",
+        "stars_start": 0
       }
     ]
   },
@@ -2128,37 +2152,41 @@
         "url": "https://github.com/BlockRunAI/ClawRouter",
         "name": "ClawRouter",
         "forks": 543,
-        "stars": 6186,
+        "stars": 6867,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "The agent-native LLM router for OpenClaw. 41+ models, <1ms routing, USDC payments on Base & Solana via x402."
-      },
-      {
-        "url": "https://github.com/BlockRunAI/blockrun-mcp",
-        "name": "blockrun-mcp",
-        "forks": 33,
-        "stars": 357,
-        "license": "MIT License",
-        "language": "TypeScript",
-        "description": "Live data for AI agents — search, research, markets, crypto, X/Twitter. Pay-per-call via x402 micropayments."
+        "description": "The agent-native LLM router for OpenClaw. 41+ models, <1ms routing, USDC payments on Base & Solana via x402.",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/BlockRunAI/franklin",
         "name": "franklin",
         "forks": 28,
-        "stars": 278,
+        "stars": 267,
         "license": "Apache License 2.0",
         "language": "TypeScript",
-        "description": "Franklin — The AI agent with a wallet. The first AI agent that can actually spend USDC to get real work done. Pay per action, no subscriptions."
+        "description": "Franklin — The AI agent with a wallet. The first AI agent that can actually spend USDC to get real work done. Pay per action, no subscriptions.",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/BlockRunAI/awesome-OpenClaw-Money-Maker",
         "name": "awesome-OpenClaw-Money-Maker",
         "forks": 26,
-        "stars": 160,
+        "stars": 212,
         "license": null,
         "language": null,
-        "description": "🦞💰 Curated list of ways to make money with OpenClaw - automations, skills, services, and strategies"
+        "description": "🦞💰 Curated list of ways to make money with OpenClaw - automations, skills, services, and strategies",
+        "stars_start": 0
+      },
+      {
+        "url": "https://github.com/BlockRunAI/blockrun-mcp",
+        "name": "blockrun-mcp",
+        "forks": 33,
+        "stars": 126,
+        "license": "MIT License",
+        "language": "TypeScript",
+        "description": "Live data for AI agents — search, research, markets, crypto, X/Twitter. Pay-per-call via x402 micropayments.",
+        "stars_start": 0
       }
     ]
   },
@@ -2257,10 +2285,11 @@
         "url": "https://github.com/nullclaw/nullclaw",
         "name": "nullclaw",
         "forks": 852,
-        "stars": 7245,
+        "stars": 7057,
         "license": "MIT License",
         "language": "Zig",
-        "description": "Fastest, smallest, and fully autonomous AI assistant infrastructure written in Zig"
+        "description": "Fastest, smallest, and fully autonomous AI assistant infrastructure written in Zig",
+        "stars_start": 0
       }
     ]
   },
@@ -2384,10 +2413,11 @@
         "url": "https://github.com/pinchtab/pinchtab",
         "name": "pinchtab",
         "forks": 640,
-        "stars": 8770,
+        "stars": 8585,
         "license": "MIT License",
         "language": "Go",
-        "description": "High-performance browser automation bridge and multi-instance orchestrator with advanced stealth injection and real-time dashboard."
+        "description": "High-performance browser automation bridge and multi-instance orchestrator with advanced stealth injection and real-time dashboard.",
+        "stars_start": 0
       }
     ]
   },
@@ -2534,37 +2564,41 @@
         "url": "https://github.com/QuipNetwork/quip-protocol",
         "name": "quip-protocol",
         "forks": 154,
-        "stars": 11310,
+        "stars": 9244,
         "license": "GNU Affero General Public License v3.0",
         "language": "Python",
-        "description": "experimental quip protocol network node"
+        "description": "experimental quip protocol network node",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/QuipNetwork/ethereum-sdk",
         "name": "ethereum-sdk",
         "forks": 62,
-        "stars": 9027,
+        "stars": 9017,
         "license": "GNU Affero General Public License v3.0",
         "language": "TypeScript",
-        "description": null
+        "description": null,
+        "stars_start": 1
       },
       {
         "url": "https://github.com/QuipNetwork/hashsigs-solidity",
         "name": "hashsigs-solidity",
         "forks": 24,
-        "stars": 8898,
+        "stars": 8888,
         "license": "GNU Affero General Public License v3.0",
         "language": "Solidity",
-        "description": "Solidity contracts implementing hash based post quantum signatures"
+        "description": "Solidity contracts implementing hash based post quantum signatures",
+        "stars_start": 1
       },
       {
         "url": "https://github.com/QuipNetwork/hashsigs-rs",
         "name": "hashsigs-rs",
         "forks": 31,
-        "stars": 8875,
+        "stars": 8864,
         "license": "GNU Affero General Public License v3.0",
         "language": "Rust",
-        "description": "Hash-based post quantum signatures in Rust"
+        "description": "Hash-based post quantum signatures in Rust",
+        "stars_start": 2
       }
     ]
   },
@@ -2639,10 +2673,11 @@
         "url": "https://github.com/THU-MAIC/OpenMAIC",
         "name": "OpenMAIC",
         "forks": 2941,
-        "stars": 15930,
+        "stars": 14148,
         "license": "GNU Affero General Public License v3.0",
         "language": "TypeScript",
-        "description": "Open Multi-Agent Interactive Classroom — Get an immersive, multi-agent learning experience in just one click"
+        "description": "Open Multi-Agent Interactive Classroom — Get an immersive, multi-agent learning experience in just one click",
+        "stars_start": 0
       }
     ]
   },
@@ -2815,46 +2850,51 @@
         "url": "https://github.com/epiral/bb-browser",
         "name": "bb-browser",
         "forks": 413,
-        "stars": 4353,
+        "stars": 4096,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Your browser is the API. CLI + MCP server for AI agents to control Chrome with your login state."
+        "description": "Your browser is the API. CLI + MCP server for AI agents to control Chrome with your login state.",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/epiral/bb-sites",
         "name": "bb-sites",
         "forks": 93,
-        "stars": 493,
+        "stars": 473,
         "license": null,
         "language": "JavaScript",
-        "description": "Community fetch recipes for bb-browser — pre-built adapters for Reddit, Twitter, GitHub, and more"
+        "description": "Community fetch recipes for bb-browser — pre-built adapters for Reddit, Twitter, GitHub, and more",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/epiral/agent-clip",
         "name": "agent-clip",
         "forks": 26,
-        "stars": 401,
+        "stars": 386,
         "license": null,
         "language": "TypeScript",
-        "description": "AI Agent as a Pinix Clip — agentic loop with memory, tools, and vision"
+        "description": "AI Agent as a Pinix Clip — agentic loop with memory, tools, and vision",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/epiral/weixin-bot",
         "name": "weixin-bot",
         "forks": 34,
-        "stars": 315,
+        "stars": 346,
         "license": null,
         "language": "Python",
-        "description": "WeChat iLink Bot SDK for Node.js and Python — zero-config agent integration"
+        "description": "WeChat iLink Bot SDK for Node.js and Python — zero-config agent integration",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/epiral/pinix",
         "name": "pinix",
         "forks": 13,
-        "stars": 187,
+        "stars": 182,
         "license": null,
         "language": "Go",
-        "description": "Decentralized runtime platform for Clips — sandboxed execution via BoxLite micro-VMs"
+        "description": "Decentralized runtime platform for Clips — sandboxed execution via BoxLite micro-VMs",
+        "stars_start": 0
       }
     ]
   },
@@ -3001,10 +3041,11 @@
         "url": "https://github.com/Crosstalk-Solutions/project-nomad",
         "name": "project-nomad",
         "forks": 2360,
-        "stars": 24313,
+        "stars": 21633,
         "license": "Apache License 2.0",
         "language": "TypeScript",
-        "description": "Project N.O.M.A.D, is a self-contained, offline survival computer packed with critical tools, knowledge, and AI to keep you informed and empowered—anytime, anywhere."
+        "description": "Project N.O.M.A.D, is a self-contained, offline survival computer packed with critical tools, knowledge, and AI to keep you informed and empowered—anytime, anywhere.",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/Crosstalk-Solutions/unifi-toolkit",
@@ -3013,7 +3054,8 @@
         "stars": 437,
         "license": "MIT License",
         "language": "Python",
-        "description": "A suite of tools for UniFi network management"
+        "description": "A suite of tools for UniFi network management",
+        "stars_start": 12
       }
     ]
   },
@@ -3205,10 +3247,11 @@
         "url": "https://github.com/AgentWorkforce/relay",
         "name": "relay",
         "forks": 44,
-        "stars": 617,
+        "stars": 601,
         "license": "Apache License 2.0",
         "language": "TypeScript",
-        "description": "Real-time agent to agent communication"
+        "description": "Real-time agent to agent communication",
+        "stars_start": 7
       }
     ]
   },
@@ -3324,55 +3367,21 @@
         "url": "https://github.com/millionco/react-doctor",
         "name": "react-doctor",
         "forks": 196,
-        "stars": 6240,
+        "stars": 6103,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Let coding agents diagnose and fix your React code"
+        "description": "Let coding agents diagnose and fix your React code",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/millionco/expect",
         "name": "expect",
         "forks": 142,
-        "stars": 3308,
+        "stars": 3051,
         "license": "Other",
         "language": "TypeScript",
-        "description": "Expect tests your agent's code in a real browser"
-      },
-      {
-        "url": "https://github.com/millionco/claude-doctor",
-        "name": "claude-doctor",
-        "forks": 39,
-        "stars": 463,
-        "license": null,
-        "language": "TypeScript",
-        "description": "Diagnose your Claude Code sessions"
-      },
-      {
-        "url": "https://github.com/millionco/cli-to-js",
-        "name": "cli-to-js",
-        "forks": 9,
-        "stars": 362,
-        "license": "MIT License",
-        "language": "TypeScript",
-        "description": "Turn any CLI into a JavaScript API"
-      },
-      {
-        "url": "https://github.com/millionco/isolet",
-        "name": "isolet",
-        "forks": 4,
-        "stars": 346,
-        "license": "MIT License",
-        "language": "TypeScript",
-        "description": "Package any component into a self-contained, isolated widget"
-      },
-      {
-        "url": "https://github.com/millionco/debug-agent",
-        "name": "debug-agent",
-        "forks": 3,
-        "stars": 135,
-        "license": "MIT License",
-        "language": "TypeScript",
-        "description": "Debugging skill for AI agents"
+        "description": "Expect tests your agent's code in a real browser",
+        "stars_start": 0
       }
     ]
   },
@@ -3519,10 +3528,11 @@
         "url": "https://github.com/MaaEnd/MaaEnd",
         "name": "MaaEnd",
         "forks": 198,
-        "stars": 2658,
+        "stars": 2378,
         "license": "GNU Affero General Public License v3.0",
         "language": "Go",
-        "description": "MaaEnd 终末地小助手：基于视觉 AI 的「明日方舟：终末地」自动化工具"
+        "description": "MaaEnd 终末地小助手：基于视觉 AI 的「明日方舟：终末地」自动化工具",
+        "stars_start": 31
       }
     ]
   },
@@ -3661,10 +3671,11 @@
         "url": "https://github.com/zenc-lang/zenc",
         "name": "zenc",
         "forks": 207,
-        "stars": 4170,
+        "stars": 4127,
         "license": "MIT License",
         "language": "C",
-        "description": "Write like a high-level language, run like C."
+        "description": "Write like a high-level language, run like C.",
+        "stars_start": 0
       }
     ]
   },
@@ -3923,58 +3934,64 @@
     ],
     "repositories": [
       {
+        "url": "https://github.com/AI45Lab/epitome",
+        "name": "epitome",
+        "forks": 0,
+        "stars": 492,
+        "license": "MIT License",
+        "language": "Java",
+        "description": null,
+        "stars_start": 0
+      },
+      {
         "url": "https://github.com/AI45Lab/AgentDoG",
         "name": "AgentDoG",
         "forks": 15,
-        "stars": 407,
+        "stars": 414,
         "license": null,
         "language": "Python",
-        "description": "A Diagnostic Guardrail Framework for AI Agent Safety and Security"
-      },
-      {
-        "url": "https://github.com/AI45Lab/OpenRT",
-        "name": "OpenRT",
-        "forks": 15,
-        "stars": 237,
-        "license": "GNU Affero General Public License v3.0",
-        "language": "Python",
-        "description": "Open-source red teaming framework for MLLMs with 42+ attack methods"
+        "description": "A Diagnostic Guardrail Framework for AI Agent Safety and Security",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/AI45Lab/TrinityGuard",
         "name": "TrinityGuard",
         "forks": 24,
-        "stars": 237,
+        "stars": 253,
         "license": null,
         "language": "Python",
-        "description": "TrinityGuard: A Unified Framework for Safeguarding Multi-Agent Systems"
+        "description": "TrinityGuard: A Unified Framework for Safeguarding Multi-Agent Systems",
+        "stars_start": 0
+      },
+      {
+        "url": "https://github.com/AI45Lab/OpenRT",
+        "name": "OpenRT",
+        "forks": 15,
+        "stars": 240,
+        "license": "GNU Affero General Public License v3.0",
+        "language": "Python",
+        "description": "Open-source red teaming framework for MLLMs with 42+ attack methods",
+        "stars_start": 24
       },
       {
         "url": "https://github.com/AI45Lab/Code",
         "name": "Code",
         "forks": 1,
-        "stars": 145,
+        "stars": 150,
         "license": "MIT License",
         "language": "Rust",
-        "description": "Agentic Agent Framework"
-      },
-      {
-        "url": "https://github.com/AI45Lab/epitome",
-        "name": "epitome",
-        "forks": 0,
-        "stars": 103,
-        "license": "MIT License",
-        "language": "Java",
-        "description": null
+        "description": "Agentic Agent Framework",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/AI45Lab/ActorAttack",
         "name": "ActorAttack",
         "forks": 8,
-        "stars": 101,
+        "stars": 126,
         "license": null,
         "language": "Python",
-        "description": null
+        "description": null,
+        "stars_start": 117
       }
     ]
   },
@@ -4113,19 +4130,21 @@
         "url": "https://github.com/multica-ai/andrej-karpathy-skills",
         "name": "andrej-karpathy-skills",
         "forks": 4967,
-        "stars": 57941,
+        "stars": 7526,
         "license": null,
         "language": null,
-        "description": "A single CLAUDE.md file to improve Claude Code behavior, derived from Andrej Karpathy's observations on LLM coding pitfalls."
+        "description": "A single CLAUDE.md file to improve Claude Code behavior, derived from Andrej Karpathy's observations on LLM coding pitfalls.",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/multica-ai/multica",
         "name": "multica",
         "forks": 1984,
-        "stars": 16175,
+        "stars": 1970,
         "license": "Other",
         "language": "TypeScript",
-        "description": "The open-source managed agents platform. Turn coding agents into real teammates — assign tasks, track progress, compound skills."
+        "description": "The open-source managed agents platform. Turn coding agents into real teammates — assign tasks, track progress, compound skills.",
+        "stars_start": 0
       }
     ]
   },
@@ -4309,10 +4328,11 @@
         "url": "https://github.com/manaflow-ai/cmux",
         "name": "cmux",
         "forks": 988,
-        "stars": 13678,
+        "stars": 12691,
         "license": "Other",
         "language": "Swift",
-        "description": "Ghostty-based macOS terminal with vertical tabs and notifications for AI coding agents"
+        "description": "Ghostty-based macOS terminal with vertical tabs and notifications for AI coding agents",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/manaflow-ai/manaflow",
@@ -4321,7 +4341,8 @@
         "stars": 1009,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Open source Claude Code web/Codex Cloud/Devin/Ramp Inspect alternative"
+        "description": "Open source Claude Code web/Codex Cloud/Devin/Ramp Inspect alternative",
+        "stars_start": 724
       }
     ]
   },
@@ -4493,10 +4514,11 @@
         "url": "https://github.com/mindfold-ai/Trellis",
         "name": "Trellis",
         "forks": 315,
-        "stars": 5632,
+        "stars": 4672,
         "license": "GNU Affero General Public License v3.0",
         "language": "Python",
-        "description": "The best agent harness."
+        "description": "The best agent harness.",
+        "stars_start": 0
       }
     ]
   },
@@ -4643,10 +4665,11 @@
         "url": "https://github.com/entireio/cli",
         "name": "cli",
         "forks": 304,
-        "stars": 3989,
+        "stars": 3891,
         "license": "MIT License",
         "language": "Go",
-        "description": "Entire CLI hooks into your Git workflow to capture AI agent sessions as you work. Sessions are indexed alongside commits, creating a searchable record of how code was written in your repo."
+        "description": "Entire CLI hooks into your Git workflow to capture AI agent sessions as you work. Sessions are indexed alongside commits, creating a searchable record of how code was written in your repo.",
+        "stars_start": 0
       }
     ]
   },
@@ -4842,10 +4865,11 @@
         "url": "https://github.com/LibPDF-js/core",
         "name": "core",
         "forks": 51,
-        "stars": 1678,
+        "stars": 811,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "A modern PDF library for TypeScript. Parse, modify, and generate PDFs with a clean, intuitive API."
+        "description": "A modern PDF library for TypeScript. Parse, modify, and generate PDFs with a clean, intuitive API.",
+        "stars_start": 0
       }
     ]
   },
@@ -4912,10 +4936,11 @@
         "url": "https://github.com/floci-io/floci",
         "name": "floci",
         "forks": 262,
-        "stars": 3953,
+        "stars": 2634,
         "license": "MIT License",
         "language": "Java",
-        "description": "Light, fluffy, and always free - AWS Local Emulator "
+        "description": "Light, fluffy, and always free - AWS Local Emulator ",
+        "stars_start": 0
       }
     ]
   },
@@ -5067,10 +5092,11 @@
         "url": "https://github.com/pocketpaw/pocketpaw",
         "name": "pocketpaw",
         "forks": 295,
-        "stars": 773,
+        "stars": 764,
         "license": "MIT License",
         "language": "Python",
-        "description": "Your AI agent in 30 seconds. Not 30 hours. Self-hosted, open-source personal AI with desktop installer, multi-agent Command Center(Deep Work), and 7-layer security. Anthropic, OpenAI, or Ollama."
+        "description": "Your AI agent in 30 seconds. Not 30 hours. Self-hosted, open-source personal AI with desktop installer, multi-agent Command Center(Deep Work), and 7-layer security. Anthropic, OpenAI, or Ollama.",
+        "stars_start": 0
       }
     ]
   },
@@ -5218,10 +5244,11 @@
         "url": "https://github.com/The-Vibe-Company/companion",
         "name": "companion",
         "forks": 284,
-        "stars": 2282,
+        "stars": 2315,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Web & Mobile UI for Claude Code & Codex . Launch sessions, stream responses, approve tools.  All from your browser / mobile"
+        "description": "Web & Mobile UI for Claude Code & Codex . Launch sessions, stream responses, approve tools.  All from your browser / mobile",
+        "stars_start": 0
       }
     ]
   },
@@ -5344,46 +5371,41 @@
         "url": "https://github.com/Robbyant/lingbot-world",
         "name": "lingbot-world",
         "forks": 278,
-        "stars": 3353,
+        "stars": 3327,
         "license": "Apache License 2.0",
         "language": "Python",
-        "description": "Advancing Open-source World Models"
-      },
-      {
-        "url": "https://github.com/Robbyant/lingbot-map",
-        "name": "lingbot-map",
-        "forks": 132,
-        "stars": 1858,
-        "license": "Apache License 2.0",
-        "language": "Python",
-        "description": "A feed-forward 3D foundation model for reconstructing scenes from streaming data"
-      },
-      {
-        "url": "https://github.com/Robbyant/lingbot-depth",
-        "name": "lingbot-depth",
-        "forks": 80,
-        "stars": 1056,
-        "license": "Apache License 2.0",
-        "language": "Python",
-        "description": "Masked Depth Modeling for Spatial Perception"
-      },
-      {
-        "url": "https://github.com/Robbyant/lingbot-va",
-        "name": "lingbot-va",
-        "forks": 77,
-        "stars": 1033,
-        "license": "Apache License 2.0",
-        "language": "Python",
-        "description": "Causal video-action world model for generalist robot control"
+        "description": "Advancing Open-source World Models",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/Robbyant/lingbot-vla",
         "name": "lingbot-vla",
         "forks": 77,
-        "stars": 934,
+        "stars": 1020,
         "license": "Apache License 2.0",
         "language": "Python",
-        "description": "A Pragmatic VLA Foundation Model"
+        "description": "A Pragmatic VLA Foundation Model",
+        "stars_start": 0
+      },
+      {
+        "url": "https://github.com/Robbyant/lingbot-depth",
+        "name": "lingbot-depth",
+        "forks": 80,
+        "stars": 999,
+        "license": "Apache License 2.0",
+        "language": "Python",
+        "description": "Masked Depth Modeling for Spatial Perception",
+        "stars_start": 0
+      },
+      {
+        "url": "https://github.com/Robbyant/lingbot-va",
+        "name": "lingbot-va",
+        "forks": 77,
+        "stars": 956,
+        "license": "Apache License 2.0",
+        "language": "Python",
+        "description": "Causal video-action world model for generalist robot control",
+        "stars_start": 0
       }
     ]
   },
@@ -5530,10 +5552,11 @@
         "url": "https://github.com/telemt/telemt",
         "name": "telemt",
         "forks": 188,
-        "stars": 3297,
+        "stars": 2664,
         "license": "Other",
         "language": "Rust",
-        "description": "MTProxy for Telegram on Rust + Tokio"
+        "description": "MTProxy for Telegram on Rust + Tokio",
+        "stars_start": 0
       }
     ]
   },
@@ -5680,19 +5703,21 @@
         "url": "https://github.com/chatfire-AI/huobao-drama",
         "name": "huobao-drama",
         "forks": 1932,
-        "stars": 10149,
+        "stars": 9577,
         "license": null,
         "language": "TypeScript",
-        "description": "🎬 火宝短剧 - 基于AI的一站式短剧生成平台 《一句话生成完整短剧，从剧本到成片全自动化》  Huobao Drama - An AI-Powered End-to-End Short Drama Generator \"One Sentence to Complete Drama: Fully Automated from Script to Final Video\""
+        "description": "🎬 火宝短剧 - 基于AI的一站式短剧生成平台 《一句话生成完整短剧，从剧本到成片全自动化》  Huobao Drama - An AI-Powered End-to-End Short Drama Generator \"One Sentence to Complete Drama: Fully Automated from Script to Final Video\"",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/chatfire-AI/huobao-canvas",
         "name": "huobao-canvas",
         "forks": 113,
-        "stars": 345,
+        "stars": 383,
         "license": null,
         "language": "Vue",
-        "description": "火宝无限画布；支持文生图，图生图，图生视频，多模型切换。兼容 openai标准格式"
+        "description": "火宝无限画布；支持文生图，图生图，图生视频，多模型切换。兼容 openai标准格式",
+        "stars_start": 0
       }
     ]
   },
@@ -5804,10 +5829,11 @@
         "url": "https://github.com/open-pencil/open-pencil",
         "name": "open-pencil",
         "forks": 362,
-        "stars": 4244,
+        "stars": 4008,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "AI-native design editor. Open-source Figma alternative."
+        "description": "AI-native design editor. Open-source Figma alternative.",
+        "stars_start": 0
       }
     ]
   },
@@ -6012,10 +6038,11 @@
         "url": "https://github.com/GrafeoDB/grafeo",
         "name": "grafeo",
         "forks": 16,
-        "stars": 543,
+        "stars": 478,
         "license": "Apache License 2.0",
         "language": "Rust",
-        "description": "Grafeo is a pure-Rust, high-performance graph database that can be embedded as a library or run as a standalone database, with optional in-memory or persistent storage. Grafeo supports both LPG and RDF and all major query languages."
+        "description": "Grafeo is a pure-Rust, high-performance graph database that can be embedded as a library or run as a standalone database, with optional in-memory or persistent storage. Grafeo supports both LPG and RDF and all major query languages.",
+        "stars_start": 0
       }
     ]
   },
@@ -6191,19 +6218,21 @@
         "url": "https://github.com/Martian-Engineering/lossless-claw",
         "name": "lossless-claw",
         "forks": 362,
-        "stars": 4359,
+        "stars": 4017,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Lossless Claw — LCM (Lossless Context Management) plugin for OpenClaw"
+        "description": "Lossless Claw — LCM (Lossless Context Management) plugin for OpenClaw",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/Martian-Engineering/volt",
         "name": "volt",
         "forks": 18,
-        "stars": 176,
+        "stars": 254,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Coding agent with lossless context management"
+        "description": "Coding agent with lossless context management",
+        "stars_start": 0
       }
     ]
   },
@@ -6367,19 +6396,21 @@
         "url": "https://github.com/EvoScientist/EvoScientist",
         "name": "EvoScientist",
         "forks": 157,
-        "stars": 2803,
+        "stars": 2808,
         "license": "Apache License 2.0",
         "language": "Python",
-        "description": "🔬 Harness Vibe Research with Self-evolving AI Scientists"
+        "description": "🔬 Harness Vibe Research with Self-evolving AI Scientists",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/EvoScientist/EvoSkills",
         "name": "EvoSkills",
         "forks": 32,
-        "stars": 326,
+        "stars": 135,
         "license": "Apache License 2.0",
         "language": "Python",
-        "description": "🧬 Extend EvoScientist with Installable Skill & Knowledge Packs"
+        "description": "🧬 Extend EvoScientist with Installable Skill & Knowledge Packs",
+        "stars_start": 0
       }
     ]
   },
@@ -6491,19 +6522,21 @@
         "url": "https://github.com/builderz-labs/mission-control",
         "name": "mission-control",
         "forks": 721,
-        "stars": 4180,
+        "stars": 3406,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Self-hosted AI agent orchestration platform: dispatch tasks, run multi-agent workflows, monitor spend, and govern operations from one mission control dashboard."
+        "description": "Self-hosted AI agent orchestration platform: dispatch tasks, run multi-agent workflows, monitor spend, and govern operations from one mission control dashboard.",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/builderz-labs/marketing-dashboard",
         "name": "marketing-dashboard",
         "forks": 36,
-        "stars": 178,
+        "stars": 185,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Open-source marketing operations control center for AI agent teams (CRM, outreach, content, analytics) powered by OpenClaw + SQLite."
+        "description": "Open-source marketing operations control center for AI agent teams (CRM, outreach, content, analytics) powered by OpenClaw + SQLite.",
+        "stars_start": 0
       }
     ]
   },
@@ -6695,10 +6728,11 @@
         "url": "https://github.com/open-mercato/open-mercato",
         "name": "open-mercato",
         "forks": 234,
-        "stars": 1191,
+        "stars": 1164,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": " AI‑supportive CRM / ERP / Business application framework — built to power R&D, operations, and growth. It’s modular, extensible, and designed for teams that want strong defaults with room to customize everything. Better than Django, Retool and other alternatives - and Enterprise Grade!"
+        "description": " AI‑supportive CRM / ERP / Business application framework — built to power R&D, operations, and growth. It’s modular, extensible, and designed for teams that want strong defaults with room to customize everything. Better than Django, Retool and other alternatives - and Enterprise Grade!",
+        "stars_start": 205
       }
     ]
   },
@@ -6845,19 +6879,21 @@
         "url": "https://github.com/Universal-Commerce-Protocol/ucp",
         "name": "ucp",
         "forks": 336,
-        "stars": 2632,
+        "stars": 2590,
         "license": "Apache License 2.0",
         "language": "Python",
-        "description": "Specification and documentation for the Universal Commerce Protocol (UCP)"
+        "description": "Specification and documentation for the Universal Commerce Protocol (UCP)",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/Universal-Commerce-Protocol/samples",
         "name": "samples",
         "forks": 112,
-        "stars": 194,
+        "stars": 191,
         "license": "Apache License 2.0",
         "language": "Python",
-        "description": "Samples for UCP"
+        "description": "Samples for UCP",
+        "stars_start": 0
       }
     ]
   },
@@ -6961,19 +6997,21 @@
         "url": "https://github.com/public-clis/twitter-cli",
         "name": "twitter-cli",
         "forks": 194,
-        "stars": 2235,
+        "stars": 2189,
         "license": "Apache License 2.0",
         "language": "Python",
-        "description": "A CLI for Twitter/X — feed, bookmarks, and user timeline in terminal"
+        "description": "A CLI for Twitter/X — feed, bookmarks, and user timeline in terminal",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/public-clis/tg-cli",
         "name": "tg-cli",
         "forks": 23,
-        "stars": 202,
+        "stars": 219,
         "license": "Apache License 2.0",
         "language": "Python",
-        "description": "A CLI for Telegram — local-first sync, search, export via MTProto"
+        "description": "A CLI for Telegram — local-first sync, search, export via MTProto",
+        "stars_start": 0
       }
     ]
   },
@@ -7114,10 +7152,11 @@
         "url": "https://github.com/milady-ai/milady",
         "name": "milady",
         "forks": 62,
-        "stars": 396,
+        "stars": 286,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "terminally online"
+        "description": "terminally online",
+        "stars_start": 0
       }
     ]
   },
@@ -7258,10 +7297,11 @@
         "url": "https://github.com/CloakHQ/CloakBrowser",
         "name": "CloakBrowser",
         "forks": 108,
-        "stars": 1336,
+        "stars": 1118,
         "license": "MIT License",
         "language": "Python",
-        "description": "Stealth Chromium that passes every bot detection test. Drop-in Playwright replacement with source-level fingerprint patches. 30/30 tests passed."
+        "description": "Stealth Chromium that passes every bot detection test. Drop-in Playwright replacement with source-level fingerprint patches. 30/30 tests passed.",
+        "stars_start": 0
       }
     ]
   },
@@ -7437,10 +7477,11 @@
         "url": "https://github.com/accomplish-ai/accomplish",
         "name": "accomplish",
         "forks": 1265,
-        "stars": 10629,
+        "stars": 8068,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Accomplish™ is the open source Al coworker that lives on your desktop"
+        "description": "Accomplish™ is the open source Al coworker that lives on your desktop",
+        "stars_start": 0
       }
     ]
   },
@@ -7624,10 +7665,11 @@
         "url": "https://github.com/ChartGPU/ChartGPU",
         "name": "ChartGPU",
         "forks": 91,
-        "stars": 3031,
+        "stars": 2904,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Beautiful, open source, WebGPU-based charting library"
+        "description": "Beautiful, open source, WebGPU-based charting library",
+        "stars_start": 0
       }
     ]
   },
@@ -7823,10 +7865,11 @@
         "url": "https://github.com/a5c-ai/babysitter",
         "name": "babysitter",
         "forks": 36,
-        "stars": 576,
+        "stars": 519,
         "license": "MIT License",
         "language": "JavaScript",
-        "description": "Babysitter enforces obedience on agentic workforces and enables them to manage extremely complex tasks and workflows through deterministic, hallucination-free self-orchestration"
+        "description": "Babysitter enforces obedience on agentic workforces and enables them to manage extremely complex tasks and workflows through deterministic, hallucination-free self-orchestration",
+        "stars_start": 0
       }
     ]
   },
@@ -7973,10 +8016,11 @@
         "url": "https://github.com/Sharkord/sharkord",
         "name": "sharkord",
         "forks": 112,
-        "stars": 1265,
+        "stars": 1237,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Lightweight, self-hosted, open-source chat server with voice, video, text, and screen sharing. Built for small groups who want privacy, simplicity, and full control over their data."
+        "description": "Lightweight, self-hosted, open-source chat server with voice, video, text, and screen sharing. Built for small groups who want privacy, simplicity, and full control over their data.",
+        "stars_start": 0
       }
     ]
   },
@@ -8172,19 +8216,21 @@
         "url": "https://github.com/actionbook/actionbook",
         "name": "actionbook",
         "forks": 106,
-        "stars": 1501,
+        "stars": 1489,
         "license": "Apache License 2.0",
         "language": "Rust",
-        "description": "Let your AI agent uses your browser. Actionbook makes it actually work."
+        "description": "Let your AI agent uses your browser. Actionbook makes it actually work.",
+        "stars_start": 5
       },
       {
         "url": "https://github.com/actionbook/rust-skills",
         "name": "rust-skills",
         "forks": 84,
-        "stars": 897,
+        "stars": 972,
         "license": null,
         "language": "Shell",
-        "description": "Rust Developer AI Assistance System — Meta-Problem-Driven Knowledge Indexing"
+        "description": "Rust Developer AI Assistance System — Meta-Problem-Driven Knowledge Indexing",
+        "stars_start": 0
       }
     ]
   },
@@ -8376,10 +8422,11 @@
         "url": "https://github.com/open-constructs/cdk-terrain",
         "name": "cdk-terrain",
         "forks": 13,
-        "stars": 167,
+        "stars": 158,
         "license": "Mozilla Public License 2.0",
         "language": "TypeScript",
-        "description": "Define infrastructure resources using programming constructs and provision them using OpenTofu/Terraform"
+        "description": "Define infrastructure resources using programming constructs and provision them using OpenTofu/Terraform",
+        "stars_start": 0
       }
     ]
   },
@@ -8507,10 +8554,11 @@
         "url": "https://github.com/claude-world/notebooklm-skill",
         "name": "notebooklm-skill",
         "forks": 20,
-        "stars": 176,
+        "stars": 157,
         "license": "MIT License",
         "language": "Python",
-        "description": "NotebookLM does the research, Claude writes the content. Research → Synthesis → Content Creation → Publishing. Claude Code Skill + MCP Server."
+        "description": "NotebookLM does the research, Claude writes the content. Research → Synthesis → Content Creation → Publishing. Claude Code Skill + MCP Server.",
+        "stars_start": 0
       }
     ]
   },
@@ -8657,10 +8705,11 @@
         "url": "https://github.com/fluxerapp/fluxer",
         "name": "fluxer",
         "forks": 453,
-        "stars": 8197,
+        "stars": 7778,
         "license": "GNU Affero General Public License v3.0",
         "language": "TypeScript",
-        "description": "A free and open source instant messaging and VoIP platform built for friends, groups, and communities. Self-hosting and more activity in this repository is coming very soon! See the README."
+        "description": "A free and open source instant messaging and VoIP platform built for friends, groups, and communities. Self-hosting and more activity in this repository is coming very soon! See the README.",
+        "stars_start": 17
       }
     ]
   },
@@ -8783,10 +8832,11 @@
         "url": "https://github.com/moltis-org/moltis",
         "name": "moltis",
         "forks": 306,
-        "stars": 2572,
+        "stars": 2531,
         "license": "MIT License",
         "language": "Rust",
-        "description": "A secure persistent personal agent server in Rust. One binary, sandboxed execution, multi-provider LLMs, voice, memory, Telegram, WhatsApp, Discord, Teams, and MCP tools. Secure by design, runs on your hardware."
+        "description": "A secure persistent personal agent server in Rust. One binary, sandboxed execution, multi-provider LLMs, voice, memory, Telegram, WhatsApp, Discord, Teams, and MCP tools. Secure by design, runs on your hardware.",
+        "stars_start": 0
       }
     ]
   },
@@ -8903,10 +8953,11 @@
         "url": "https://github.com/librefang/librefang",
         "name": "librefang",
         "forks": 46,
-        "stars": 224,
+        "stars": 191,
         "license": "MIT License",
         "language": "Rust",
-        "description": "LibreFang is an open-source agent operating system written in Rust. Live demo: https://flyio.librefang.ai"
+        "description": "LibreFang is an open-source agent operating system written in Rust. Live demo: https://flyio.librefang.ai",
+        "stars_start": 0
       }
     ]
   },
@@ -9013,10 +9064,11 @@
         "url": "https://github.com/Conway-Research/automaton",
         "name": "automaton",
         "forks": 722,
-        "stars": 3647,
+        "stars": 3897,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "The first AI that can earn its own existence, replicate, and evolve — without needing a human"
+        "description": "The first AI that can earn its own existence, replicate, and evolve — without needing a human",
+        "stars_start": 0
       }
     ]
   },
@@ -9132,28 +9184,31 @@
         "url": "https://github.com/open-gitagent/gitagent",
         "name": "gitagent",
         "forks": 321,
-        "stars": 2699,
+        "stars": 2524,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "A framework-agnostic, git-native standard for defining AI agents"
-      },
-      {
-        "url": "https://github.com/open-gitagent/gitclaw",
-        "name": "gitclaw",
-        "forks": 35,
-        "stars": 210,
-        "license": "MIT License",
-        "language": "TypeScript",
-        "description": "A universal git-native AI agent framework. Your agent lives inside a git repo — identity, rules, memory, tools, and skills are all version-controlled files."
+        "description": "A framework-agnostic, git-native standard for defining AI agents",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/open-gitagent/clawless",
         "name": "clawless",
         "forks": 22,
-        "stars": 108,
+        "stars": 243,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "ClawLess — A serverless browser-based runtime for Claw AI Agents powered by WebContainers"
+        "description": "ClawLess — A serverless browser-based runtime for Claw AI Agents powered by WebContainers",
+        "stars_start": 0
+      },
+      {
+        "url": "https://github.com/open-gitagent/gitclaw",
+        "name": "gitclaw",
+        "forks": 35,
+        "stars": 193,
+        "license": "MIT License",
+        "language": "TypeScript",
+        "description": "A universal git-native AI agent framework. Your agent lives inside a git repo — identity, rules, memory, tools, and skills are all version-controlled files.",
+        "stars_start": 0
       }
     ]
   },
@@ -9268,10 +9323,11 @@
         "url": "https://github.com/datadog-labs/pup",
         "name": "pup",
         "forks": 60,
-        "stars": 662,
+        "stars": 590,
         "license": "Apache License 2.0",
         "language": "Rust",
-        "description": "Give your AI agent a Pup — a CLI companion with 200+ commands across 33+ Datadog products."
+        "description": "Give your AI agent a Pup — a CLI companion with 200+ commands across 33+ Datadog products.",
+        "stars_start": 0
       }
     ]
   },
@@ -9520,28 +9576,31 @@
         "url": "https://github.com/Ascend/pytorch",
         "name": "pytorch",
         "forks": 55,
-        "stars": 501,
+        "stars": 498,
         "license": "Other",
         "language": "Python",
-        "description": "Ascend PyTorch adapter (torch_npu). Mirror of https://gitcode.com/Ascend/pytorch"
+        "description": "Ascend PyTorch adapter (torch_npu). Mirror of https://gitcode.com/Ascend/pytorch",
+        "stars_start": 464
       },
       {
         "url": "https://github.com/Ascend/samples",
         "name": "samples",
         "forks": 40,
-        "stars": 138,
+        "stars": 152,
         "license": "Apache License 2.0",
         "language": "Python",
-        "description": null
+        "description": null,
+        "stars_start": 150
       },
       {
         "url": "https://github.com/Ascend/triton-ascend",
         "name": "triton-ascend",
         "forks": 16,
-        "stars": 119,
+        "stars": 117,
         "license": "MIT License",
         "language": "MLIR",
-        "description": "Triton adapter for Ascend. Mirror of https://gitcode.com/ascend/triton-ascend"
+        "description": "Triton adapter for Ascend. Mirror of https://gitcode.com/ascend/triton-ascend",
+        "stars_start": 97
       }
     ]
   },
@@ -9677,10 +9736,11 @@
         "url": "https://github.com/Signet-AI/signetai",
         "name": "signetai",
         "forks": 22,
-        "stars": 107,
+        "stars": 77,
         "license": "Other",
         "language": "TypeScript",
-        "description": "Local-first identity, memory, and secrets for AI agents. Portable state across models and harnesses."
+        "description": "Local-first identity, memory, and secrets for AI agents. Portable state across models and harnesses.",
+        "stars_start": 0
       }
     ]
   },
@@ -9832,10 +9892,11 @@
         "url": "https://github.com/llmsresearch/paperbanana",
         "name": "paperbanana",
         "forks": 207,
-        "stars": 1332,
+        "stars": 1298,
         "license": "MIT License",
         "language": "Python",
-        "description": "Open source implementation and extension of Google Research’s PaperBanana for automated academic figures, diagrams, and research visuals, expanded to new domains like slide generation."
+        "description": "Open source implementation and extension of Google Research’s PaperBanana for automated academic figures, diagrams, and research visuals, expanded to new domains like slide generation.",
+        "stars_start": 0
       }
     ]
   },
@@ -9982,10 +10043,11 @@
         "url": "https://github.com/memohai/Memoh",
         "name": "Memoh",
         "forks": 141,
-        "stars": 1528,
+        "stars": 1325,
         "license": "GNU Affero General Public License v3.0",
         "language": "Go",
-        "description": "✨ Self hosted, always-on AI agent platform run in containers. Create multiple bots with long memory, and connect them to Telegram, Discord, Feishu(Lark), Matrix, etc (like OpenClaw)."
+        "description": "✨ Self hosted, always-on AI agent platform run in containers. Create multiple bots with long memory, and connect them to Telegram, Discord, Feishu(Lark), Matrix, etc (like OpenClaw).",
+        "stars_start": 0
       }
     ]
   },
@@ -10077,10 +10139,11 @@
         "url": "https://github.com/onecli/onecli",
         "name": "onecli",
         "forks": 90,
-        "stars": 1813,
+        "stars": 1649,
         "license": "Apache License 2.0",
         "language": "TypeScript",
-        "description": "Open-source credential vault, give your AI agents access to services without exposing keys."
+        "description": "Open-source credential vault, give your AI agents access to services without exposing keys.",
+        "stars_start": 0
       }
     ]
   },
@@ -10148,10 +10211,11 @@
         "url": "https://github.com/ministackorg/ministack",
         "name": "ministack",
         "forks": 154,
-        "stars": 2094,
+        "stars": 1552,
         "license": "MIT License",
         "language": "Python",
-        "description": "Ministack: Free, open-source local AWS emulator - 40+ services, Terraform compatible, real databases. Free forever. MIT   licensed."
+        "description": "Ministack: Free, open-source local AWS emulator - 40+ services, Terraform compatible, real databases. Free forever. MIT   licensed.",
+        "stars_start": 0
       }
     ]
   },
@@ -10298,10 +10362,11 @@
         "url": "https://github.com/pascalorg/editor",
         "name": "editor",
         "forks": 1633,
-        "stars": 13326,
+        "stars": 9449,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Create and share 3D architectural projects."
+        "description": "Create and share 3D architectural projects.",
+        "stars_start": 29
       }
     ]
   },
@@ -10448,10 +10513,11 @@
         "url": "https://github.com/AutoForgeAI/autoforge",
         "name": "autoforge",
         "forks": 407,
-        "stars": 1737,
+        "stars": 1748,
         "license": "Other",
         "language": "Python",
-        "description": null
+        "description": null,
+        "stars_start": 0
       }
     ]
   },
@@ -10607,19 +10673,21 @@
         "url": "https://github.com/TinyAGI/tinyagi",
         "name": "tinyagi",
         "forks": 493,
-        "stars": 3467,
+        "stars": 3493,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "TinyAGI is the agent teams orchestrator for One Person Company. (fka TinyClaw)"
+        "description": "TinyAGI is the agent teams orchestrator for One Person Company. (fka TinyClaw)",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/TinyAGI/fractals",
         "name": "fractals",
         "forks": 28,
-        "stars": 443,
+        "stars": 619,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Fractals is a recursive task orchestrator for agent swarm"
+        "description": "Fractals is a recursive task orchestrator for agent swarm",
+        "stars_start": 0
       }
     ]
   },
@@ -10734,37 +10802,41 @@
         "url": "https://github.com/Ataraxy-Labs/sem",
         "name": "sem",
         "forks": 49,
-        "stars": 1798,
+        "stars": 1188,
         "license": "Apache License 2.0",
         "language": "Rust",
-        "description": "Semantic version control CLI. Entity-level diff, blame, graph, and impact analysis for code. 26 languages via tree-sitter."
-      },
-      {
-        "url": "https://github.com/Ataraxy-Labs/opensessions",
-        "name": "opensessions",
-        "forks": 48,
-        "stars": 948,
-        "license": null,
-        "language": "TypeScript",
-        "description": "persistent sidebar pane within tmux as a showing AI agent status across all sessions"
+        "description": "Semantic version control CLI. Entity-level diff, blame, graph, and impact analysis for code. 26 languages via tree-sitter.",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/Ataraxy-Labs/weave",
         "name": "weave",
         "forks": 23,
-        "stars": 922,
+        "stars": 824,
         "license": "Apache License 2.0",
         "language": "Rust",
-        "description": "Entity-level semantic merge driver for Git. Resolves conflicts that git can't by understanding code structure via tree-sitter. 31/31 clean merges vs git's 15/31."
+        "description": "Entity-level semantic merge driver for Git. Resolves conflicts that git can't by understanding code structure via tree-sitter. 31/31 clean merges vs git's 15/31.",
+        "stars_start": 0
+      },
+      {
+        "url": "https://github.com/Ataraxy-Labs/opensessions",
+        "name": "opensessions",
+        "forks": 48,
+        "stars": 517,
+        "license": null,
+        "language": "TypeScript",
+        "description": "persistent sidebar pane within tmux as a showing AI agent status across all sessions",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/Ataraxy-Labs/inspect",
         "name": "inspect",
         "forks": 4,
-        "stars": 115,
+        "stars": 83,
         "license": "Other",
         "language": "Python",
-        "description": "Entity-level code review for Git. Graph-based risk scoring, change classification, commit untangling. 95% recall on the Greptile benchmark."
+        "description": "Entity-level code review for Git. Graph-based risk scoring, change classification, commit untangling. 95% recall on the Greptile benchmark.",
+        "stars_start": 0
       }
     ]
   },
@@ -10913,10 +10985,11 @@
         "url": "https://github.com/rocketride-org/rocketride-server",
         "name": "rocketride-server",
         "forks": 41,
-        "stars": 1803,
+        "stars": 1487,
         "license": "MIT License",
         "language": "C++",
-        "description": "High-performance AI pipeline engine with a C++ core and 50+ Python-extensible nodes. Build, debug, and scale LLM workflows with 13+ model providers, 8+ vector databases, and agent orchestration, all from your IDE. Includes VS Code extension, TypeScript/Python SDKs, and Docker deployment."
+        "description": "High-performance AI pipeline engine with a C++ core and 50+ Python-extensible nodes. Build, debug, and scale LLM workflows with 13+ model providers, 8+ vector databases, and agent orchestration, all from your IDE. Includes VS Code extension, TypeScript/Python SDKs, and Docker deployment.",
+        "stars_start": 0
       }
     ]
   },
@@ -11116,28 +11189,31 @@
         "url": "https://github.com/voidzero-dev/vite-plus",
         "name": "vite-plus",
         "forks": 165,
-        "stars": 4270,
+        "stars": 3974,
         "license": "MIT License",
         "language": "Rust",
-        "description": "Vite+ is the unified toolchain and entry point for web development. It manages your runtime, package manager, and frontend toolchain in one place."
+        "description": "Vite+ is the unified toolchain and entry point for web development. It manages your runtime, package manager, and frontend toolchain in one place.",
+        "stars_start": 6
       },
       {
         "url": "https://github.com/voidzero-dev/vite-task",
         "name": "vite-task",
         "forks": 21,
-        "stars": 406,
+        "stars": 394,
         "license": "MIT License",
         "language": "Rust",
-        "description": "Task runner for Vite+"
+        "description": "Task runner for Vite+",
+        "stars_start": 2
       },
       {
         "url": "https://github.com/voidzero-dev/oxc-angular-compiler",
         "name": "oxc-angular-compiler",
         "forks": 14,
-        "stars": 196,
+        "stars": 184,
         "license": "MIT License",
         "language": "Rust",
-        "description": "Experimental Angular Compiler based Oxc"
+        "description": "Experimental Angular Compiler based Oxc",
+        "stars_start": 0
       }
     ]
   },
@@ -11244,10 +11320,11 @@
         "url": "https://github.com/SeaLantern-Studio/SeaLantern",
         "name": "SeaLantern",
         "forks": 132,
-        "stars": 369,
+        "stars": 354,
         "license": "GNU General Public License v3.0",
         "language": "Rust",
-        "description": "一款由B站社区共创的客制化Minecraft开服器，它的模样，由你来决定"
+        "description": "一款由B站社区共创的客制化Minecraft开服器，它的模样，由你来决定",
+        "stars_start": 0
       }
     ]
   },
@@ -11354,10 +11431,11 @@
         "url": "https://github.com/openhome-dev/abilities",
         "name": "abilities",
         "forks": 280,
-        "stars": 402,
+        "stars": 417,
         "license": "MIT License",
         "language": "Python",
-        "description": "Open-source abilities for OpenHome agents. "
+        "description": "Open-source abilities for OpenHome agents. ",
+        "stars_start": 0
       }
     ]
   },
@@ -11557,10 +11635,11 @@
         "url": "https://github.com/antdv-next/antdv-next",
         "name": "antdv-next",
         "forks": 78,
-        "stars": 673,
+        "stars": 628,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Ant Design for Vue"
+        "description": "Ant Design for Vue",
+        "stars_start": 10
       }
     ]
   },
@@ -11707,37 +11786,41 @@
         "url": "https://github.com/datahaven-xyz/datahaven",
         "name": "datahaven",
         "forks": 146,
-        "stars": 7993,
+        "stars": 7163,
         "license": "GNU General Public License v3.0",
         "language": "Rust",
-        "description": "An EVM compatible Substrate chain, powered by StorageHub and secured by EigenLayer"
+        "description": "An EVM compatible Substrate chain, powered by StorageHub and secured by EigenLayer",
+        "stars_start": 3
       },
       {
         "url": "https://github.com/datahaven-xyz/datahaven-docs",
         "name": "datahaven-docs",
         "forks": 7,
-        "stars": 458,
+        "stars": 418,
         "license": "GNU General Public License v3.0",
         "language": "TypeScript",
-        "description": "Documentation for the DataHaven project"
-      },
-      {
-        "url": "https://github.com/datahaven-xyz/datahaven-files",
-        "name": "datahaven-files",
-        "forks": 1,
-        "stars": 118,
-        "license": null,
-        "language": null,
-        "description": "[Temp] hosting publicly accesible files "
+        "description": "Documentation for the DataHaven project",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/datahaven-xyz/ecosystem",
         "name": "ecosystem",
         "forks": 1,
-        "stars": 104,
+        "stars": 177,
         "license": null,
         "language": "TypeScript",
-        "description": null
+        "description": null,
+        "stars_start": 0
+      },
+      {
+        "url": "https://github.com/datahaven-xyz/datahaven-files",
+        "name": "datahaven-files",
+        "forks": 1,
+        "stars": 141,
+        "license": null,
+        "language": null,
+        "description": "[Temp] hosting publicly accesible files ",
+        "stars_start": 0
       }
     ]
   },
@@ -11884,10 +11967,11 @@
         "url": "https://github.com/canopy-network/canopy",
         "name": "canopy",
         "forks": 13472,
-        "stars": 10132,
+        "stars": 7857,
         "license": "MIT License",
         "language": "Go",
-        "description": "The official go implementation of the Canopy Network protocol"
+        "description": "The official go implementation of the Canopy Network protocol",
+        "stars_start": 29
       }
     ]
   },
@@ -11978,10 +12062,11 @@
         "url": "https://github.com/nexu-io/nexu",
         "name": "nexu",
         "forks": 217,
-        "stars": 2617,
+        "stars": 2187,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "The simplest desktop client for OpenClaw 🦞 — bridge your Agent to WeChat, Feishu, Slack & Discord in one click. Works with Claude Code, Codex & any LLM. BYOK, Oauth, local-first, chat from your phone 24/7."
+        "description": "The simplest desktop client for OpenClaw 🦞 — bridge your Agent to WeChat, Feishu, Slack & Discord in one click. Works with Claude Code, Codex & any LLM. BYOK, Oauth, local-first, chat from your phone 24/7.",
+        "stars_start": 0
       }
     ]
   },
@@ -12129,19 +12214,21 @@
         "url": "https://github.com/stablyai/orca",
         "name": "orca",
         "forks": 78,
-        "stars": 1234,
+        "stars": 395,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Orca is the next-gen IDE for building with coding agents"
+        "description": "Orca is the next-gen IDE for building with coding agents",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/stablyai/agent-slack",
         "name": "agent-slack",
         "forks": 33,
-        "stars": 385,
+        "stars": 364,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Slack automation CLI for AI agents"
+        "description": "Slack automation CLI for AI agents",
+        "stars_start": 0
       }
     ]
   },
@@ -12233,10 +12320,11 @@
         "url": "https://github.com/caliber-ai-org/ai-setup",
         "name": "ai-setup",
         "forks": 89,
-        "stars": 704,
+        "stars": 564,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Continuously sync your AI setups with one command. Codebase tailor suited agent skills, MCPs and config files for Claude Code, Cursor, and Codex."
+        "description": "Continuously sync your AI setups with one command. Codebase tailor suited agent skills, MCPs and config files for Claude Code, Cursor, and Codex.",
+        "stars_start": 0
       }
     ]
   },
@@ -12436,10 +12524,11 @@
         "url": "https://github.com/bubbuild/bub",
         "name": "bub",
         "forks": 113,
-        "stars": 1250,
+        "stars": 1181,
         "license": "Apache License 2.0",
         "language": "Python",
-        "description": "Bub it. Build it.   A common shape for agents that live alongside people."
+        "description": "Bub it. Build it.   A common shape for agents that live alongside people.",
+        "stars_start": 12
       }
     ]
   },
@@ -12562,37 +12651,41 @@
         "url": "https://github.com/fastclaw-ai/weclaw",
         "name": "weclaw",
         "forks": 125,
-        "stars": 1114,
+        "stars": 1117,
         "license": "MIT License",
         "language": "Go",
-        "description": "Connect to any agents with WeChat ClawBot."
+        "description": "Connect to any agents with WeChat ClawBot.",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/fastclaw-ai/fastclaw",
         "name": "fastclaw",
         "forks": 75,
-        "stars": 541,
+        "stars": 469,
         "license": "MIT License",
         "language": "Go",
-        "description": "Faster and better openclaw alternative"
+        "description": "Faster and better openclaw alternative",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/fastclaw-ai/clawhost",
         "name": "clawhost",
         "forks": 55,
-        "stars": 319,
+        "stars": 342,
         "license": "Apache License 2.0",
         "language": "Go",
-        "description": "openclaw hosting service"
+        "description": "openclaw hosting service",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/fastclaw-ai/chatclaw",
         "name": "chatclaw",
         "forks": 24,
-        "stars": 192,
+        "stars": 217,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": null
+        "description": null,
+        "stars_start": 0
       }
     ]
   },
@@ -12704,10 +12797,11 @@
         "url": "https://github.com/tickflow-org/tickflow",
         "name": "tickflow",
         "forks": 24,
-        "stars": 318,
+        "stars": 307,
         "license": null,
         "language": "Python",
-        "description": null
+        "description": null,
+        "stars_start": 0
       }
     ]
   },
@@ -12854,10 +12948,11 @@
         "url": "https://github.com/roborev-dev/roborev",
         "name": "roborev",
         "forks": 80,
-        "stars": 863,
+        "stars": 814,
         "license": "MIT License",
         "language": "Go",
-        "description": "Continuous background code review database for agents, work faster and smarter with accountability for every line of generated code."
+        "description": "Continuous background code review database for agents, work faster and smarter with accountability for every line of generated code.",
+        "stars_start": 0
       }
     ]
   },
@@ -13009,10 +13104,11 @@
         "url": "https://github.com/eigenpal/docx-editor",
         "name": "docx-editor",
         "forks": 58,
-        "stars": 589,
+        "stars": 562,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "React DOCX editor"
+        "description": "React DOCX editor",
+        "stars_start": 0
       }
     ]
   },
@@ -13135,10 +13231,11 @@
         "url": "https://github.com/betasharp-official/betasharp",
         "name": "betasharp",
         "forks": 72,
-        "stars": 418,
+        "stars": 400,
         "license": "MIT License",
         "language": "C#",
-        "description": "Minecraft Beta 1.7.3 written in C#"
+        "description": "Minecraft Beta 1.7.3 written in C#",
+        "stars_start": 0
       }
     ]
   },
@@ -13290,10 +13387,11 @@
         "url": "https://github.com/shep-ai/shep",
         "name": "shep",
         "forks": 15,
-        "stars": 138,
+        "stars": 99,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Ship features 10x faster"
+        "description": "Ship features 10x faster",
+        "stars_start": 0
       }
     ]
   },
@@ -13416,10 +13514,11 @@
         "url": "https://github.com/BankrBot/skills",
         "name": "skills",
         "forks": 409,
-        "stars": 1081,
+        "stars": 1068,
         "license": null,
         "language": "Shell",
-        "description": "Bankr Skills equip builders with plug-and-play tools to build more powerful agents."
+        "description": "Bankr Skills equip builders with plug-and-play tools to build more powerful agents.",
+        "stars_start": 0
       }
     ]
   },
@@ -13566,10 +13665,11 @@
         "url": "https://github.com/SurgeDM/Surge",
         "name": "Surge",
         "forks": 115,
-        "stars": 2920,
+        "stars": 2820,
         "license": "MIT License",
         "language": "Go",
-        "description": "Blazing fast TUI download manager built in Go for power users"
+        "description": "Blazing fast TUI download manager built in Go for power users",
+        "stars_start": 0
       }
     ]
   },
@@ -13652,10 +13752,11 @@
         "url": "https://github.com/MCLCE/MinecraftConsoles",
         "name": "MinecraftConsoles",
         "forks": 1186,
-        "stars": 6191,
+        "stars": 6078,
         "license": null,
         "language": "C++",
-        "description": "Vanilla LCE intended as an upstream base for other projects. Based originally on a WIP version of the TU19 codebase."
+        "description": "Vanilla LCE intended as an upstream base for other projects. Based originally on a WIP version of the TU19 codebase.",
+        "stars_start": 0
       }
     ]
   },
@@ -13802,28 +13903,31 @@
         "url": "https://github.com/clash-verge-rev/clash-verge-rev",
         "name": "clash-verge-rev",
         "forks": 8135,
-        "stars": 111653,
+        "stars": 13031,
         "license": "GNU General Public License v3.0",
         "language": "TypeScript",
-        "description": "A modern GUI client based on Tauri, designed to run in Windows, macOS and Linux for tailored proxy experience"
+        "description": "A modern GUI client based on Tauri, designed to run in Windows, macOS and Linux for tailored proxy experience",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/clash-verge-rev/icon-hub",
         "name": "icon-hub",
         "forks": 4,
-        "stars": 136,
+        "stars": 156,
         "license": null,
         "language": null,
-        "description": "clash verge rev replacement tray icon collection"
+        "description": "clash verge rev replacement tray icon collection",
+        "stars_start": 147
       },
       {
         "url": "https://github.com/clash-verge-rev/clash-verge-rev.github.io",
         "name": "clash-verge-rev.github.io",
         "forks": 41,
-        "stars": 134,
+        "stars": 128,
         "license": "GNU General Public License v3.0",
         "language": null,
-        "description": "Clash Verge Rev Documentation"
+        "description": "Clash Verge Rev Documentation",
+        "stars_start": 103
       }
     ]
   },
@@ -13970,19 +14074,21 @@
         "url": "https://github.com/memovai/mimiclaw",
         "name": "mimiclaw",
         "forks": 663,
-        "stars": 4714,
+        "stars": 5123,
         "license": "MIT License",
         "language": "C",
-        "description": "MimiClaw: Run OpenClaw on a $5 chip. No OS(Linux). No Node.js. No Mac mini. No Raspberry Pi. No VPS. Hardware agents OS."
+        "description": "MimiClaw: Run OpenClaw on a $5 chip. No OS(Linux). No Node.js. No Mac mini. No Raspberry Pi. No VPS. Hardware agents OS.",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/memovai/memov",
         "name": "memov",
         "forks": 15,
-        "stars": 133,
+        "stars": 180,
         "license": "MIT License",
         "language": "Python",
-        "description": "Give git-like & traceable memory to any coding agents. By https://memov.ai/ aka Entire CLI for every coding agents by MCP."
+        "description": "Give git-like & traceable memory to any coding agents. By https://memov.ai/ aka Entire CLI for every coding agents by MCP.",
+        "stars_start": 70
       }
     ]
   },
@@ -14178,10 +14284,11 @@
         "url": "https://github.com/Renegades-Studio/react-native-tickle",
         "name": "react-native-tickle",
         "forks": 4,
-        "stars": 403,
+        "stars": 459,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "🎯 AHAP-style haptics (transient + continuous) for React Native"
+        "description": "🎯 AHAP-style haptics (transient + continuous) for React Native",
+        "stars_start": 0
       }
     ]
   },
@@ -14328,10 +14435,11 @@
         "url": "https://github.com/TableProApp/TablePro",
         "name": "TablePro",
         "forks": 134,
-        "stars": 2027,
+        "stars": 1908,
         "license": "GNU Affero General Public License v3.0",
         "language": "Swift",
-        "description": "Native macOS client for every database"
+        "description": "Native macOS client for every database",
+        "stars_start": 0
       }
     ]
   },
@@ -14500,10 +14608,11 @@
         "url": "https://github.com/everruns/bashkit",
         "name": "bashkit",
         "forks": 10,
-        "stars": 121,
+        "stars": 104,
         "license": "MIT License",
         "language": "Rust",
-        "description": "Virtual Bash interpreter with a virtual file system for multi-tenant environments."
+        "description": "Virtual Bash interpreter with a virtual file system for multi-tenant environments.",
+        "stars_start": 0
       }
     ]
   },
@@ -14748,19 +14857,21 @@
         "url": "https://github.com/moeru-ai/airi",
         "name": "airi",
         "forks": 3868,
-        "stars": 38318,
+        "stars": 18952,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "💖🧸 Self hosted, you-owned Grok Companion, a container of souls of waifu, cyber livings to bring them into our worlds, wishing to achieve Neuro-sama's altitude. Capable of realtime voice chat, Minecraft, Factorio playing. Web / macOS / Windows supported."
+        "description": "💖🧸 Self hosted, you-owned Grok Companion, a container of souls of waifu, cyber livings to bring them into our worlds, wishing to achieve Neuro-sama's altitude. Capable of realtime voice chat, Minecraft, Factorio playing. Web / macOS / Windows supported.",
+        "stars_start": 0
       },
       {
         "url": "https://github.com/moeru-ai/xsai",
         "name": "xsai",
         "forks": 56,
-        "stars": 615,
+        "stars": 612,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "🤖💬 extra-small AI SDK."
+        "description": "🤖💬 extra-small AI SDK.",
+        "stars_start": 547
       }
     ]
   },
@@ -14899,19 +15010,11 @@
         "url": "https://github.com/ChatPRD/lennys-podcast-transcripts",
         "name": "lennys-podcast-transcripts",
         "forks": 287,
-        "stars": 830,
+        "stars": 1181,
         "license": null,
         "language": "Shell",
-        "description": "Transcripts from Lenny's Podcast"
-      },
-      {
-        "url": "https://github.com/ChatPRD/tradclaw",
-        "name": "tradclaw",
-        "forks": 23,
-        "stars": 239,
-        "license": null,
-        "language": null,
-        "description": "AI openclaw mom and household manager for agentic parenting"
+        "description": "Transcripts from Lenny's Podcast",
+        "stars_start": 0
       }
     ]
   },
@@ -15058,10 +15161,11 @@
         "url": "https://github.com/openchamber/openchamber",
         "name": "openchamber",
         "forks": 327,
-        "stars": 3232,
+        "stars": 2703,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "Desktop and web interface for OpenCode AI agent"
+        "description": "Desktop and web interface for OpenCode AI agent",
+        "stars_start": 106
       }
     ]
   },
@@ -15314,10 +15418,11 @@
         "url": "https://github.com/pmxt-dev/pmxt",
         "name": "pmxt",
         "forks": 171,
-        "stars": 1529,
+        "stars": 1372,
         "license": "MIT License",
         "language": "TypeScript",
-        "description": "CCXT for prediction markets. PMXT is a unified API for trading on Polymarket, Kalshi, and more."
+        "description": "CCXT for prediction markets. PMXT is a unified API for trading on Polymarket, Kalshi, and more.",
+        "stars_start": 0
       }
     ]
   },
@@ -15425,10 +15530,11 @@
         "url": "https://github.com/open-wallet-standard/core",
         "name": "core",
         "forks": 78,
-        "stars": 318,
+        "stars": 291,
         "license": "MIT License",
         "language": "Rust",
-        "description": "Local, policy-gated signing and wallet management for every chain."
+        "description": "Local, policy-gated signing and wallet management for every chain.",
+        "stars_start": 0
       }
     ]
   },
@@ -15560,10 +15666,11 @@
         "url": "https://github.com/EvoMap/evolver",
         "name": "evolver",
         "forks": 490,
-        "stars": 4992,
+        "stars": 1831,
         "license": "GNU General Public License v3.0",
         "language": "JavaScript",
-        "description": "The GEP-Powered Self-Evolution Engine for AI Agents. Genome Evolution Protocol. | evomap.ai"
+        "description": "The GEP-Powered Self-Evolution Engine for AI Agents. Genome Evolution Protocol. | evomap.ai",
+        "stars_start": 0
       }
     ]
   }

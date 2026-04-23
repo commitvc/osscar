@@ -496,14 +496,9 @@ export default async function OrgPage({ params }: Props) {
           {hasRepos && (
             <section className="space-y-5">
               <div className="flex items-baseline justify-between flex-wrap gap-2">
-                <div className="flex items-baseline gap-3">
-                  <h2 className="font-bold text-base text-foreground tracking-tight">
-                    Repositories
-                  </h2>
-                  <span className="font-mono text-[0.6rem] uppercase tracking-widest text-muted-foreground/35">
-                    {org.repositories.length} public repos
-                  </span>
-                </div>
+                <h2 className="font-bold text-base text-foreground tracking-tight">
+                  Repositories
+                </h2>
                 {githubUrl && (
                   <a
                     href={githubUrl}
