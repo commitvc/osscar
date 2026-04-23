@@ -153,19 +153,24 @@ export function ScoreRequestModal({ onClose }: ScoreRequestModalProps) {
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
-          <div className="flex items-baseline gap-2.5">
+        <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-4 border-b border-white/8">
+          <div className="flex flex-col gap-1.5">
             <span
               id="score-request-title"
               className="font-bold text-sm text-foreground tracking-tight"
             >
               Get your score by email
             </span>
+            <p className="text-[0.8rem] leading-relaxed text-muted-foreground/75">
+              We rank GitHub organizations (not personal accounts) with at least one repo of{" "}
+              <span className="text-foreground font-medium">100+ stars</span>,{" "}
+              <span className="text-foreground font-medium">created after 2015</span>, and active this quarter on GitHub or npm · PyPI · Cargo.
+            </p>
           </div>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-white/6 transition-all cursor-pointer"
+            className="shrink-0 p-1.5 rounded-lg text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-white/6 transition-all cursor-pointer"
           >
             <X size={14} />
           </button>
