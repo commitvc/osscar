@@ -206,10 +206,13 @@ type OrgRow = {
   division: "emerging" | "scaling";
   division_rank: number;
   division_size: number;
+  github_stars_start: number | null;
   github_stars_end: number | null;
   github_stars_growth_rate: number | null;
+  github_contributors_start: number | null;
   github_contributors_end: number | null;
   github_contributors_growth_rate: number | null;
+  package_downloads_start: number | null;
   package_downloads_end: number | null;
   package_downloads_growth_rate: number | null;
 };
@@ -221,7 +224,7 @@ async function findOrg(
   const { data, error } = await getSupabaseAdmin()
     .from("organizations_full")
     .select(
-      "owner_id, owner_login, owner_name, owner_url, owner_logo, owner_description, homepage_url, division, division_rank, division_size, github_stars_end, github_stars_growth_rate, github_contributors_end, github_contributors_growth_rate, package_downloads_end, package_downloads_growth_rate",
+      "owner_id, owner_login, owner_name, owner_url, owner_logo, owner_description, homepage_url, division, division_rank, division_size, github_stars_start, github_stars_end, github_stars_growth_rate, github_contributors_start, github_contributors_end, github_contributors_growth_rate, package_downloads_start, package_downloads_end, package_downloads_growth_rate",
     )
     .eq("quarter_id", quarterId)
     // GitHub logins are case-insensitive; owner_login is stored as reported
@@ -256,15 +259,18 @@ function toScoreEmailProps(
     ownerUrl: org.owner_url,
     homepageUrl: org.homepage_url,
     stars: {
-      value: org.github_stars_end,
+      start: org.github_stars_start,
+      end: org.github_stars_end,
       growthRate: org.github_stars_growth_rate,
     },
     contributors: {
-      value: org.github_contributors_end,
+      start: org.github_contributors_start,
+      end: org.github_contributors_end,
       growthRate: org.github_contributors_growth_rate,
     },
     downloads: {
-      value: org.package_downloads_end,
+      start: org.package_downloads_start,
+      end: org.package_downloads_end,
       growthRate: org.package_downloads_growth_rate,
     },
   };
