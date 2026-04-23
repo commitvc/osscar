@@ -12,7 +12,7 @@ import {
   type SortingState,
   type Column,
 } from "@tanstack/react-table"
-import { ExternalLink, Github, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react"
+import { ExternalLink, Github, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, Star, Users, Package } from "lucide-react"
 import { Tooltip } from "@base-ui/react/tooltip"
 import type { Org, Division } from "@/types"
 import { formatCompact, formatGrowthRate, formatPercentile, formatTopPct, cn } from "@/lib/utils"
@@ -257,6 +257,150 @@ function compareMetric(a: number | null, b: number | null): number {
 }
 
 const columnHelper = createColumnHelper<Org>()
+
+interface CardMetricRowProps {
+  icon: typeof Star
+  label: string
+  value: number | null
+  rate: number | null
+  sources?: string[]
+}
+
+function CardMetricRow({ icon: Icon, label, value, rate, sources }: CardMetricRowProps) {
+  const hasData = value != null || rate != null
+  const showRate = rate != null && rate > 0
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-1.5 min-w-0 flex-1">
+        <Icon size={11} className="text-muted-foreground/45 shrink-0" />
+        <span className="font-mono text-[0.6rem] uppercase tracking-wider text-muted-foreground/65 truncate">
+          {label}
+        </span>
+        {sources && sources.length > 0 && (
+          <span className="font-mono text-[0.55rem] font-semibold uppercase tracking-wider px-1 py-0.5 rounded-sm border border-white/10 bg-white/4 text-muted-foreground/70 shrink-0">
+            {sources.join("·")}
+          </span>
+        )}
+      </div>
+      <div className="flex items-center gap-1.5 shrink-0">
+        <span className={cn(
+          "font-mono text-sm tabular-nums leading-none",
+          hasData ? "font-semibold text-foreground" : "text-muted-foreground/30"
+        )}>
+          {value != null ? formatCompact(value) : "—"}
+        </span>
+        {showRate ? (
+          <span className="font-mono text-[0.65rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm bg-green/15 text-green">
+            {formatGrowthRate(rate)}
+          </span>
+        ) : (
+          <span className="font-mono text-[0.65rem] leading-none text-muted-foreground/25 px-1.5">—</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+interface OrgCardProps {
+  org: Org
+  rank: number
+  slug?: string
+  pkg: { value: number | null; rate: number | null; percentile: number | null }
+  sources?: string[]
+}
+
+function OrgCard({ org, rank, slug, pkg, sources }: OrgCardProps) {
+  const pip = RANK_PIPS[rank]
+  const rankColor = rank === 1 ? "#F4C430" : rank === 2 ? "#C0C0C0" : rank === 3 ? "#CD7F32" : null
+
+  return (
+    <div
+      className={cn(
+        "rounded-lg border border-white/10 bg-card/50 p-4 space-y-3 transition-colors",
+        rank <= 3 && "border-l-2",
+      )}
+      style={rankColor ? { borderLeftColor: rankColor } : undefined}
+    >
+      {/* Top: rank + logo + name + links */}
+      <div className="flex items-start gap-3">
+        <div className="flex items-center gap-1.5 shrink-0 pt-0.5 w-8">
+          {pip ? (
+            <span className="size-1.5 rounded-full shrink-0" style={{ backgroundColor: pip }} />
+          ) : (
+            <span className="size-1.5 shrink-0" />
+          )}
+          <span className={cn(
+            "font-mono text-sm tabular-nums",
+            rank <= 3 ? "text-foreground font-semibold" : rank <= 10 ? "text-foreground" : "text-muted-foreground"
+          )}>
+            {rank}
+          </span>
+        </div>
+        <OrgLogo logoUrl={org.owner_logo} name={org.owner_name} size={28} className="mt-0.5 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <Link
+            href={slug ? `/org/${slug}` : "#"}
+            className="block font-semibold text-sm text-foreground hover:text-green transition-colors truncate leading-snug"
+          >
+            {org.owner_name}
+          </Link>
+          {org.owner_description && (
+            <p className="text-xs text-muted-foreground/75 line-clamp-1 leading-snug mt-0.5">
+              {org.owner_description}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0 pt-1">
+          {org.homepage_url && (
+            <a
+              href={org.homepage_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Homepage"
+            >
+              <ExternalLink size={14} />
+            </a>
+          )}
+          {org.owner_url && (
+            <a
+              href={org.owner_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="GitHub"
+            >
+              <Github size={14} />
+            </a>
+          )}
+        </div>
+      </div>
+
+      {/* Metrics */}
+      <div className="space-y-1.5 pl-[2.75rem] pr-0.5">
+        <CardMetricRow
+          icon={Star}
+          label="Stars"
+          value={org.github_stars_end}
+          rate={org.github_stars_growth_rate}
+        />
+        <CardMetricRow
+          icon={Users}
+          label="Contributors"
+          value={org.github_contributors_end}
+          rate={org.github_contributors_growth_rate}
+        />
+        <CardMetricRow
+          icon={Package}
+          label="Downloads"
+          value={pkg.value}
+          rate={pkg.rate}
+          sources={sources}
+        />
+      </div>
+    </div>
+  )
+}
 
 interface OrgTableProps {
   emerging: Org[]
@@ -547,8 +691,31 @@ export function OrgTable({ emerging, scaling, packageSources = {} }: OrgTablePro
         ))}
       </div>
 
-      {/* Table */}
-      <div className="rounded-lg border border-white/10 overflow-hidden">
+      {/* Mobile/tablet card list */}
+      <div className="lg:hidden space-y-2">
+        {table.getRowModel().rows.map((row) => {
+          const rank = row.index + 1
+          const org = row.original
+          const slug = org.owner_url
+            ? org.owner_url.trim().replace(/\/$/, "").split("/").pop()?.toLowerCase()
+            : undefined
+          const sources = slug ? packageSources[slug] : undefined
+          const pkg = computePackageDownloads(org)
+          return (
+            <OrgCard
+              key={row.id}
+              org={org}
+              rank={rank}
+              slug={slug}
+              pkg={pkg}
+              sources={sources}
+            />
+          )
+        })}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden lg:block rounded-lg border border-white/10 overflow-hidden">
         <Table className="table-fixed">
           <TableHeader>
             {table.getHeaderGroups().map((hg) => (

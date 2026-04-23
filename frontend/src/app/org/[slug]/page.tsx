@@ -341,7 +341,7 @@ export default async function OrgPage({ params }: Props) {
           />
 
           <div className="max-w-6xl mx-auto px-6 py-12 relative">
-            <div className="flex flex-col lg:flex-row gap-10 lg:items-start">
+            <div className="flex flex-col md:flex-row gap-8 md:gap-10 md:items-start">
               {/* Org identity */}
               <div className="flex-1 space-y-6 min-w-0">
                 <div className="flex items-start gap-4">
@@ -413,7 +413,7 @@ export default async function OrgPage({ params }: Props) {
               </div>
 
               {/* Rank + share panel */}
-              <div className="flex flex-col items-center gap-5 lg:pl-12 lg:border-l lg:border-white/10 shrink-0 w-full lg:w-[260px]">
+              <div className="flex flex-col items-center gap-5 md:pl-8 lg:pl-12 md:border-l md:border-white/10 shrink-0 w-full md:w-[240px] lg:w-[260px]">
                 <div className="text-center w-full">
                   <div
                     className="font-mono font-bold leading-none tabular-nums select-none"
