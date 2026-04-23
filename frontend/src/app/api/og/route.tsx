@@ -565,7 +565,7 @@ export async function GET(request: NextRequest) {
                   display: "flex",
                 }}
               >
-                of 80,000+ Open Source GitHub organizations
+                of 40,000+ Open Source GitHub organizations
               </span>
             </div>
 
