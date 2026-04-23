@@ -131,7 +131,6 @@ export async function GET(request: NextRequest) {
   const bgEnd = isLight ? "#fafafa" : "#1a1a1a";
   const borderColor = isLight ? "#e6e6e6" : "#2a2a2a";
   const ink = isLight ? "#111111" : "#ededed";
-  const inkDim = isLight ? "#444444" : "#a0a0a0";
   const inkMute = isLight ? "#888888" : "#6f6f6f";
   const dividerColor = isLight ? "rgba(0,0,0,0.10)" : "rgba(255,255,255,0.12)";
 
@@ -584,8 +583,6 @@ export async function GET(request: NextRequest) {
           >
             {QUARTER_LABEL}
           </span>
-          {/* referenced inkDim to keep it used by light/dark theming */}
-          <span style={{ display: "none", color: inkDim }} />
         </div>
       </div>
     ),

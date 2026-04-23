@@ -1,40 +1,6 @@
 import fs from "fs";
 import path from "path";
 
-// ─── Rank helpers ─────────────────────────────────────────────────────────────
-
-export function getTopN(rank: number): number {
-  if (rank === 1) return 1;
-  if (rank === 2) return 2;
-  if (rank <= 3) return 3;
-  if (rank <= 10) return 10;
-  if (rank <= 20) return 20;
-  if (rank <= 50) return 50;
-  if (rank <= 100) return 100;
-  if (rank <= 500) return 500;
-  return 1000;
-}
-
-export function getRankColor(rank: number): string {
-  if (rank === 1) return "#F0B429";   // amber
-  if (rank === 2) return "#C8D0DA";   // silver
-  if (rank === 3) return "#C87941";   // bronze
-  return "#D9D9D9";                    // white for the rest
-}
-
-export function getOscarFile(rank: number): string {
-  if (rank === 1) return "osscar-logo-icon-gold.png";
-  if (rank === 2) return "osscar-logo-icon-silver.png";
-  if (rank === 3) return "osscar-logo-icon-bronze.png";
-  return "osscar-logo-icon-white.png";
-}
-
-/** Returns "#1", "#2", "#3" for top 3, "Top N" otherwise */
-export function getRankLabel(rank: number): string {
-  if (rank <= 3) return `#${rank}`;
-  return `Top ${getTopN(rank)}`;
-}
-
 // ─── Font loader ──────────────────────────────────────────────────────────────
 
 let interBoldData: ArrayBuffer | null = null;
