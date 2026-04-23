@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import type { Org } from "@/types";
 import { DATA_FILES } from "@/lib/config";
+import { normalizeLogin } from "@/lib/normalize-login";
 
 function readOrgs(filename: string): Org[] {
   const raw = fs.readFileSync(
@@ -24,9 +25,14 @@ export function getAllOrgs(): Org[] {
   return [...getEmerging(), ...getScaling()];
 }
 
+/**
+ * Derive the canonical org slug (= GitHub login, lowercased) from any of the
+ * representations we store in CSV rows: full URL, "owner/repo", bare login.
+ *
+ * Thin wrapper over `normalizeLogin` so client + server share one parser.
+ */
 export function extractSlug(url: string | null | undefined): string | null {
-  if (!url) return null;
-  return url.trim().replace(/\/$/, "").split("/").pop()?.toLowerCase() ?? null;
+  return normalizeLogin(url);
 }
 
 /** Find an org across both divisions by its GitHub URL slug. */
