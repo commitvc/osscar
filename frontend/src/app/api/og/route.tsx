@@ -157,41 +157,44 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Little stat row (icon + value)
-  function Stat({
+  // One stat slot — fixed 1/3 width so positions stay stable when some stats are missing
+  function StatSlot({
     icon,
     value,
-    isLast,
+    showDivider,
   }: {
-    icon: React.ReactNode;
-    value: string;
-    isLast?: boolean;
+    icon?: React.ReactNode;
+    value?: string;
+    showDivider?: boolean;
   }) {
+    const hasValue = value != null;
     return (
       <div
         style={{
+          width: "33.333%",
           display: "flex",
           alignItems: "center",
+          justifyContent: "center",
           gap: "11px",
-          flex: 1,
-          paddingRight: "22px",
-          borderRight: isLast ? "0" : "1px solid #2A2A2A",
-          paddingLeft: "22px",
+          borderRight: showDivider ? "1px solid #2A2A2A" : "0",
+          padding: "0 12px",
         }}
       >
-        {icon}
-        <span
-          style={{
-            fontSize: "24px",
-            fontWeight: 700,
-            color: "#EDEDED",
-            letterSpacing: "-0.015em",
-            lineHeight: 1,
-            display: "flex",
-          }}
-        >
-          {value}
-        </span>
+        {hasValue && icon}
+        {hasValue && (
+          <span
+            style={{
+              fontSize: "24px",
+              fontWeight: 700,
+              color: "#EDEDED",
+              letterSpacing: "-0.015em",
+              lineHeight: 1,
+              display: "flex",
+            }}
+          >
+            {value}
+          </span>
+        )}
       </div>
     );
   }
@@ -212,19 +215,6 @@ export async function GET(request: NextRequest) {
         }}
       >
         {/* Atmospheric accent on the rank side */}
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            right: 0,
-            bottom: 0,
-            width: "58%",
-            background:
-              "radial-gradient(ellipse 70% 70% at 60% 55%, rgba(62,207,142,0.055), transparent 65%)",
-            display: "flex",
-          }}
-        />
-
         {/* Corner crosshairs */}
         <Corner pos="tl" />
         <Corner pos="tr" />
@@ -422,8 +412,7 @@ export async function GET(request: NextRequest) {
                 display: "flex",
               }}
             >
-              Ranked among the fastest-growing open source organizations of the
-              quarter.
+              Ranked among the fastest-growing open source organizations of {QUARTER_LABEL}
             </span>
           </div>
 
@@ -479,6 +468,7 @@ export async function GET(request: NextRequest) {
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
+              alignItems: "center",
               gap: "36px",
               padding: "0 72px 0 64px",
             }}
@@ -488,6 +478,7 @@ export async function GET(request: NextRequest) {
               style={{
                 display: "flex",
                 flexDirection: "column",
+                alignItems: "center",
                 gap: "10px",
               }}
             >
@@ -562,6 +553,7 @@ export async function GET(request: NextRequest) {
                   fontSize: "16px",
                   fontWeight: 500,
                   lineHeight: 1.4,
+                  textAlign: "center",
                   display: "flex",
                 }}
               >
@@ -569,79 +561,75 @@ export async function GET(request: NextRequest) {
               </span>
             </div>
 
-            {/* Stats */}
+            {/* Stats — always 3 fixed-width slots so positions are stable
+                whether the org has 1, 2 or 3 metrics */}
             {hasStats && (
               <div
                 style={{
                   display: "flex",
                   borderTop: "1px solid #2A2A2A",
                   paddingTop: "22px",
-                  maxWidth: "500px",
+                  width: "500px",
                 }}
               >
-                {starsDelta && (
-                  <Stat
-                    icon={
-                      <svg
-                        width="22"
-                        height="22"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#A0A0A0"
-                        strokeWidth="1.7"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <polygon points="12 2 15 9 22 9.5 16.5 14 18.5 21 12 17 5.5 21 7.5 14 2 9.5 9 9" />
-                      </svg>
-                    }
-                    value={starsDelta}
-                  />
-                )}
-                {contribDelta && (
-                  <Stat
-                    icon={
-                      <svg
-                        width="22"
-                        height="22"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#A0A0A0"
-                        strokeWidth="1.7"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <circle cx="9" cy="8" r="3.2" />
-                        <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
-                        <circle cx="17" cy="7" r="2.6" />
-                        <path d="M15.5 13.2c3.2.6 5.5 3.1 5.5 6.3" />
-                      </svg>
-                    }
-                    value={contribDelta}
-                  />
-                )}
-                {downloadsDelta && (
-                  <Stat
-                    icon={
-                      <svg
-                        width="22"
-                        height="22"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#A0A0A0"
-                        strokeWidth="1.7"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M12 3v12" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <path d="M4 19h16" />
-                      </svg>
-                    }
-                    value={downloadsDelta}
-                    isLast
-                  />
-                )}
+                <StatSlot
+                  icon={
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#A0A0A0"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polygon points="12 2 15 9 22 9.5 16.5 14 18.5 21 12 17 5.5 21 7.5 14 2 9.5 9 9" />
+                    </svg>
+                  }
+                  value={starsDelta ?? undefined}
+                  showDivider={!!starsDelta && !!contribDelta}
+                />
+                <StatSlot
+                  icon={
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#A0A0A0"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="9" cy="8" r="3.2" />
+                      <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
+                      <circle cx="17" cy="7" r="2.6" />
+                      <path d="M15.5 13.2c3.2.6 5.5 3.1 5.5 6.3" />
+                    </svg>
+                  }
+                  value={contribDelta ?? undefined}
+                  showDivider={!!contribDelta && !!downloadsDelta}
+                />
+                <StatSlot
+                  icon={
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#A0A0A0"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 3v12" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <path d="M4 19h16" />
+                    </svg>
+                  }
+                  value={downloadsDelta ?? undefined}
+                />
               </div>
             )}
           </div>
@@ -689,7 +677,19 @@ export async function GET(request: NextRequest) {
             <span style={{ color: "#6F6F6F", fontSize: "14px", display: "flex" }}>
               ×
             </span>
-            <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "7px",
+                // Nudge the >commit group down so the text bottom sits on the
+                // same baseline as the "supabase" wordmark inside the PNG
+                // (the wordmark text has ~2–3px padding at the bottom of its
+                // image box, while the rendered >commit text is vertically
+                // centered within its own line box).
+                transform: "translateY(4px)",
+              }}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={rrwDataUrl}
