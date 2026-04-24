@@ -1,8 +1,8 @@
-# OSS Growth Index (OSSCAr)
+# OSS Growth Index (OSSCAR)
 
 A quarterly ranking of the fastest-growing open-source GitHub organizations, produced by [Supabase](https://supabase.com) and [>commit](https://commit.fund).
 
-## What is OSSCAr?
+## What is OSSCAR?
 
 The OSS Growth Index tracks growth across GitHub stars, contributors, and package downloads (npm, PyPI, Cargo) for thousands of open-source organizations each quarter. The top 200 organizations in each division are published on the website and the full dataset is available for download.
 
