@@ -98,6 +98,59 @@ async function getCurrentQuarter(): Promise<CurrentQuarter | null> {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+/**
+ * "We're running in a production Vercel deployment". Previews and local dev
+ * are treated as non-production so contributors can test without setting up
+ * Turnstile / SITE_URL. NODE_ENV === "production" is a fallback for self-hosts
+ * that don't set VERCEL_ENV.
+ */
+function isProduction(): boolean {
+  return (
+    process.env.VERCEL_ENV === "production" ||
+    (process.env.VERCEL_ENV == null && process.env.NODE_ENV === "production")
+  );
+}
+
+/**
+ * Same-origin check for POST. Modern browsers always send `Origin` on POST,
+ * so requiring it in production cheaply blocks cross-site form submissions
+ * from a page a visitor might browse — without needing a CSRF token.
+ *
+ * Preview deployments: also accept `VERCEL_URL` so preview URLs (which have
+ * randomized subdomains) can hit their own endpoint. Local dev: no origin
+ * enforcement.
+ */
+function isAllowedOrigin(req: NextRequest): boolean {
+  // In dev / preview without a configured SITE_URL, don't enforce. Keeps
+  // `next dev` and ad-hoc preview deploys usable without extra setup.
+  if (!isProduction() && !process.env.VERCEL_URL) return true;
+
+  const originHeader = req.headers.get("origin");
+  const refererHeader = req.headers.get("referer");
+
+  let origin: string | null = originHeader;
+  if (!origin && refererHeader) {
+    try {
+      origin = new URL(refererHeader).origin;
+    } catch {
+      origin = null;
+    }
+  }
+  if (!origin) return false;
+
+  const allowed = new Set<string>();
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    try {
+      allowed.add(new URL(process.env.NEXT_PUBLIC_SITE_URL).origin);
+    } catch {
+      // malformed env — ignored
+    }
+  }
+  if (process.env.VERCEL_URL) allowed.add(`https://${process.env.VERCEL_URL}`);
+
+  return allowed.has(origin);
+}
+
 function getClientIp(req: NextRequest): string {
   const xff = req.headers.get("x-forwarded-for");
   if (xff) return xff.split(",")[0]!.trim();
@@ -121,10 +174,18 @@ async function verifyTurnstile(
 ): Promise<{ ok: boolean; reason?: string }> {
   const secret = process.env.TURNSTILE_SECRET_KEY;
   if (!secret) {
-    // Dev bypass so the feature can be built/tested before Turnstile is set
-    // up. Logged loudly every request so it can't go unnoticed in prod.
+    // In production, a missing secret means Turnstile is unconfigured — fail
+    // closed so a misconfigured deploy doesn't silently become an open relay.
+    // In dev/preview without the key set, we allow through so the feature can
+    // be built/tested locally.
+    if (isProduction()) {
+      console.error(
+        "[request-score] TURNSTILE_SECRET_KEY unset in production — rejecting.",
+      );
+      return { ok: false, reason: "turnstile-unconfigured" };
+    }
     console.warn(
-      "[request-score] TURNSTILE_SECRET_KEY unset — skipping bot verification.",
+      "[request-score] TURNSTILE_SECRET_KEY unset — skipping bot verification (dev only).",
     );
     return { ok: true };
   }
@@ -396,6 +457,12 @@ function json(body: { ok: boolean; status: RequestScoreStatus }, init?: Response
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  // 0. Same-origin check. Cross-site POSTs get the same response shape as a
+  //    malformed body so attackers can't probe the allowlist.
+  if (!isAllowedOrigin(req)) {
+    return json({ ok: false, status: "invalid_input" }, { status: 400 });
+  }
+
   // 1. Parse + validate.
   let parsed: Body;
   try {

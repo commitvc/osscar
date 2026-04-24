@@ -318,9 +318,9 @@ export async function GET(request: NextRequest) {
       {
         width: W,
         height: H,
-        headers: {
-          "Cache-Control": "public, max-age=86400, s-maxage=86400",
-        },
+        // Cache-Control is set via next.config.ts headers() so the response
+        // still picks up the site's security headers. Passing `headers` here
+        // would suppress that merging.
         ...(fontData
           ? { fonts: [{ name: "Inter", data: fontData, style: "normal", weight: 700 }] }
           : {}),
@@ -589,9 +589,7 @@ export async function GET(request: NextRequest) {
     {
       width: W,
       height: H,
-      headers: {
-        "Cache-Control": "public, max-age=86400, s-maxage=86400",
-      },
+      // Cache-Control set via next.config.ts headers() — see compact branch.
       ...(fontData
         ? { fonts: [{ name: "Inter", data: fontData, style: "normal", weight: 700 }] }
         : {}),
