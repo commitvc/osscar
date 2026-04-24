@@ -355,6 +355,7 @@ export default function MethodologyPage() {
               <ul className="list-none space-y-3 not-prose">
                 {[
                   { k: "First version", v: "This is the first version of the index, and the methodology will keep evolving. Expect signals, thresholds, and scoring choices to change as we iterate." },
+                  { k: "Weekly data collection", v: "We snapshot data on a weekly cadence, so the start and end of a quarter rarely align with its exact first and last day. Instead, the quarter is bounded by the weekly snapshots closest to those dates." },
                   { k: "Package coverage", v: "We currently track downloads from three registries: npm, PyPI, and Cargo. Orgs that publish to other ecosystems (Maven, RubyGems, NuGet, Go modules, Hex, and others) are effectively ranked on stars and contributors alone. We plan to expand registry coverage over time." },
                   { k: "Short-term growth bias", v: "Because the index measures a single quarter, mature projects that have plateaued at high adoption can rank poorly, even when they\u2019re foundational to their ecosystem. The index is a picture of momentum, not of importance." },
                 ].map((item, i) => (
