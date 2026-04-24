@@ -91,8 +91,8 @@ export async function GET(request: NextRequest) {
   } else {
     const normalized = normalizeLogin(loginParam);
     if (!normalized) return bad(400, "Invalid login");
-    // Quarter is optional, but if supplied it must be a UUID — reject
-    // anything else before it touches the DB.
+    // Quarter is optional, but if supplied it must match our quarter-id
+    // format — reject anything else before it touches the DB.
     if (quarterParam != null && !isQuarterId(quarterParam)) {
       return bad(400, "Invalid quarter");
     }
