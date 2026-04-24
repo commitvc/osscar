@@ -1,51 +1,21 @@
 # Data Schema
 
-The OSSCAr project publishes two Parquet files per quarter on GitHub Releases:
+OSSCAR publishes three kinds of data file per quarter:
 
-- **`osscar_input_data_Q*_*.parquet`** — raw organization metrics, the input to the scoring pipeline.
-- **`osscar_ranking_Q*_*.parquet`** — the input columns passed through, plus division assignment, rank, and the derived scoring columns used by the frontend.
-
-The repository also ships two trimmed CSVs in [`frontend/data/`](../../frontend/data/) that power the website table (top 200 orgs per division), plus a frontend enrichment CSV. Those are documented at the bottom of this file.
-
-## Ranking parquet
-
-File: `osscar_ranking_Q*_*.parquet` (GitHub Releases)
-
-Contains every organization that was eligible for ranking in a given quarter. Column set = every column from the input parquet, plus the derived columns listed below.
-
-### Derived columns added by the scoring pipeline
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `division` | string | `emerging` (<1,000 stars at quarter start) or `scaling` (>=1,000) |
-| `division_rank` | integer | 1-based rank within the division, ordered by composite score descending |
-| `package_downloads_start` | integer | Combined npm + PyPI + Cargo downloads at quarter start (nullable) — summed from per-registry columns |
-| `package_downloads_end` | integer | Combined downloads at quarter end (nullable) |
-| `github_stars_growth_rate` | float | Real growth rate for stars: `(end - start) / start` (null when start is 0) |
-| `github_stars_growth_percentile` | float | Percentile rank of growth rate within the division (0–100) |
-| `github_stars_final_weight` | float | Weight used in the composite score (1.0 in sum mode) |
-| `github_contributors_growth_rate` | float | Real growth rate for contributors (nullable) |
-| `github_contributors_growth_percentile` | float | Percentile rank within division (nullable) |
-| `github_contributors_final_weight` | float | Weight used in composite score (nullable) |
-| `package_downloads_growth_rate` | float | Real growth rate for combined downloads (nullable) |
-| `package_downloads_growth_percentile` | float | Percentile rank within division (nullable) |
-| `package_downloads_final_weight` | float | Weight used in composite score (nullable) |
-
-### Notes on growth rates
-
-- **Real vs. padded rate**: The `_growth_rate` column is the **real** rate `(end - start) / start`. Padding (`max(start, padding_threshold)`) is applied internally for scoring only — it prevents low-baseline outliers from dominating the ranked scores, but is never surfaced as a displayed rate.
-- **Eligibility**: An organization is eligible for a metric only if both start and end values exist, the end value meets the padding threshold, and the padded growth rate is non-negative.
-- **Nullable fields**: `_growth_rate` is null when `start` is 0 (rate undefined). Package download columns are null for organizations that don't publish to npm, PyPI, or Cargo.
+- **`osscar_input_data_Q*_*.parquet`** — the raw per-organization metrics, the input to the scoring pipeline. Attached to the GitHub Release.
+- **`osscar_ranking_Q*_*.parquet`** — the input columns passed through, plus division assignment, rank, and the derived scoring columns used by the frontend. Attached to the GitHub Release.
+- **`osscar_{emerging,scaling}_top100_Q*_*.json`** — per-division frontend bundles (top 100 orgs each). Committed to the repo under [`frontend/data/`](../../frontend/data/).
 
 ## Input parquet
 
 File: `osscar_input_data_Q*_*.parquet` (GitHub Releases)
 
-Raw per-organization metrics for a given quarter. This is the file
-`methodology/compute_index.py` consumes.
+Raw per-organization metrics for a given quarter. This is the file [`methodology/compute_index.py`](../../methodology/compute_index.py) consumes.
+
+### Scalar columns
 
 | Column | Type | Description |
-|--------|------|-------------|
+|---|---|---|
 | `owner_id` | string | GitHub organization ID |
 | `owner_login` | string | GitHub organization login (e.g., `supabase`) |
 | `owner_name` | string | Display name of the organization |
@@ -65,77 +35,84 @@ Raw per-organization metrics for a given quarter. This is the file
 | `pypi_downloads_end` | float | PyPI downloads at quarter end (nullable) |
 | `cargo_downloads_start` | float | Cargo downloads at quarter start (nullable) |
 | `cargo_downloads_end` | float | Cargo downloads at quarter end (nullable) |
-| `github_repo_count` | float | Number of repositories owned by the organization |
-| `github_is_new_this_quarter` | bool | Whether the organization first appeared on GitHub this quarter |
-| `npm_is_new_this_quarter` | bool | Whether the organization first published to npm this quarter |
-| `pypi_is_new_this_quarter` | bool | Whether the organization first published to PyPI this quarter |
-| `cargo_is_new_this_quarter` | bool | Whether the organization first published to Cargo this quarter |
-| `github_stars_weekly` | list<struct> | Weekly star time series — array of `{date, value}` points |
-| `github_contributors_weekly` | list<struct> | Weekly contributor time series |
-| `npm_weekly` | list<struct> | Weekly npm download time series |
-| `pypi_weekly` | list<struct> | Weekly PyPI download time series |
-| `cargo_weekly` | list<struct> | Weekly Cargo download time series |
+
+### Array columns
+
+The parquet also carries weekly time-series arrays and a per-repository detail array. These are stored as JSON-encoded strings in the parquet and parsed into nested structures by downstream tooling.
+
+| Column | Element schema | Description |
+|---|---|---|
+| `github_stars_weekly` | `{ date, value }` | Cumulative weekly star counts over the quarter |
+| `github_contributors_weekly` | `{ date, value }` | Cumulative weekly contributor counts |
+| `npm_weekly` | `{ date, value }` | Weekly npm download counts |
+| `pypi_weekly` | `{ date, value }` | Weekly PyPI download counts |
+| `cargo_weekly` | `{ date, value }` | Weekly Cargo download counts |
+| `repositories` | see [repository object](#repository-object) | Per-repository detail for the org |
 
 ### Weekly time-series point schema
 
 | Field | Type | Description |
-|-------|------|-------------|
-| `date` | string | ISO date (e.g., `2026-01-06`) |
+|---|---|---|
+| `date` | string | ISO date for the week (e.g., `2026-01-04`) |
 | `value` | number | Metric value at that point |
 
-## In-repo ranking CSVs (frontend)
+### Repository object
 
-Files: `frontend/data/oss_growth_index_{above,below}_1000_Q*_top200_clean.csv`
-
-Top-200 trimmed subsets of the ranking parquet, in CSV form, committed to the
-repo so the statically-generated frontend can read them without any release
-dependency. Columns mirror the ranking parquet: org identity fields,
-`*_start`/`*_end` for each metric, and the derived `growth_rate` /
-`growth_percentile` / `final_weight` columns.
-
-## Frontend enrichment file
-
-File: `oss_index_prototype_frontend_data.csv`
-
-This file contains additional data used by the org detail pages on the website.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `owner_id` | string | GitHub organization ID |
-| `owner_login` | string | GitHub organization login |
-| `name` | string | Display name |
-| `description` | string | Organization description (nullable) |
-| `github_url` | string | GitHub profile URL |
-| `logo_url` | string | Avatar URL (nullable) |
-| `homepage_url` | string | Website URL (nullable) |
-| `repositories` | JSON string | Array of repository objects (see below) |
-| `github_stars_weekly` | JSON string | Array of `{date, value}` points — cumulative weekly star counts |
-| `github_contributors_weekly` | JSON string | Array of `{date, value}` points — cumulative weekly contributor counts |
-| `npm_weekly` | JSON string | Array of `{date, value}` points — weekly npm download counts |
-| `pypi_weekly` | JSON string | Array of `{date, value}` points — weekly PyPI download counts |
-| `cargo_weekly` | JSON string | Array of `{date, value}` points — weekly Cargo download counts |
-| `docker_weekly` | JSON string | Array of `{date, value}` points — weekly Docker pull counts |
-
-### Repository object schema
-
-Each element in the `repositories` JSON array:
+Each element in the `repositories` array:
 
 | Field | Type | Description |
-|-------|------|-------------|
+|---|---|---|
 | `url` | string | Repository URL |
 | `name` | string | Repository name |
-| `forks` | integer | Fork count |
-| `stars` | integer | Star count |
+| `forks` | integer | Fork count at quarter end |
+| `stars` | integer | Star count at quarter end |
+| `stars_start` | integer | Star count at quarter start |
 | `license` | string | License identifier (nullable) |
 | `language` | string | Primary language (nullable) |
 | `description` | string | Repository description (nullable) |
 
-### Time series point schema
+## Ranking parquet
 
-Each element in the weekly JSON arrays:
+File: `osscar_ranking_Q*_*.parquet` (GitHub Releases)
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `date` | string | ISO date (e.g., `2026-01-06`) |
-| `value` | number | Metric value at that point |
+Contains every organization eligible for ranking in a given quarter. The column set is **every column from the input parquet**, plus the derived columns below. The input's array columns (weekly series, repositories) pass through unchanged.
 
+### Derived columns added by the scoring pipeline
+
+| Column | Type | Description |
+|---|---|---|
+| `division` | string | `emerging` (`stars_start < 1,000`) or `scaling` (`stars_start ≥ 1,000`) |
+| `division_rank` | integer | 1-based rank within the division, ordered by composite score descending. Ties share the same rank (`pandas.rank(method="min")`). |
+| `package_downloads_start` | integer | Combined npm + PyPI + Cargo downloads at quarter start (nullable) — summed from per-registry columns, treating missing registries as 0 when at least one is present |
+| `package_downloads_end` | integer | Combined downloads at quarter end (nullable) |
+| `github_stars_growth_rate` | float | Real growth rate for stars: `(end − start) / start` (null when start is 0) |
+| `github_stars_growth_percentile` | float | Percentile rank of growth rate within the division (0–100) |
+| `github_stars_final_weight` | float | Weight contributed by this metric to the composite score |
+| `github_contributors_growth_rate` | float | Real growth rate for contributors (nullable) |
+| `github_contributors_growth_percentile` | float | Percentile rank within division (nullable) |
+| `github_contributors_final_weight` | float | Weight contributed to the composite score (nullable) |
+| `package_downloads_growth_rate` | float | Real growth rate for combined downloads (nullable) |
+| `package_downloads_growth_percentile` | float | Percentile rank within division (nullable) |
+| `package_downloads_final_weight` | float | Weight contributed to the composite score (nullable) |
+
+### Notes on growth rates
+
+- **Real vs. padded rate.** The `_growth_rate` column is the **real** rate `(end − start) / start`. Padding (`max(start, padding_threshold)`) is applied internally for scoring only — it prevents low-baseline outliers from dominating ranked scores, but is never surfaced as a displayed rate. See [methodology.md](../methodology.md#step-03--measure-three-growth-signals).
+- **Eligibility.** An organization is eligible for a metric only if both start and end values exist, the end value meets the padding threshold, and the padded growth rate is non-negative.
+- **Nullable fields.** `_growth_rate` is null when `start` is 0 (rate undefined). Package download columns are null for organizations with no data across npm, PyPI, and Cargo.
+
+## Per-division frontend JSON
+
+Files: `frontend/data/osscar_{emerging,scaling}_top100_Q*_*.json`
+
+Self-contained JSON arrays of the top 100 orgs per division, generated from the ranking parquet by [`methodology/extract_frontend_data.py`](../../methodology/extract_frontend_data.py). One file per division, one record per organization. Each record includes:
+
+- **Identity:** `owner_id`, `owner_login`, `owner_name`, `owner_url`, `homepage_url`, `owner_description`, `owner_logo`
+- **Quarter:** `quarter_start`, `quarter_end`
+- **Ranking:** `division`, `division_rank`
+- **Per-metric scoring:** for each of `github_stars`, `github_contributors`, `package_downloads` — `_start`, `_end`, `_growth_rate`, `_growth_percentile`, `_final_weight`
+- **Enrichment for org detail pages:** `github_stars_weekly`, `github_contributors_weekly`, `npm_weekly`, `pypi_weekly`, `cargo_weekly`, `repositories`
+
+The array columns are parsed from their JSON-string form into real JSON arrays at extraction time, so the frontend can consume them directly without further parsing. Nulls (NaN / NaT / `pandas.NA`) in the source parquet are emitted as explicit JSON `null`s.
+
+The set of columns included is authoritatively defined by `FRONTEND_COLUMNS` at the top of [`methodology/extract_frontend_data.py`](../../methodology/extract_frontend_data.py).
