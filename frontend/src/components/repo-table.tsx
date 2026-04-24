@@ -67,7 +67,7 @@ export function RepoTable({ repos }: RepoTableProps) {
           href={row.original.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="font-mono text-sm text-foreground hover:text-green transition-colors group flex items-center gap-1.5"
+          className="font-mono text-sm text-foreground hover:text-green transition-colors group flex min-w-0 items-center gap-1.5"
         >
           <span className="truncate">{row.original.name}</span>
           <ExternalLink
@@ -179,7 +179,7 @@ export function RepoTable({ repos }: RepoTableProps) {
         if (!desc)
           return <span className="text-muted-foreground/25 text-sm">—</span>;
         return (
-          <span className="text-xs text-muted-foreground/70 line-clamp-1">
+          <span className="block text-xs leading-relaxed text-muted-foreground/70">
             {desc}
           </span>
         );
@@ -201,7 +201,7 @@ export function RepoTable({ repos }: RepoTableProps) {
   return (
     <div className="space-y-3">
     <div className="rounded-lg border border-white/10 overflow-hidden">
-      <Table>
+      <Table className="table-fixed">
         <TableHeader>
           {table.getHeaderGroups().map((hg) => (
             <TableRow key={hg.id} className="border-white/10 hover:bg-transparent">
@@ -210,6 +210,7 @@ export function RepoTable({ repos }: RepoTableProps) {
                   key={header.id}
                   className={cn(
                     "text-[0.6rem] uppercase tracking-widest text-muted-foreground/60 font-semibold py-3",
+                    header.id === "name" && "w-36 sm:w-40",
                     header.id === "stars" && "w-20 text-right sm:w-24",
                     header.id === "forks" && "w-20 text-right sm:w-24",
                     header.id === "language" && "w-32 hidden sm:table-cell",
@@ -233,10 +234,11 @@ export function RepoTable({ repos }: RepoTableProps) {
                   key={cell.id}
                   className={cn(
                     "py-3",
+                    cell.column.id === "name" && "min-w-0 overflow-hidden",
                     cell.column.id === "stars" && "text-right",
                     cell.column.id === "forks" && "text-right",
                     cell.column.id === "language" && "hidden sm:table-cell",
-                    cell.column.id === "description" && "hidden md:table-cell"
+                    cell.column.id === "description" && "hidden md:table-cell min-w-0 whitespace-normal break-words"
                   )}
                 >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
