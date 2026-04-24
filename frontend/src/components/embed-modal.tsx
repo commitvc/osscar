@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { X, Check, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -27,7 +27,7 @@ export function EmbedModal({ name, slug, onClose }: EmbedModalProps) {
   const [loadedVariants, setLoadedVariants] = useState<Set<Variant>>(new Set());
   const overlayRef = useRef<HTMLDivElement>(null);
   // Stable cache-buster so the preview images don't reload on every keystroke
-  const nonce = useRef(Date.now()).current;
+  const nonce = useId().replaceAll(":", "");
 
   const origin =
     typeof window !== "undefined" ? window.location.origin : "";
@@ -58,11 +58,6 @@ export function EmbedModal({ name, slug, onClose }: EmbedModalProps) {
       // ignore
     }
   }
-
-  // Reset copy state when tab or variant changes
-  useEffect(() => {
-    setCopyState("idle");
-  }, [activeTab, variant]);
 
   // Close on Escape + lock body scroll
   useEffect(() => {
@@ -162,7 +157,10 @@ export function EmbedModal({ name, slug, onClose }: EmbedModalProps) {
             {VARIANTS.map((v) => (
               <button
                 key={v.key}
-                onClick={() => setVariant(v.key)}
+                onClick={() => {
+                  setVariant(v.key);
+                  setCopyState("idle");
+                }}
                 className={cn(
                   "flex items-center justify-between gap-2 px-3 py-2 rounded-lg border transition-all cursor-pointer text-left",
                   variant === v.key
@@ -195,7 +193,10 @@ export function EmbedModal({ name, slug, onClose }: EmbedModalProps) {
             {(["html", "markdown"] as Tab[]).map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => {
+                  setActiveTab(tab);
+                  setCopyState("idle");
+                }}
                 className={cn(
                   "px-3 py-1 rounded-md font-mono text-[0.6rem] uppercase tracking-widest transition-all cursor-pointer",
                   activeTab === tab
