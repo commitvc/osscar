@@ -2,18 +2,18 @@
 
 All notable changes to the OSS Growth Index are documented here. Each quarterly release includes methodology, data, and frontend changes.
 
-## Q1 2026 — Methodology v6
+## Q1 2026
 
 **Release tag:** `v2026.Q1`
 
 ### Methodology
-- Growth scores use log-minmax normalization scaled to [0, 100] (changed from raw percentiles in v5)
-- Composite score = sum of eligible metric scores (breadth-rewarding)
+- Growth scores use log-minmax normalization scaled to [0, 100] (changed from raw percentiles in the previous iteration)
+- Composite score via the L² norm of eligible metric scores: `√(Σ score_i²)` — breadth-rewarding, with extra weight on standout performance on a single signal
 - Three signals: GitHub stars, GitHub contributors, package downloads (npm + PyPI + Cargo)
 - Padding thresholds prevent small-baseline distortion
 
 ### Data
-- Rankings for 200 organizations per division (emerging + scaling)
+- Rankings for the top 100 organizations per division (emerging + scaling)
 - Full dataset available in GitHub Releases
 
 ### Frontend
