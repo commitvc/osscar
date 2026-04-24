@@ -1,4 +1,4 @@
 pandas>=3.0.2,<4.0
 numpy>=2.4.4,<3.0
-pyarrow>=14.0
+pyarrow>=24.0.0
 pytest>=9.0.3
