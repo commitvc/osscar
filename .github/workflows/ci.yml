@@ -123,4 +123,4 @@ jobs:
           docker run --rm \
             -v "${{ github.workspace }}:/repo:ro" \
             zricethezav/gitleaks:v8.30.1 \
-            detect --source=/repo --redact --verbose
+            detect --source=/repo --gitleaks-ignore-path=/repo/.gitleaksignore --redact --verbose
