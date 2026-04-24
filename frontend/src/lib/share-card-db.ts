@@ -23,9 +23,11 @@ export type ShareCardLookup = {
   quarterLabel: string;
 };
 
-const QUARTER_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Quarter IDs are short text tokens assigned by the ingest script, e.g.
+// "Q12026". Accept any short alphanumeric string (with `_`/`-`) so the format
+// can evolve without code changes; the DB lookup is the source of truth.
+const QUARTER_ID_RE = /^[A-Za-z0-9_-]{1,32}$/;
 
-/** Validate a UUIDv4-shaped string without pulling in a uuid dep. */
 export function isQuarterId(value: string | null | undefined): value is string {
   return !!value && QUARTER_ID_RE.test(value);
 }
