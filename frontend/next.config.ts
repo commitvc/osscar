@@ -7,22 +7,38 @@ import type { NextConfig } from "next";
 //   - `connect-src` gets ws:/wss: in dev for HMR.
 //   - Turnstile (challenges.cloudflare.com) is allowed for script + frame +
 //     connect so the invisible widget can run.
+//   - PostHog needs two hosts: the ingestion API (NEXT_PUBLIC_POSTHOG_HOST,
+//     e.g. eu.i.posthog.com) for connect-src, and the matching *-assets
+//     host (eu-assets.i.posthog.com) for both script-src (lazy-loaded
+//     recorder/surveys/toolbar bundles) and connect-src. The -assets host
+//     is derived by the same .replace() posthog-js uses internally so
+//     switching region only requires updating the env var.
 //   - `img-src` is broad (`https:`) because org logos come from many hosts.
 //   - `frame-ancestors 'none'` blocks clickjacking of the HTML pages. It does
 //     NOT block embedding `/api/badge` as an <img> — X-Frame-Options and
 //     frame-ancestors only apply to framed documents, not images.
 const isDev = process.env.NODE_ENV !== "production";
 
+const posthogHost =
+  process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com";
+const posthogAssetsHost = posthogHost.replace(
+  ".i.posthog.com",
+  "-assets.i.posthog.com"
+);
+
 const scriptSrc = [
   "'self'",
   "'unsafe-inline'",
   "https://challenges.cloudflare.com",
+  posthogAssetsHost,
   ...(isDev ? ["'unsafe-eval'"] : []),
 ];
 
 const connectSrc = [
   "'self'",
   "https://challenges.cloudflare.com",
+  posthogHost,
+  posthogAssetsHost,
   ...(isDev ? ["ws:", "wss:"] : []),
 ];
 
