@@ -347,26 +347,32 @@ function fromAddress(): string {
   return process.env.RESEND_FROM ?? "OSSCAR <onboarding@resend.dev>";
 }
 
-// ─── Logo (inline CID attachment) ─────────────────────────────────────────────
-// We attach the OSSCAR logo as a MIME part with `contentId: "osscar-logo"`
-// and reference it via `<img src="cid:osscar-logo">` in the email HTML.
-// This is the standard email approach — works in Gmail, Apple Mail, Outlook,
-// iOS Mail — and avoids depending on any external image hosting (our public
-// asset isn't live at osscar.dev yet, and GitHub raw requires auth since the
-// repo is private). Lazy-loaded once per process.
-let _logoBuf: Buffer | null = null;
-function loadLogoBuffer(): Buffer | null {
-  if (_logoBuf) return _logoBuf;
+// ─── Logos (inline CID attachments) ───────────────────────────────────────────
+// We attach each logo as a MIME part with a `contentId` and reference it via
+// `<img src="cid:<id>">` in the email HTML. This is the standard email
+// approach — works in Gmail, Apple Mail, Outlook, iOS Mail — and avoids
+// depending on any external image hosting (our public asset isn't live at
+// osscar.dev yet, and GitHub raw requires auth since the repo is private).
+// Lazy-loaded once per process, per file.
+type InlineLogo = { filename: string; contentId: string; publicFile: string };
+
+const INLINE_LOGOS: readonly InlineLogo[] = [
+  { filename: "osscar-logo.png", contentId: "osscar-logo", publicFile: "osscar-logo-icon-white.png" },
+  { filename: "supabase-logo.png", contentId: "supabase-logo", publicFile: "supabase-logo-wordmark--dark.png" },
+  { filename: "commit-logo.png", contentId: "commit-logo", publicFile: "commit-logo-dark.png" },
+];
+
+const _logoBufCache = new Map<string, Buffer>();
+function loadLogoBuffer(publicFile: string): Buffer | null {
+  const cached = _logoBufCache.get(publicFile);
+  if (cached) return cached;
   try {
-    const p = path.join(
-      process.cwd(),
-      "public",
-      "osscar-logo-icon-white.png",
-    );
-    _logoBuf = fs.readFileSync(p);
-    return _logoBuf;
+    const p = path.join(process.cwd(), "public", publicFile);
+    const buf = fs.readFileSync(p);
+    _logoBufCache.set(publicFile, buf);
+    return buf;
   } catch (err) {
-    console.warn("[request-score] Could not read logo PNG; email will ship without inline logo", err);
+    console.warn(`[request-score] Could not read ${publicFile}; email will ship without it`, err);
     return null;
   }
 }
@@ -385,7 +391,10 @@ async function sendEmail(
     render(reactEl, { pretty: false }),
     render(reactEl, { plainText: true }),
   ]);
-  const logoBuf = loadLogoBuffer();
+  const attachments = INLINE_LOGOS.flatMap((logo) => {
+    const buf = loadLogoBuffer(logo.publicFile);
+    return buf ? [{ filename: logo.filename, content: buf, contentId: logo.contentId }] : [];
+  });
   try {
     const { data, error } = await resend.emails.send({
       from: fromAddress(),
@@ -398,20 +407,10 @@ async function sendEmail(
       // which collapses HTML chunks it recognizes from prior messages in a
       // thread — we'd see it hide our signal-breakdown + footer.
       headers: { "X-Entity-Ref-ID": randomUUID() },
-      // Inline-attached logo, referenced via src="cid:osscar-logo" in the
-      // email body. Omit the attachment if we couldn't load the file — the
-      // <img> will just render as a broken placeholder (no crash).
-      ...(logoBuf
-        ? {
-            attachments: [
-              {
-                filename: "osscar-logo.png",
-                content: logoBuf,
-                contentId: "osscar-logo",
-              },
-            ],
-          }
-        : {}),
+      // Inline-attached logos (osscar, supabase, commit), referenced via
+      // src="cid:<id>" in the email body. Missing files are skipped — the
+      // <img> just renders as a broken placeholder (no crash).
+      ...(attachments.length > 0 ? { attachments } : {}),
     });
     if (error) {
       console.error("[request-score] Resend send error", error);

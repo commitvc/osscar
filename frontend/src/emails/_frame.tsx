@@ -231,14 +231,53 @@ export function EmailFrame({ preview, quarterLabel, children }: Props) {
                     style={{
                       textAlign: "right",
                       verticalAlign: "middle",
-                      fontFamily: MONO_STACK,
-                      fontSize: 10,
-                      letterSpacing: "0.18em",
-                      textTransform: "uppercase",
-                      color: COLORS.fgFaint,
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    Report
+                    <Link
+                      href="https://supabase.com"
+                      style={{ textDecoration: "none" }}
+                    >
+                      <Img
+                        src="cid:supabase-logo"
+                        alt="Supabase"
+                        height={16}
+                        style={{
+                          display: "inline-block",
+                          verticalAlign: "middle",
+                          height: 16,
+                          width: "auto",
+                          opacity: 0.85,
+                        }}
+                      />
+                    </Link>
+                    <span
+                      style={{
+                        color: COLORS.fgFaint,
+                        margin: "0 8px",
+                        verticalAlign: "middle",
+                        fontSize: 11,
+                      }}
+                    >
+                      ×
+                    </span>
+                    <Link
+                      href="https://commit.fund"
+                      style={{ textDecoration: "none" }}
+                    >
+                      <Img
+                        src="cid:commit-logo"
+                        alt=">commit"
+                        height={16}
+                        style={{
+                          display: "inline-block",
+                          verticalAlign: "middle",
+                          height: 16,
+                          width: "auto",
+                          opacity: 0.85,
+                        }}
+                      />
+                    </Link>
                   </td>
                 </tr>
               </tbody>
