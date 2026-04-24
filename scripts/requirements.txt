@@ -4,5 +4,5 @@
 #     source /Users/alessadro/Developer/osscar/methodology/.venv/bin/activate
 #     pip install -r scripts/requirements.txt
 
-supabase>=2.7,<3.0
+supabase>=2.29.0,<3.0
 python-dotenv>=1.0,<2.0
