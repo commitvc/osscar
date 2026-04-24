@@ -307,9 +307,11 @@ async function findOrg(
 function toScoreEmailProps(
   org: OrgRow,
   quarterLabel: string,
+  quarterId: string,
 ): ScoreReportEmailProps {
   return {
     quarterLabel,
+    quarterId,
     division: org.division,
     divisionRank: org.division_rank,
     divisionSize: org.division_size,
@@ -555,7 +557,7 @@ export async function POST(req: NextRequest) {
   const org = await findOrg(quarter.id, login);
 
   if (org) {
-    const props = toScoreEmailProps(org, quarter.label);
+    const props = toScoreEmailProps(org, quarter.label, quarter.id);
     const subject = `Your OSSCAR ${quarter.label} report — #${org.division_rank} in ${org.division === "scaling" ? "Scaling" : "Emerging"}`;
     const result = await sendEmail(
       normalizedEmail,

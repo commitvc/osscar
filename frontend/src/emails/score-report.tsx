@@ -21,6 +21,9 @@ import { COLORS, EmailFrame, MONO_STACK, SITE_URL } from "./_frame";
 
 export type ScoreReportEmailProps = {
   quarterLabel: string;
+  /** UUID of the quarter in Supabase — used to build the share-card download URL
+   *  so old emails keep resolving to their own quarter's data after rollover. */
+  quarterId: string;
   division: "emerging" | "scaling";
   divisionRank: number;
   divisionSize: number;
@@ -314,6 +317,7 @@ function MetricCard({
 export default function ScoreReportEmail(props: ScoreReportEmailProps) {
   const {
     quarterLabel,
+    quarterId,
     division,
     divisionRank,
     divisionSize,
@@ -327,6 +331,10 @@ export default function ScoreReportEmail(props: ScoreReportEmailProps) {
     contributors,
     downloads,
   } = props;
+
+  const shareCardUrl = `${SITE_URL}/api/og?login=${encodeURIComponent(
+    ownerLogin.toLowerCase(),
+  )}&quarter=${encodeURIComponent(quarterId)}&download=1`;
 
   const displayName = ownerName?.trim() || ownerLogin;
   const rankHex = rankColor(divisionRank);
@@ -552,7 +560,7 @@ export default function ScoreReportEmail(props: ScoreReportEmailProps) {
       {/* ── CTA ─────────────────────────────────────────────────────────── */}
       <Section style={{ textAlign: "center", marginTop: 28, marginBottom: 4 }}>
         <Button
-          href={`${SITE_URL}/`}
+          href={shareCardUrl}
           style={{
             backgroundColor: COLORS.brand,
             color: COLORS.brandFg,
@@ -565,11 +573,33 @@ export default function ScoreReportEmail(props: ScoreReportEmailProps) {
             letterSpacing: "0.01em",
           }}
         >
-          Go to the ranking →
+          Download image →
         </Button>
         <Text
           style={{
-            margin: "14px 0 0",
+            margin: "10px 0 0",
+            fontSize: 11,
+            lineHeight: "18px",
+            color: COLORS.fgSubtle,
+          }}
+        >
+          A 1200×630 PNG for X, LinkedIn, or wherever you post.
+        </Text>
+        <div style={{ marginTop: 18 }}>
+          <Link
+            href={`${SITE_URL}/`}
+            style={{
+              fontSize: 12,
+              color: COLORS.fgMuted,
+              textDecoration: "underline",
+            }}
+          >
+            Go to the ranking →
+          </Link>
+        </div>
+        <Text
+          style={{
+            margin: "18px 0 0",
             fontSize: 11,
             lineHeight: "18px",
             color: COLORS.fgSubtle,
@@ -592,6 +622,7 @@ export default function ScoreReportEmail(props: ScoreReportEmailProps) {
 // Preview data for `react-email dev`
 ScoreReportEmail.PreviewProps = {
   quarterLabel: "Q1 2026",
+  quarterId: "00000000-0000-0000-0000-000000000000",
   division: "scaling",
   divisionRank: 42,
   divisionSize: 12_840,
