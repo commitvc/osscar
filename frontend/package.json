@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "data:validate": "node scripts/validate-data-contract.mjs",
     "email:dev": "email dev --dir src/emails --port 3030",
     "email:export": "email export --dir src/emails --outDir .email-out",
     "email:send": "tsx scripts/send-test-email.ts"
