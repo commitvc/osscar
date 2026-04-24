@@ -116,9 +116,14 @@ function isProduction(): boolean {
  * so requiring it in production cheaply blocks cross-site form submissions
  * from a page a visitor might browse — without needing a CSRF token.
  *
- * Preview deployments: also accept `VERCEL_URL` so preview URLs (which have
- * randomized subdomains) can hit their own endpoint. Local dev: no origin
- * enforcement.
+ * Vercel deployments serve the same code from several hostnames; we accept
+ * all of the system-provided ones so the endpoint works wherever the user
+ * actually lands. All are set automatically by Vercel — no per-env config.
+ *   - NEXT_PUBLIC_SITE_URL       : canonical custom domain (e.g. osscar.dev)
+ *   - VERCEL_PROJECT_PRODUCTION_URL : stable prod alias (project-name.vercel.app)
+ *   - VERCEL_BRANCH_URL          : stable branch alias for previews
+ *   - VERCEL_URL                 : unique per-deployment URL
+ * Local dev: no origin enforcement so `next dev` keeps working.
  */
 function isAllowedOrigin(req: NextRequest): boolean {
   // In dev / preview without a configured SITE_URL, don't enforce. Keeps
@@ -146,7 +151,13 @@ function isAllowedOrigin(req: NextRequest): boolean {
       // malformed env — ignored
     }
   }
-  if (process.env.VERCEL_URL) allowed.add(`https://${process.env.VERCEL_URL}`);
+  for (const host of [
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    process.env.VERCEL_BRANCH_URL,
+    process.env.VERCEL_URL,
+  ]) {
+    if (host) allowed.add(`https://${host}`);
+  }
 
   return allowed.has(origin);
 }
