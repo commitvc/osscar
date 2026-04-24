@@ -1,5 +1,7 @@
 # OSS Growth Index (OSSCAR)
 
+OSSCAR stands for Open Source Supabase Commit Analytical Ranking.
+
 A quarterly ranking of the fastest-growing open-source GitHub organizations, produced by [Supabase](https://supabase.com) and [>commit](https://commit.fund).
 
 ## What is OSSCAR?
