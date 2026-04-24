@@ -21,6 +21,21 @@ export const metadata: Metadata = {
   title: "OSSCARs",
   description:
     "The quarterly ranking of the fastest-growing open source organizations, by Supabase and >commit.",
+  icons: {
+    icon: [
+      { url: "/favicon/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon/favicon-48.png", sizes: "48x48", type: "image/png" },
+      { url: "/favicon/favicon-64.png", sizes: "64x64", type: "image/png" },
+      { url: "/favicon/favicon-96.png", sizes: "96x96", type: "image/png" },
+      { url: "/favicon/favicon-128.png", sizes: "128x128", type: "image/png" },
+      { url: "/favicon/favicon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/favicon/favicon-256.png", sizes: "256x256", type: "image/png" },
+    ],
+    shortcut: "/favicon/favicon.ico",
+    apple: { url: "/favicon/apple-touch-icon.png", sizes: "180x180" },
+  },
 };
 
 export default function RootLayout({
