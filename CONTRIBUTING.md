@@ -1,4 +1,4 @@
-# Contributing to the OSS Growth Index (OSSCAr)
+# Contributing to the OSS Growth Index (OSSCAR)
 
 Thank you for your interest in contributing to the OSS Growth Index! This project is maintained by [Supabase](https://supabase.com) and [>commit](https://commit.fund). We welcome contributions and feedback, but final decisions on methodology, data sources, and branding are made by the core team.
 
