@@ -407,9 +407,10 @@ interface OrgTableProps {
   emerging: Org[]
   scaling: Org[]
   packageSources?: Record<string, string[]>
+  searchSlot?: React.ReactNode
 }
 
-export function OrgTable({ emerging, scaling, packageSources = {} }: OrgTableProps) {
+export function OrgTable({ emerging, scaling, packageSources = {}, searchSlot }: OrgTableProps) {
   const [activeDivision, setActiveDivision] = useState<Division>("emerging")
   const [sorting, setSorting] = useState<SortingState>([])
   const [starsSortMode, setStarsSortMode] = useState<SortMode>("growth")
@@ -674,22 +675,25 @@ export function OrgTable({ emerging, scaling, packageSources = {} }: OrgTablePro
 
   return (
     <div className="space-y-4">
-      {/* Division selector */}
-      <div className="flex gap-6 border-b border-white/10">
-        {(["emerging", "scaling"] as Division[]).map((division) => (
-          <button
-            key={division}
-            onClick={() => handleDivisionChange(division)}
-            className={cn(
-              "pb-3 text-xs uppercase tracking-widest font-semibold transition-colors -mb-px cursor-pointer",
-              activeDivision === division
-                ? "border-b-2 border-green text-foreground"
-                : "text-muted-foreground hover:text-foreground/70"
-            )}
-          >
-            {DIVISION_LABELS[division]}
-          </button>
-        ))}
+      {/* Division selector + optional search */}
+      <div className="flex flex-col-reverse gap-3 border-b border-white/10 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+        <div className="flex gap-6">
+          {(["emerging", "scaling"] as Division[]).map((division) => (
+            <button
+              key={division}
+              onClick={() => handleDivisionChange(division)}
+              className={cn(
+                "pb-3 text-xs uppercase tracking-widest font-semibold transition-colors -mb-px cursor-pointer",
+                activeDivision === division
+                  ? "border-b-2 border-green text-foreground"
+                  : "text-muted-foreground hover:text-foreground/70"
+              )}
+            >
+              {DIVISION_LABELS[division]}
+            </button>
+          ))}
+        </div>
+        {searchSlot && <div className="sm:pb-2">{searchSlot}</div>}
       </div>
 
       {/* Mobile/tablet card list */}

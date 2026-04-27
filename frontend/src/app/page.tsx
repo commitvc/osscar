@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/site-footer"
 import { OrgTable } from "@/components/org-table"
 import { ScoreRequestCta } from "@/components/score-request-cta"
 import { ScoreRequestButton } from "@/components/score-request-button"
+import { HomeSearch } from "@/components/home-search"
 
 export default async function Home() {
   const emerging = getEmerging()
@@ -75,7 +76,12 @@ export default async function Home() {
         {/* Rankings */}
         <section className="px-6 py-10">
           <div className="max-w-6xl mx-auto space-y-8">
-            <OrgTable emerging={emerging} scaling={scaling} packageSources={packageSources} />
+            <OrgTable
+              emerging={emerging}
+              scaling={scaling}
+              packageSources={packageSources}
+              searchSlot={<HomeSearch orgs={[...emerging, ...scaling]} />}
+            />
             <ScoreRequestCta />
           </div>
         </section>
