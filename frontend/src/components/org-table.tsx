@@ -12,11 +12,12 @@ import {
   type SortingState,
   type Column,
 } from "@tanstack/react-table"
-import { ExternalLink, Github, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, Star, Users, Package } from "lucide-react"
+import { ExternalLink, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, Star, Users, Package } from "lucide-react"
 import { Tooltip } from "@base-ui/react/tooltip"
 import type { Org, Division } from "@/types"
 import { formatCompact, formatGrowthRate, formatPercentile, formatTopPct, cn } from "@/lib/utils"
 import { PADDING_THRESHOLDS, type MetricKey } from "@/lib/padding-thresholds"
+import { GitHubIcon } from "@/components/github-icon"
 import { OrgLogo } from "@/components/org-logo"
 import { Button } from "@/components/ui/button"
 import {
@@ -370,7 +371,7 @@ function OrgCard({ org, rank, slug, pkg, sources }: OrgCardProps) {
               className="text-muted-foreground hover:text-foreground transition-colors"
               aria-label="GitHub"
             >
-              <Github size={14} />
+              <GitHubIcon size={14} />
             </a>
           )}
         </div>
@@ -642,7 +643,7 @@ export function OrgTable({ emerging, scaling, packageSources = {} }: OrgTablePro
                 className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                 aria-label="GitHub"
               >
-                <Github size={14} />
+                <GitHubIcon size={14} />
               </a>
             )}
           </div>

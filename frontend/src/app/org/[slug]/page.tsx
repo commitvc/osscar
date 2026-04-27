@@ -5,7 +5,6 @@ import {
   Star,
   Users,
   Package,
-  Github,
   Globe,
   ChevronLeft,
   ArrowUpRight,
@@ -17,6 +16,7 @@ import { GrowthChart, type MetricConfig } from "@/components/growth-chart";
 import { ShareButton } from "@/components/share-button";
 import { EmbedButton } from "@/components/embed-button";
 import { RepoTable } from "@/components/repo-table";
+import { GitHubIcon } from "@/components/github-icon";
 import {
   getAllOrgs,
   findOrgBySlug,
@@ -382,7 +382,7 @@ export default async function OrgPage({ params }: Props) {
                       rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/20 bg-white/4 hover:bg-white/8 transition-all font-mono text-[0.65rem] uppercase tracking-wider text-muted-foreground/70 hover:text-foreground group"
                     >
-                      <Github size={12} />
+                      <GitHubIcon size={12} />
                       GitHub
                       <ArrowUpRight
                         size={10}
