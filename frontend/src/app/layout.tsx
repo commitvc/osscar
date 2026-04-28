@@ -17,7 +17,7 @@ const sourceCodePro = Source_Code_Pro({
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://osscar.dev"
   ),
   title: {
     default: "OSSCAR — Fastest-Growing Open Source Orgs",
