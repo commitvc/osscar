@@ -55,13 +55,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const slug = rawSlug.toLowerCase();
   const org = findOrgBySlug(slug);
 
-  if (!org) return { title: "OSS Growth Index" };
+  if (!org) return { title: { absolute: "OSSCAR" } };
 
   const score = computeScore(org);
   const ogImageUrl = `/api/og?slug=${slug}`;
   return {
-    title: `${org.owner_name} — OSS Growth Index ${QUARTER_LABEL}`,
-    description: `${org.owner_name} on the OSS Growth Index ${QUARTER_LABEL} with a composite score of ${formatScore(score)}.`,
+    title: { absolute: `${org.owner_name} — OSSCAR ${QUARTER_LABEL}` },
+    description: `${org.owner_name} on OSSCAR ${QUARTER_LABEL} with a composite score of ${formatScore(score)}.`,
     openGraph: {
       images: [{ url: ogImageUrl, width: 1200, height: 630 }],
     },
