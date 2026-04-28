@@ -1,6 +1,13 @@
+import type { Metadata } from "next"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { Badge } from "@/components/ui/badge"
+
+export const metadata: Metadata = {
+  title: "Methodology",
+  description:
+    "How OSSCAR ranks open-source organizations: composite score across GitHub stars, contributors, and package downloads.",
+}
 
 function Formula({ children }: { children: React.ReactNode }) {
   return (

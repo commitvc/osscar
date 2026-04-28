@@ -19,9 +19,29 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
   ),
-  title: "OSSCARs",
+  title: {
+    default: "OSSCAR — Fastest-Growing Open Source Orgs",
+    template: "%s — OSSCAR",
+  },
   description:
-    "The quarterly ranking of the fastest-growing open source organizations, by Supabase and >commit.",
+    "A quarterly ranking of the fastest-growing open-source organizations, by Supabase and >commit.",
+  openGraph: {
+    type: "website",
+    siteName: "OSSCAR",
+    title: "OSSCAR — Fastest-Growing Open Source Orgs",
+    description:
+      "A quarterly ranking of the fastest-growing open-source organizations, by Supabase and >commit.",
+    images: [
+      { url: "/og-image.png", width: 1200, height: 630, alt: "OSSCAR" },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "OSSCAR — Fastest-Growing Open Source Orgs",
+    description:
+      "A quarterly ranking of the fastest-growing open-source organizations, by Supabase and >commit.",
+    images: ["/og-image.png"],
+  },
   icons: {
     icon: [
       { url: "/favicon/favicon.svg", type: "image/svg+xml" },
