@@ -195,8 +195,11 @@ export function RepoTable({ repos }: RepoTableProps) {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    initialState: { pagination: { pageSize: 10 } },
+    initialState: { pagination: { pageIndex: 0, pageSize: 10 } },
   });
+
+  const { pageIndex, pageSize } = table.getState().pagination;
+  const pageCount = table.getPageCount();
 
   return (
     <div className="space-y-3">
@@ -251,12 +254,12 @@ export function RepoTable({ repos }: RepoTableProps) {
     </div>
 
     {/* Pagination */}
-    {table.getPageCount() > 1 && (
+    {pageCount > 1 && (
       <div className="flex items-center justify-between pt-2">
         <span className="font-mono text-[0.65rem] uppercase tracking-widest text-muted-foreground/40">
-          {table.getState().pagination.pageIndex * 10 + 1}–
+          {pageIndex * pageSize + 1}–
           {Math.min(
-            (table.getState().pagination.pageIndex + 1) * 10,
+            (pageIndex + 1) * pageSize,
             repos.length
           )}{" "}
           of {repos.length}
@@ -272,8 +275,7 @@ export function RepoTable({ repos }: RepoTableProps) {
             <ChevronLeft size={14} />
           </Button>
           <span className="font-mono text-xs text-muted-foreground tabular-nums">
-            {table.getState().pagination.pageIndex + 1} /{" "}
-            {table.getPageCount()}
+            {pageIndex + 1} / {pageCount}
           </span>
           <Button
             variant="outline"
