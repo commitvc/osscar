@@ -97,6 +97,12 @@ function getRankPalette(rank: number, light: boolean): RankPalette {
   };
 }
 
+function getCompactHeaderBucket(rank: number): 10 | 50 | 100 {
+  if (rank <= 10) return 10;
+  if (rank <= 50) return 50;
+  return 100;
+}
+
 // ─── Route ────────────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
@@ -214,7 +220,7 @@ export async function GET(request: NextRequest) {
                 marginTop: "1px",
               }}
             >
-              Top 10 · {tierLabel}
+              Top {getCompactHeaderBucket(rank)} · {tierLabel}
             </span>
           </div>
 
