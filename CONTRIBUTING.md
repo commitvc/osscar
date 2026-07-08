@@ -40,7 +40,7 @@ npm install
 npm run dev
 ```
 
-The dev server runs at http://localhost:3000. Data is loaded from CSV files in `frontend/data/`.
+The dev server runs at http://localhost:3000. Data is loaded from the app-facing Supabase project configured in `frontend/.env.local`.
 
 ### Methodology
 

@@ -311,6 +311,7 @@ function OrgCard({ org, rank, slug, quarterId, pkg, sources }: OrgCardProps) {
 
   return (
     <div
+      data-testid="ranking-entry"
       className={cn(
         "rounded-lg border border-white/10 bg-card/50 p-4 space-y-3 transition-colors",
         rank <= 3 && "border-l-2",
@@ -336,6 +337,7 @@ function OrgCard({ org, rank, slug, quarterId, pkg, sources }: OrgCardProps) {
         <div className="flex-1 min-w-0">
           <Link
             href={slug ? hrefWithQuarter(`/org/${slug}`, quarterId) : "#"}
+            data-testid="ranking-org-link"
             className="block font-semibold text-sm text-foreground hover:text-green transition-colors truncate leading-snug"
           >
             {org.owner_name}
@@ -471,6 +473,7 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, se
                       )
                     : "#"
                 }
+                data-testid="ranking-org-link"
                 className="font-semibold text-sm text-foreground hover:text-green transition-colors truncate leading-snug flex items-baseline gap-1 cursor-pointer"
               >
                 <span className="truncate">{org.owner_name}</span>
@@ -676,7 +679,7 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, se
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid="rankings">
       {/* Division selector + optional search */}
       <div className="flex flex-col-reverse gap-3 border-b border-white/10 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
         <div className="flex gap-6">
@@ -684,6 +687,7 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, se
             <button
               key={division}
               onClick={() => handleDivisionChange(division)}
+              data-testid={`division-tab-${division}`}
               className={cn(
                 "pb-3 text-xs uppercase tracking-widest font-semibold transition-colors -mb-px cursor-pointer",
                 activeDivision === division
@@ -753,6 +757,7 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, se
               return (
                 <TableRow
                   key={row.id}
+                  data-testid="ranking-entry"
                   className={cn(
                     "border-white/10 transition-colors",
                     rank <= 3 && "border-l-2",
@@ -778,7 +783,10 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, se
 
       {/* Pagination */}
       <div className="flex items-center justify-between py-2">
-        <span className="font-mono text-[0.65rem] uppercase tracking-widest text-muted-foreground/60">
+        <span
+          className="font-mono text-[0.65rem] uppercase tracking-widest text-muted-foreground/60"
+          data-testid="rankings-pagination-summary"
+        >
           {pageIndex * pageSize + 1}–{Math.min((pageIndex + 1) * pageSize, activeData.length)} of {activeData.length}
         </span>
         <div className="flex items-center gap-3">

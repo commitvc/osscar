@@ -466,7 +466,7 @@ export default async function OrgPage({ params, searchParams }: Props) {
 
           {/* Signal breakdown */}
           {hasAnySignal && (
-            <section className="space-y-5">
+            <section className="space-y-5" data-testid="signal-breakdown-section">
               <div className="flex items-baseline gap-3">
                 <h2 className="font-bold text-base text-foreground tracking-tight">
                   Signal Breakdown
@@ -493,7 +493,7 @@ export default async function OrgPage({ params, searchParams }: Props) {
 
           {/* Growth chart */}
           {hasChartData && (
-            <section className="space-y-5">
+            <section className="space-y-5" data-testid="growth-chart-section">
               <div className="flex items-baseline gap-3">
                 <h2 className="font-bold text-base text-foreground tracking-tight">
                   Growth Over Time
@@ -510,7 +510,7 @@ export default async function OrgPage({ params, searchParams }: Props) {
 
           {/* Repositories */}
           {hasRepos && (
-            <section className="space-y-5">
+            <section className="space-y-5" data-testid="repositories-section">
               <div className="flex items-baseline justify-between flex-wrap gap-2">
                 <h2 className="font-bold text-base text-foreground tracking-tight">
                   Repositories

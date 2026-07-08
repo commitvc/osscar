@@ -11,7 +11,7 @@ The website reads published quarters from the app-facing Supabase project:
 - `quarters` stores published quarter metadata and marks the current quarter.
 - `organizations_full` stores the full per-quarter ranking, scalar metric fields, weekly time-series arrays, and repository payloads used by org detail pages.
 
-The top 100 per division is selected at request time from `organizations_full` by `(quarter_id, division, division_rank)`, which lets the site switch between published quarters without committing new frontend data files.
+The top 100 per division is selected at request time from `organizations_full` by `(quarter_id, division, division_rank)`, which lets the site switch between published quarters without shipping static data bundles.
 
 ### In GitHub Releases
 
@@ -68,6 +68,9 @@ python scripts/ingest_quarter.py \
 ```
 
 Remove `--dry-run` only after validation passes. Add `--make-current` when the quarter is ready to become the default website quarter.
+
+Before making a quarter current, run the release data validator and frontend e2e
+checks described in [Quarterly Release Checks](../release-checks.md).
 
 ## Schema
 

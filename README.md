@@ -58,6 +58,7 @@ See [docs/data/](docs/data/) for schemas and full download / reproduction instru
 - [Methodology](docs/methodology.md) — how rankings are computed, step by step
 - [Data collection](docs/data-collection.md) — how the raw signals are sourced and processed
 - [Data schema](docs/data/SCHEMA.md) — column definitions for every published file
+- [Quarterly release checks](docs/release-checks.md) — data-quality and frontend gates before publishing a new quarter
 - [Scoring pipeline](methodology/) — reproducible Python implementation
 
 ## Development
@@ -86,4 +87,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). We welcome bug reports, data-quality fix
 ## License
 
 - **Code** (frontend + methodology): [MIT](LICENSE)
-- **Data** (JSON files + GitHub Release Parquet assets): [CC BY 4.0](LICENSE-DATA)
+- **Data** (GitHub Release Parquet assets): [CC BY 4.0](LICENSE-DATA)

@@ -102,7 +102,7 @@ Contains every organization eligible for ranking in a given quarter. The column 
 
 ## Website Database Contract
 
-The website reads published ranking data from Supabase rather than committed JSON files. The app-facing database contains:
+The website reads published ranking data from Supabase. The app-facing database contains:
 
 - `quarters`: one row per published quarter, including `id`, `label`, `quarter_start`, `quarter_end`, `is_current`, and `published_at`.
 - `organizations_full`: one row per `(quarter_id, owner_id)` with the scalar ranking columns from the ranking parquet plus frontend detail payloads.

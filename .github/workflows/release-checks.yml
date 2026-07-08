@@ -1,0 +1,64 @@
+name: Release Checks
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Vercel preview or production URL to test"
+        required: true
+        type: string
+      quarter_id:
+        description: 'Quarter id to test through the website query param, e.g. "Q2_2026"'
+        required: false
+        type: string
+      quarter_label:
+        description: 'Expected visible quarter label, e.g. "Q2 2026"'
+        required: false
+        type: string
+      frontend_top_n:
+        description: "Expected published org count per division"
+        required: false
+        default: "100"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-checks-${{ github.ref }}-${{ inputs.base_url }}-${{ inputs.quarter_id }}
+  cancel-in-progress: false
+
+jobs:
+  frontend-e2e:
+    name: Frontend e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run release e2e checks
+        run: npm run release:e2e
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ inputs.base_url }}
+          OSSCAR_RELEASE_QUARTER_ID: ${{ inputs.quarter_id }}
+          OSSCAR_RELEASE_QUARTER_LABEL: ${{ inputs.quarter_label }}
+          OSSCAR_FRONTEND_TOP_N: ${{ inputs.frontend_top_n }}

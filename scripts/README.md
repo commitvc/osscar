@@ -33,4 +33,10 @@ What it does:
 
 Use `--dry-run` to validate the parquet without writing anything.
 
-Quarter IDs use `Q*_YYYY` format (`Q1_2026`, `Q2_2026`). Quarter end dates are inclusive calendar dates (`Q2 2026` ends at `2026-06-30`).
+Quarter IDs use `Q*_YYYY` format (`Q1_2026`, `Q2_2026`). Quarter date
+arguments must match the ranking parquet and the `quarters` row exactly; the
+current public artifacts use the next-quarter boundary as `quarter_end` (for
+example, Q2 2026 uses `2026-07-01`).
+
+Before flipping a quarter to current, run the full data and frontend release
+gate in [docs/release-checks.md](../docs/release-checks.md).

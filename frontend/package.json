@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "data:validate": "node scripts/validate-data-contract.mjs",
+    "release:e2e": "playwright test",
     "email:dev": "email dev --dir src/emails --port 3030",
     "email:export": "email export --dir src/emails --outDir .email-out",
     "email:send": "tsx scripts/send-test-email.ts"
@@ -36,6 +36,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@react-email/ui": "^6.0.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^25",
