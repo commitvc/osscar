@@ -17,6 +17,7 @@ import { Tooltip } from "@base-ui/react/tooltip"
 import type { Org, Division } from "@/types"
 import { formatCompact, formatGrowthRate, formatPercentile, formatTopPct, cn } from "@/lib/utils"
 import { PADDING_THRESHOLDS, type MetricKey } from "@/lib/padding-thresholds"
+import { hrefWithQuarter } from "@/lib/quarter-url"
 import { GitHubIcon } from "@/components/github-icon"
 import { OrgLogo } from "@/components/org-logo"
 import { Button } from "@/components/ui/button"
@@ -236,13 +237,6 @@ function SortHeader({ column, label, align = "right", sortMode, onToggleMode }: 
   )
 }
 
-/** Compute the real growth rate; returns Infinity when start is 0 and end > 0 */
-function realGrowth(start: number | null, end: number | null): number | null {
-  if (end == null) return null
-  if (start == null || start === 0) return end > 0 ? Infinity : null
-  return (end - start) / start
-}
-
 /** Returns the displayed growth value for sorting — always the methodology rate (what's shown in the table) */
 function displayedGrowth(_start: number | null, _end: number | null, methodologyRate: number | null): number | null {
   return methodologyRate
@@ -306,11 +300,12 @@ interface OrgCardProps {
   org: Org
   rank: number
   slug?: string
+  quarterId?: string | null
   pkg: { value: number | null; rate: number | null; percentile: number | null }
   sources?: string[]
 }
 
-function OrgCard({ org, rank, slug, pkg, sources }: OrgCardProps) {
+function OrgCard({ org, rank, slug, quarterId, pkg, sources }: OrgCardProps) {
   const pip = RANK_PIPS[rank]
   const rankColor = rank === 1 ? "#F4C430" : rank === 2 ? "#C0C0C0" : rank === 3 ? "#CD7F32" : null
 
@@ -340,7 +335,7 @@ function OrgCard({ org, rank, slug, pkg, sources }: OrgCardProps) {
         <OrgLogo logoUrl={org.owner_logo} name={org.owner_name} size={28} className="mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
           <Link
-            href={slug ? `/org/${slug}` : "#"}
+            href={slug ? hrefWithQuarter(`/org/${slug}`, quarterId) : "#"}
             className="block font-semibold text-sm text-foreground hover:text-green transition-colors truncate leading-snug"
           >
             {org.owner_name}
@@ -407,10 +402,11 @@ interface OrgTableProps {
   emerging: Org[]
   scaling: Org[]
   packageSources?: Record<string, string[]>
+  quarterId?: string | null
   searchSlot?: React.ReactNode
 }
 
-export function OrgTable({ emerging, scaling, packageSources = {}, searchSlot }: OrgTableProps) {
+export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, searchSlot }: OrgTableProps) {
   const [activeDivision, setActiveDivision] = useState<Division>("emerging")
   const [sorting, setSorting] = useState<SortingState>([])
   const [starsSortMode, setStarsSortMode] = useState<SortMode>("growth")
@@ -428,9 +424,8 @@ export function OrgTable({ emerging, scaling, packageSources = {}, searchSlot }:
   // Create new sort-state objects to break TanStack's internal memo cache
   const forceSortRefresh = () => setSorting(prev => prev.length > 0 ? prev.map(s => ({ ...s })) : prev)
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const columns = useMemo(() => [
-    columnHelper.accessor((_row: Org) => 0 as number, {
+    columnHelper.accessor(() => 0 as number, {
       id: "rank",
       enableSorting: true,
       sortingFn: (rowA, rowB) => rowA.index - rowB.index,
@@ -468,7 +463,14 @@ export function OrgTable({ emerging, scaling, packageSources = {}, searchSlot }:
             <OrgLogo logoUrl={org.owner_logo} name={org.owner_name} size={24} className="mt-0.5 shrink-0" />
             <div className="min-w-0">
               <Link
-                href={org.owner_url ? `/org/${org.owner_url.trim().replace(/\/$/, "").split("/").pop()?.toLowerCase()}` : "#"}
+                href={
+                  org.owner_url
+                    ? hrefWithQuarter(
+                        `/org/${org.owner_url.trim().replace(/\/$/, "").split("/").pop()?.toLowerCase()}`,
+                        quarterId,
+                      )
+                    : "#"
+                }
                 className="font-semibold text-sm text-foreground hover:text-green transition-colors truncate leading-snug flex items-baseline gap-1 cursor-pointer"
               >
                 <span className="truncate">{org.owner_name}</span>
@@ -651,7 +653,7 @@ export function OrgTable({ emerging, scaling, packageSources = {}, searchSlot }:
         )
       },
     }),
-  ], [starsSortMode, contribSortMode, pkgSortMode])
+  ], [starsSortMode, contribSortMode, pkgSortMode, quarterId, packageSources])
 
   const table = useReactTable({
     data: activeDivision === "scaling" ? scaling : emerging,
@@ -712,6 +714,7 @@ export function OrgTable({ emerging, scaling, packageSources = {}, searchSlot }:
               org={org}
               rank={rank}
               slug={slug}
+              quarterId={quarterId}
               pkg={pkg}
               sources={sources}
             />

@@ -1,10 +1,9 @@
 # Data Schema
 
-OSSCAR publishes three kinds of data file per quarter:
+OSSCAR publishes two release data files per quarter:
 
 - **`osscar_input_data_Q*_*.parquet`** — the raw per-organization metrics, the input to the scoring pipeline. Attached to the GitHub Release.
-- **`osscar_ranking_Q*_*.parquet`** — the input columns passed through, plus division assignment, rank, and the derived scoring columns used by the frontend. Attached to the GitHub Release.
-- **`osscar_{emerging,scaling}_top100_Q*_*.json`** — per-division frontend bundles (top 100 orgs each). Committed to the repo under [`frontend/data/`](../../frontend/data/).
+- **`osscar_ranking_Q*_*.parquet`** — the input columns passed through, plus division assignment, rank, and the derived scoring columns used by the website ingest. Attached to the GitHub Release.
 
 ## Input parquet
 
@@ -101,18 +100,20 @@ Contains every organization eligible for ranking in a given quarter. The column 
 - **Eligibility.** An organization is eligible for a metric only if both start and end values exist, the end value meets the padding threshold, and the padded growth rate is non-negative.
 - **Nullable fields.** `_growth_rate` is null when `start` is 0 (rate undefined). Package download columns are null for organizations with no data across npm, PyPI, and Cargo.
 
-## Per-division frontend JSON
+## Website Database Contract
 
-Files: `frontend/data/osscar_{emerging,scaling}_top100_Q*_*.json`
+The website reads published ranking data from Supabase rather than committed JSON files. The app-facing database contains:
 
-Self-contained JSON arrays of the top 100 orgs per division, generated from the ranking parquet by [`methodology/extract_frontend_data.py`](../../methodology/extract_frontend_data.py). One file per division, one record per organization. Each record includes:
+- `quarters`: one row per published quarter, including `id`, `label`, `quarter_start`, `quarter_end`, `is_current`, and `published_at`.
+- `organizations_full`: one row per `(quarter_id, owner_id)` with the scalar ranking columns from the ranking parquet plus frontend detail payloads.
+
+`organizations_full` includes:
 
 - **Identity:** `owner_id`, `owner_login`, `owner_name`, `owner_url`, `homepage_url`, `owner_description`, `owner_logo`
-- **Quarter:** `quarter_start`, `quarter_end`
 - **Ranking:** `division`, `division_rank`
 - **Per-metric scoring:** for each of `github_stars`, `github_contributors`, `package_downloads` — `_start`, `_end`, `_growth_rate`, `_growth_percentile`, `_final_weight`
 - **Enrichment for org detail pages:** `github_stars_weekly`, `github_contributors_weekly`, `npm_weekly`, `pypi_weekly`, `cargo_weekly`, `repositories`
 
-The array columns are parsed from their JSON-string form into real JSON arrays at extraction time, so the frontend can consume them directly without further parsing. Nulls (NaN / NaT / `pandas.NA`) in the source parquet are emitted as explicit JSON `null`s.
+The array payload columns are stored as non-null `jsonb` arrays. Quarter start/end are normalized on `quarters`; the frontend attaches that quarter metadata when returning organization records.
 
-The set of columns included is authoritatively defined by `FRONTEND_COLUMNS` at the top of [`methodology/extract_frontend_data.py`](../../methodology/extract_frontend_data.py).
+The database schema is defined under [`supabase/migrations/`](../../supabase/migrations/), and [`scripts/ingest_quarter.py`](../../scripts/ingest_quarter.py) validates the ranking parquet before loading it.

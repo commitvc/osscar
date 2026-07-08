@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compute OSS Growth Index results (org-based, Q1 2026, v7).
+"""Compute OSS Growth Index results (org-based, v7).
 
 Changes vs v6:
   - Composite aggregation switches from arithmetic sum to the L^2 norm over
@@ -415,28 +415,12 @@ def run(input_path: Path, output_dir: Path) -> None:
     export_ranking_file(df=df, output_path=output_path, output_cols=output_cols)
 
 
-DEFAULT_INPUT_FILENAME = "osscar_input_data_Q1_2026.parquet"
-
-
-def default_input_path() -> Path:
-    script_dir = Path(__file__).resolve().parent
-    candidates = [
-        script_dir / "data" / DEFAULT_INPUT_FILENAME,
-        script_dir / DEFAULT_INPUT_FILENAME,
-        script_dir.parent / DEFAULT_INPUT_FILENAME,
-    ]
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
-    return candidates[0]
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Compute OSS Growth Index outputs (org-based).")
     parser.add_argument(
         "--input",
         type=Path,
-        default=default_input_path(),
+        required=True,
         help="Path to input basetable parquet.",
     )
     parser.add_argument(

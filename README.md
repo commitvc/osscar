@@ -37,7 +37,7 @@ See the full [methodology documentation](docs/methodology.md) or the [executable
 
 ## Data
 
-**In this repository:** Top 100 rankings per division, one JSON file per division in [`frontend/data/`](frontend/data/). These are the files that power the website.
+**Website data:** Published quarters are loaded into the app-facing Supabase project. The website reads the selected quarter from the database so visitors can switch between published quarters.
 
 **Full dataset:** Every tracked organization, published as Parquet assets in [GitHub Releases](../../releases) (raw input data + full ranking output).
 
@@ -76,7 +76,7 @@ npm run dev
 cd methodology
 pip install -r requirements.txt
 python -m pytest              # run tests
-python compute_index.py       # compute rankings (requires base data)
+python compute_index.py --input data/osscar_input_data_Q2_2026.parquet
 ```
 
 ## Contributing

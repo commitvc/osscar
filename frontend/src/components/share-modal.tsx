@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Download, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { QUARTER_LABEL, QUARTER_ID } from "@/lib/config";
+import { hrefWithQuarter } from "@/lib/quarter-url";
 
 // ─── Platform icons (inline SVG paths) ────────────────────────────────────────
 
@@ -38,6 +38,8 @@ interface ShareModalProps {
   rank: number;
   tierLabel: string;
   slug: string;
+  quarterId?: string | null;
+  quarterLabel: string;
   onClose: () => void;
 }
 
@@ -48,19 +50,23 @@ export function ShareModal({
   rank,
   tierLabel,
   slug,
+  quarterId,
+  quarterLabel,
   onClose,
 }: ShareModalProps) {
   const [copyState, setCopyState] = useState<"idle" | "copied">("idle");
   const [imageLoaded, setImageLoaded] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  const ogImageUrl = `/api/og?slug=${encodeURIComponent(slug)}`;
+  const ogParams = new URLSearchParams({ slug });
+  if (quarterId) ogParams.set("quarter", quarterId);
+  const ogImageUrl = `/api/og?${ogParams.toString()}`;
   const pageUrl =
     typeof window !== "undefined"
-      ? `${window.location.origin}/org/${slug}`
-      : `/org/${slug}`;
+      ? `${window.location.origin}${hrefWithQuarter(`/org/${slug}`, quarterId)}`
+      : hrefWithQuarter(`/org/${slug}`, quarterId);
 
-  const shareText = `${name} ranked #${rank} in the ${tierLabel} tier — OSS Growth Index ${QUARTER_LABEL}`;
+  const shareText = `${name} ranked #${rank} in the ${tierLabel} tier — OSS Growth Index ${quarterLabel}`;
   const shareTextEncoded = encodeURIComponent(shareText);
   const pageUrlEncoded = encodeURIComponent(pageUrl);
 
@@ -102,7 +108,11 @@ export function ShareModal({
   async function handleDownload() {
     const a = document.createElement("a");
     a.href = ogImageUrl;
-    a.download = `${slug}-osscar-${QUARTER_ID.toLowerCase()}.png`;
+    const quarterSlug = (quarterId ?? quarterLabel)
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9_-]/g, "");
+    a.download = `${slug}-osscar-${quarterSlug}.png`;
     a.click();
   }
 

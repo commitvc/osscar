@@ -1,4 +1,10 @@
-import { getEmerging, getScaling, extractSlug } from "@/lib/data"
+import { notFound } from "next/navigation"
+import {
+  extractSlug,
+  getPublishedQuarters,
+  getRankingsForQuarter,
+  resolveQuarter,
+} from "@/lib/data"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { OrgTable } from "@/components/org-table"
@@ -6,9 +12,23 @@ import { ScoreRequestCta } from "@/components/score-request-cta"
 import { ScoreRequestButton } from "@/components/score-request-button"
 import { HomeSearch } from "@/components/home-search"
 
-export default async function Home() {
-  const emerging = getEmerging()
-  const scaling = getScaling()
+export const dynamic = "force-dynamic"
+
+type Props = {
+  searchParams?: Promise<{ quarter?: string }>
+}
+
+export default async function Home({ searchParams }: Props) {
+  const params = await searchParams
+  const [quarters, quarter] = await Promise.all([
+    getPublishedQuarters(),
+    resolveQuarter(params?.quarter),
+  ])
+
+  if (!quarter) notFound()
+
+  const { emerging, scaling } = await getRankingsForQuarter(quarter)
+  const quarterParam = quarter.is_current ? null : quarter.id
 
   // Build slug → active package managers map from per-manager weekly series
   const packageSources: Record<string, string[]> = {}
@@ -25,7 +45,7 @@ export default async function Home() {
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader quarters={quarters} selectedQuarterId={quarter.id} />
 
       <main className="flex-1">
         {/* Hero */}
@@ -80,7 +100,13 @@ export default async function Home() {
               emerging={emerging}
               scaling={scaling}
               packageSources={packageSources}
-              searchSlot={<HomeSearch orgs={[...emerging, ...scaling]} />}
+              quarterId={quarterParam}
+              searchSlot={
+                <HomeSearch
+                  orgs={[...emerging, ...scaling]}
+                  quarterId={quarterParam}
+                />
+              }
             />
             <ScoreRequestCta />
           </div>

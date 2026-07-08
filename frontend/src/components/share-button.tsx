@@ -9,9 +9,18 @@ interface ShareButtonProps {
   rank: number;
   tierLabel: string;
   slug: string;
+  quarterId?: string | null;
+  quarterLabel: string;
 }
 
-export function ShareButton({ name, rank, tierLabel, slug }: ShareButtonProps) {
+export function ShareButton({
+  name,
+  rank,
+  tierLabel,
+  slug,
+  quarterId,
+  quarterLabel,
+}: ShareButtonProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -33,6 +42,8 @@ export function ShareButton({ name, rank, tierLabel, slug }: ShareButtonProps) {
           rank={rank}
           tierLabel={tierLabel}
           slug={slug}
+          quarterId={quarterId}
+          quarterLabel={quarterLabel}
           onClose={() => setOpen(false)}
         />
       )}

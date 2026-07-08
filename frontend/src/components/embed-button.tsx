@@ -7,9 +7,10 @@ import { EmbedModal } from "@/components/embed-modal";
 interface EmbedButtonProps {
   name: string;
   slug: string;
+  quarterId?: string | null;
 }
 
-export function EmbedButton({ name, slug }: EmbedButtonProps) {
+export function EmbedButton({ name, slug, quarterId }: EmbedButtonProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -29,6 +30,7 @@ export function EmbedButton({ name, slug }: EmbedButtonProps) {
         <EmbedModal
           name={name}
           slug={slug}
+          quarterId={quarterId}
           onClose={() => setOpen(false)}
         />
       )}

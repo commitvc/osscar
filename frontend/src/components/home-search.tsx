@@ -8,6 +8,7 @@ import posthog from "posthog-js"
 import type { Org, RepoEntry } from "@/types"
 import { normalizeLogin } from "@/lib/normalize-login"
 import { cn, formatCompact } from "@/lib/utils"
+import { hrefWithQuarter } from "@/lib/quarter-url"
 import { OrgLogo } from "@/components/org-logo"
 import { ScoreRequestModal } from "@/components/score-request-modal"
 
@@ -32,13 +33,14 @@ type Hit = OrgHit | RepoHit
 
 type Props = {
   orgs: Org[]
+  quarterId?: string | null
 }
 
 function divisionLabel(d: Org["division"]): string {
   return d === "scaling" ? "Scaling" : "Emerging"
 }
 
-export function HomeSearch({ orgs }: Props) {
+export function HomeSearch({ orgs, quarterId }: Props) {
   const router = useRouter()
   const [query, setQuery] = useState("")
   const [open, setOpen] = useState(false)
@@ -119,7 +121,7 @@ export function HomeSearch({ orgs }: Props) {
   }, [open])
 
   function hrefFor(hit: Hit): string {
-    return `/org/${hit.slug}`
+    return hrefWithQuarter(`/org/${hit.slug}`, quarterId)
   }
 
   function onSelect(hit: Hit) {

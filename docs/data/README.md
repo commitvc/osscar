@@ -4,16 +4,14 @@ The OSS Growth Index publishes all data openly under the [CC BY 4.0 license](../
 
 ## What's available
 
-### In the repository
+### Website database
 
-The [`frontend/data/`](../../frontend/data/) directory contains the **top 100 organizations per division** for the current quarter, one JSON file per division. These are the files that power the website:
+The website reads published quarters from the app-facing Supabase project:
 
-- `osscar_emerging_top100_Q1_2026.json` — Top 100 emerging orgs (`stars_start < 1,000`)
-- `osscar_scaling_top100_Q1_2026.json` — Top 100 scaling orgs (`stars_start ≥ 1,000`)
+- `quarters` stores published quarter metadata and marks the current quarter.
+- `organizations_full` stores the full per-quarter ranking, scalar metric fields, weekly time-series arrays, and repository payloads used by org detail pages.
 
-Each file is a self-contained JSON array where every record carries the ranking columns, the per-metric `start`/`end`/`growth_rate`/`growth_percentile`/`final_weight` columns, and the enrichment data the org detail pages need (weekly time series for each metric plus per-repository info). Both the ranking table and the org detail pages read from the same file — this replaces the earlier three-file layout (two ranking CSVs + a separate enrichment CSV).
-
-These JSON files are produced by [`methodology/extract_frontend_data.py`](../../methodology/extract_frontend_data.py) from the full ranking parquet. The top-N count and quarter label are configured at the top of [`frontend/src/lib/config.ts`](../../frontend/src/lib/config.ts).
+The top 100 per division is selected at request time from `organizations_full` by `(quarter_id, division, division_rank)`, which lets the site switch between published quarters without committing new frontend data files.
 
 ### In GitHub Releases
 
@@ -37,7 +35,7 @@ gh release download v2026.Q1 \
     -D methodology/data/
 ```
 
-The `methodology/data/` directory is gitignored and is where [`methodology/compute_index.py`](../../methodology/compute_index.py) looks for input by default. To also download the published rankings so you can compare against your reproduction:
+The `methodology/data/` directory is gitignored and is the conventional local drop zone for release parquets. To also download the published rankings so you can compare against your reproduction:
 
 ```bash
 gh release download v2026.Q1 -p "osscar_ranking_Q1_2026.parquet"
@@ -51,18 +49,25 @@ Once the input parquet is in `methodology/data/`, run the pipeline from the repo
 
 ```bash
 pip install -r methodology/requirements.txt
-python methodology/compute_index.py
+python methodology/compute_index.py \
+    --input methodology/data/osscar_input_data_Q1_2026.parquet
 ```
 
 This produces `methodology/results/osscar_ranking_Q1_2026.parquet`, which should match the published `osscar_ranking_Q1_2026.parquet` release asset given the same input.
 
-To regenerate the per-division JSON files consumed by the frontend:
+To publish a quarter to the website database, validate and ingest the ranking parquet:
 
 ```bash
-python methodology/extract_frontend_data.py
+python scripts/ingest_quarter.py \
+    --parquet methodology/results/osscar_ranking_Q1_2026.parquet \
+    --quarter-id Q1_2026 \
+    --quarter-label "Q1 2026" \
+    --quarter-start 2026-01-01 \
+    --quarter-end 2026-04-01 \
+    --dry-run
 ```
 
-This reads `methodology/results/osscar_ranking_Q1_2026.parquet` and writes the JSON files into `frontend/data/`. See [`methodology/README.md`](../../methodology/README.md) for details on flags and configuration.
+Remove `--dry-run` only after validation passes. Add `--make-current` when the quarter is ready to become the default website quarter.
 
 ## Schema
 
@@ -72,8 +77,8 @@ See [SCHEMA.md](SCHEMA.md) for column definitions of every published file.
 
 1. **Data collection** — Weekly metrics are collected for GitHub organizations and their packages. See [data-collection.md](../data-collection.md).
 2. **Scoring pipeline** — [`methodology/compute_index.py`](../../methodology/compute_index.py) reads the input parquet, computes growth rates, scores, and rankings, and writes the ranking parquet. See [methodology.md](../methodology.md).
-3. **Frontend extraction** — [`methodology/extract_frontend_data.py`](../../methodology/extract_frontend_data.py) extracts the top 100 per division as JSON bundles.
-4. **Publishing** — Per-division JSON files are committed to the repo; the full input and ranking parquets are attached to the GitHub Release.
+3. **Website ingest** — [`scripts/ingest_quarter.py`](../../scripts/ingest_quarter.py) validates the ranking parquet and loads the published quarter into Supabase.
+4. **Publishing** — The website reads from Supabase; the full input and ranking parquets are attached to the GitHub Release.
 
 ## License
 

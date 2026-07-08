@@ -58,11 +58,11 @@ function CustomTooltip({ active, payload, label, color, periodLabel }: CustomToo
 
 interface GrowthChartProps {
   metrics: MetricConfig[];
-  quarterStart?: string;
-  quarterEnd?: string;
+  quarterStart: string;
+  quarterEnd: string;
 }
 
-export function GrowthChart({ metrics, quarterStart = "2026-01-01", quarterEnd = "2026-03-31" }: GrowthChartProps) {
+export function GrowthChart({ metrics, quarterStart, quarterEnd }: GrowthChartProps) {
   const id = useId();
   const available = metrics.filter((m) => m.data.length > 0);
   const [activeKey, setActiveKey] = useState(available[0]?.key ?? "");

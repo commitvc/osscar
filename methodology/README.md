@@ -20,7 +20,7 @@ For a detailed explanation, see [docs/methodology.md](../docs/methodology.md) or
 
 ### 1. Download the base data
 
-From the latest GitHub Release into `methodology/data/` (the default input location):
+From the latest GitHub Release into `methodology/data/`:
 
 ```bash
 mkdir -p methodology/data
@@ -43,22 +43,22 @@ pip install -r methodology/requirements.txt
 From the repo root:
 
 ```bash
-python methodology/compute_index.py
+python methodology/compute_index.py \
+    --input methodology/data/osscar_input_data_Q1_2026.parquet
 ```
 
-This picks up `methodology/data/osscar_input_data_Q1_2026.parquet` by default
-and writes `methodology/results/osscar_ranking_Q1_2026.parquet`. You can
-override either side:
+This writes `methodology/results/osscar_ranking_Q1_2026.parquet`. For a new
+quarter, pass that quarter's input parquet explicitly:
 
 ```bash
 python methodology/compute_index.py \
-    --input path/to/input.parquet \
-    --output-dir path/to/out/
+    --input methodology/data/osscar_input_data_Q2_2026.parquet \
+    --output-dir methodology/results
 ```
 
 The ranking file contains every input column plus `division` (`emerging` or
 `scaling`), `division_rank`, and the per-metric `growth_rate`,
-`growth_percentile`, and `final_weight` columns consumed by the frontend.
+`growth_percentile`, and `final_weight` columns consumed by the website ingest.
 
 ## Running tests
 

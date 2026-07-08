@@ -3,10 +3,12 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { X, Check, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { hrefWithQuarter } from "@/lib/quarter-url";
 
 interface EmbedModalProps {
   name: string;
   slug: string;
+  quarterId?: string | null;
   onClose: () => void;
 }
 
@@ -20,7 +22,7 @@ const VARIANTS: { key: Variant; label: string; size: string }[] = [
   { key: "compact-light", label: "Compact Light", size: "260 × 64" },
 ];
 
-export function EmbedModal({ name, slug, onClose }: EmbedModalProps) {
+export function EmbedModal({ name, slug, quarterId, onClose }: EmbedModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>("html");
   const [variant, setVariant] = useState<Variant>("default");
   const [copyState, setCopyState] = useState<"idle" | "copied">("idle");
@@ -33,14 +35,16 @@ export function EmbedModal({ name, slug, onClose }: EmbedModalProps) {
     typeof window !== "undefined" ? window.location.origin : "";
 
   const badgeUrl = useMemo(
-    () =>
-      variant === "default"
-        ? `${origin}/api/badge?slug=${slug}`
-        : `${origin}/api/badge?slug=${slug}&variant=${variant}`,
-    [origin, slug, variant]
+    () => {
+      const params = new URLSearchParams({ slug });
+      if (variant !== "default") params.set("variant", variant);
+      if (quarterId) params.set("quarter", quarterId);
+      return `${origin}/api/badge?${params.toString()}`;
+    },
+    [origin, quarterId, slug, variant]
   );
 
-  const pageUrl = `${origin}/org/${slug}`;
+  const pageUrl = `${origin}${hrefWithQuarter(`/org/${slug}`, quarterId)}`;
 
   const snippets: Record<Tab, string> = {
     html: `<a href="${pageUrl}" target="_blank" rel="noopener noreferrer">\n  <img src="${badgeUrl}" alt="Featured on OSSCAR" />\n</a>`,

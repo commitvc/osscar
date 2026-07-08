@@ -9,15 +9,15 @@ import {
  * Renderer for the 1200×630 social share card — the same PNG that drives the
  * site's share modal and the "Download your share card" CTA in transactional
  * email. The route handler (./route.tsx) resolves the `OrgCardData` from
- * either the frontend top-N JSON (by slug, for the site) or Supabase (by
- * GitHub login, for the email long tail) and calls this function. Both call
- * sites produce byte-identical output for the same org, which keeps Vercel's
- * edge cache happy and gives us one source of truth for the card design.
+ * Supabase by slug (for the site) or GitHub login (for the email long tail)
+ * and calls this function. Both call sites produce byte-identical output for
+ * the same org, which keeps Vercel's edge cache happy and gives us one source
+ * of truth for the card design.
  */
 
 export type Division = "emerging" | "scaling";
 
-/** Minimum shape the renderer needs — subset of Org shared between JSON + DB paths. */
+/** Minimum shape the renderer needs from the Supabase org row. */
 export type OrgCardData = {
   owner_login: string;
   owner_name: string;

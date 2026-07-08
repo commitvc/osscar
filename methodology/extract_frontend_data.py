@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Extract the top-N orgs per division as frontend-ready JSON bundles.
+"""Extract the top-N orgs per division as public JSON bundles.
 
 Reads the ranking parquet produced by `compute_index.py`, filters to the
 top `FRONTEND_TOP_N` orgs in each division (by `division_rank`), selects the
-columns the frontend consumes, parses the embedded JSON-string arrays into
+columns included in the public JSON snapshot, parses the embedded JSON-string arrays into
 proper nested structures, and writes one self-contained JSON file per division
 to the frontend data directory.
 
@@ -25,7 +25,6 @@ import pandas as pd
 
 FRONTEND_TOP_N = 100
 DIVISIONS = ["emerging", "scaling"]
-DEFAULT_QUARTER_LABEL = "Q1_2026"
 
 # Columns expected to hold JSON-serialized arrays in the input parquet.
 JSON_ARRAY_COLUMNS = [
@@ -80,11 +79,11 @@ FRONTEND_COLUMNS: List[str] = [
 
 
 def _parse_json_array(value: Any) -> list:
-    """Best-effort parse of a JSON-string array column into a Python list.
+    """Parse a JSON-string array column into a Python list.
 
-    Tolerates None, NaN, empty strings, and already-parsed lists. Returns `[]`
-    for anything that cannot be decoded — the frontend treats empty arrays and
-    missing data the same way, so there is no value in surfacing parse errors.
+    Tolerates None, NaN, empty strings, and already-parsed lists. Malformed
+    JSON and non-array payloads fail loudly because they indicate a broken
+    release artifact.
     """
     if value is None:
         return []
@@ -93,15 +92,17 @@ def _parse_json_array(value: Any) -> list:
     if isinstance(value, float) and math.isnan(value):
         return []
     if not isinstance(value, str):
-        return []
+        raise ValueError(f"Expected JSON array string, got {type(value).__name__}")
     text = value.strip()
     if not text:
         return []
     try:
         parsed = json.loads(text)
-    except json.JSONDecodeError:
-        return []
-    return parsed if isinstance(parsed, list) else []
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Malformed JSON array: {exc}") from exc
+    if not isinstance(parsed, list):
+        raise ValueError("Expected JSON value to be an array")
+    return parsed
 
 
 def _to_json_safe(value: Any) -> Any:
@@ -131,7 +132,10 @@ def _row_to_record(row: pd.Series) -> dict:
     for col in FRONTEND_COLUMNS:
         raw = row[col]
         if col in JSON_ARRAY_COLUMNS:
-            record[col] = _parse_json_array(raw)
+            try:
+                record[col] = _parse_json_array(raw)
+            except ValueError as exc:
+                raise ValueError(f"{col}: {exc}") from exc
         else:
             record[col] = _to_json_safe(raw)
     return record
@@ -155,20 +159,26 @@ def write_division_json(records: Iterable[dict], path: Path) -> None:
         fh.write("\n")
 
 
-def run(ranking_path: Path, output_dir: Path, top_n: int, quarter_label: str) -> list[Path]:
+def infer_quarter_label(df: pd.DataFrame) -> str:
+    if "quarter_start" not in df.columns or df["quarter_start"].dropna().empty:
+        raise ValueError("Cannot infer quarter label: ranking parquet has no quarter_start values")
+    ts = pd.to_datetime(df["quarter_start"].dropna().iloc[0], errors="coerce")
+    if pd.isna(ts):
+        raise ValueError("Cannot infer quarter label: invalid quarter_start value")
+    quarter = ((int(ts.month) - 1) // 3) + 1
+    return f"Q{quarter}_{ts.year}"
+
+
+def run(ranking_path: Path, output_dir: Path, top_n: int, quarter_label: str | None) -> list[Path]:
     df = pd.read_parquet(ranking_path)
+    resolved_quarter_label = quarter_label or infer_quarter_label(df)
     written: list[Path] = []
     for division in DIVISIONS:
         records = extract_division(df, division=division, top_n=top_n)
-        out_path = output_dir / f"osscar_{division}_top{top_n}_{quarter_label}.json"
+        out_path = output_dir / f"osscar_{division}_top{top_n}_{resolved_quarter_label}.json"
         write_division_json(records, out_path)
         written.append(out_path)
     return written
-
-
-def default_ranking_path() -> Path:
-    script_dir = Path(__file__).resolve().parent
-    return script_dir / "results" / f"osscar_ranking_{DEFAULT_QUARTER_LABEL}.parquet"
 
 
 def default_output_dir() -> Path:
@@ -186,7 +196,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--ranking",
         type=Path,
-        default=default_ranking_path(),
+        required=True,
         help="Path to the ranking parquet produced by compute_index.py.",
     )
     parser.add_argument(
@@ -204,8 +214,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--quarter-label",
         type=str,
-        default=DEFAULT_QUARTER_LABEL,
-        help="Quarter label used in output filenames (default: %(default)s).",
+        default=None,
+        help="Quarter label used in output filenames (default: inferred from quarter_start).",
     )
     return parser.parse_args()
 

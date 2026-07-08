@@ -21,7 +21,7 @@ import { COLORS, EmailFrame, MONO_STACK, SITE_URL } from "./_frame";
 
 export type ScoreReportEmailProps = {
   quarterLabel: string;
-  /** Quarter id in Supabase (e.g. "Q12026") — used to build the share-card
+  /** Quarter id in Supabase (e.g. "Q1_2026") — used to build the share-card
    *  download URL so old emails keep resolving to their own quarter's data
    *  after rollover. */
   quarterId: string;
@@ -623,7 +623,7 @@ export default function ScoreReportEmail(props: ScoreReportEmailProps) {
 // Preview data for `react-email dev`
 ScoreReportEmail.PreviewProps = {
   quarterLabel: "Q1 2026",
-  quarterId: "Q12026",
+  quarterId: "Q1_2026",
   division: "scaling",
   divisionRank: 42,
   divisionSize: 12_840,

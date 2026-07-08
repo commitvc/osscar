@@ -18,17 +18,19 @@ cp scripts/.env.example scripts/.env
 ```bash
 python scripts/ingest_quarter.py \
     --parquet /Users/alessadro/Developer/osscar/methodology/results/osscar_ranking_Q1_2026.parquet \
-    --quarter-id Q12026 \
+    --quarter-id Q1_2026 \
     --quarter-label "Q1 2026" \
     --quarter-start 2026-01-01 \
-    --quarter-end 2026-03-31 \
+    --quarter-end 2026-04-01 \
     --make-current
 ```
 
 What it does:
 1. Reads the parquet (46k rows for Q1 2026).
 2. Upserts a row into `quarters`.
-3. Upserts all org rows into `organizations_full` in 1000-row batches, keyed on `(quarter_id, owner_id)`. Idempotent — safe to re-run.
+3. Replaces that quarter's rows in `organizations_full` in 1000-row batches. Re-runs do not leave stale rows from older parquet versions.
 4. With `--make-current`, flips `is_current` to the new quarter so `/api/request-score` queries it.
 
 Use `--dry-run` to validate the parquet without writing anything.
+
+Quarter IDs use `Q*_YYYY` format (`Q1_2026`, `Q2_2026`). Quarter end dates are inclusive calendar dates (`Q2 2026` ends at `2026-06-30`).
