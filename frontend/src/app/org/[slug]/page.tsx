@@ -153,7 +153,6 @@ function SignalCard({
 }) {
   const hasData = signal.end != null;
   const Icon = signal.icon;
-  const showRate = signal.rate != null && signal.rate > 0;
 
   return (
     <div
@@ -179,21 +178,16 @@ function SignalCard({
         </span>
       </div>
 
-      {/* Value + real growth rate + padding-for-ranking note */}
+      {/* Value + ranking growth rate + observed-chart note */}
       {(() => {
         const padding = PADDING_THRESHOLDS[signal.key][division];
         const isLowBaseline =
           signal.start != null &&
           signal.end != null &&
           signal.start < padding;
-        const rankingRate = isLowBaseline
+        const rankingRate = signal.percentile != null
           ? calculateRankingGrowthRate(signal.start, signal.end, padding)
           : null;
-        const isEligibleAfterPadding =
-          rankingRate != null &&
-          rankingRate >= 0 &&
-          signal.end != null &&
-          signal.end >= padding;
 
         return (
           <div className="flex flex-col gap-1.5">
@@ -201,17 +195,16 @@ function SignalCard({
               <span className="font-mono text-3xl font-bold text-foreground tabular-nums leading-none">
                 {hasData ? formatCompact(signal.end) : "—"}
               </span>
-              {showRate ? (
+              {rankingRate != null ? (
                 <span className="font-mono text-sm font-semibold px-2 py-0.5 rounded-sm tabular-nums bg-green/15 text-green">
-                  {formatGrowthMultiplier(signal.rate)}
+                  {formatGrowthMultiplier(rankingRate)}
                 </span>
               ) : null}
             </div>
             {isLowBaseline && (
               <span className="font-mono text-[0.65rem] tabular-nums text-muted-foreground/40 leading-tight">
-                Actual: {formatCompact(signal.start)} → {formatCompact(signal.end)}.{" "}
-                {isEligibleAfterPadding
-                  ? <>Ranking: {formatCompact(padding)} → {formatCompact(signal.end)} ({formatGrowthMultiplier(rankingRate)}).</>
+                {rankingRate != null
+                  ? <>Ranking baseline: {formatCompact(padding)} → {formatCompact(signal.end)}. Chart: {formatCompact(signal.start)} → {formatCompact(signal.end)}{signal.rate != null ? <> ({formatGrowthMultiplier(signal.rate)} actual)</> : null}.</>
                   : <>Below the minimum ranking baseline of {formatCompact(padding)}.</>}
               </span>
             )}

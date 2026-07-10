@@ -217,7 +217,7 @@ export default function MethodologyPage() {
                 Package downloads aggregate npm, PyPI, and Cargo. If an org only publishes to one or two registries, we sum the available values instead of penalizing it for the ones it&rsquo;s missing. An org with no data across all three registries gets a null for this signal.
               </p>
               <p>
-                The quarterly growth rate shown in the table is the raw rate:
+                The observed quarterly growth rate is:
               </p>
             </Prose>
             <Formula>
@@ -225,14 +225,17 @@ export default function MethodologyPage() {
             </Formula>
             <Prose>
               <p>
-                We display this fractional rate as a total multiplier by adding one: a growth rate of <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">0.25</code> is shown as <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">1.25×</code>.
+                The charts preserve those observed start and end values. The multiplier displayed in the leaderboard and signal cards is the value used for ranking, so it always corresponds to the score that determines the organization&rsquo;s position.
               </p>
               <p>
-                For ranking, we divide instead by a <em className="text-foreground not-italic font-medium">padded start</em>: whichever is larger, the actual start value or a minimum threshold. This prevents tiny absolute changes from producing outsized rank gains. Going from 2 to 4 stars shouldn&rsquo;t outrank a project going from 5,000 to 8,000 stars. The padded rate only feeds the scoring step below. It&rsquo;s never shown as the displayed growth.
+                For ranking, we divide by a <em className="text-foreground not-italic font-medium">padded start</em>: whichever is larger, the actual start value or a minimum threshold. This prevents tiny absolute changes from producing outsized rank gains. Going from 2 to 4 stars shouldn&rsquo;t outrank a project going from 5,000 to 8,000 stars. When padding applies, the displayed multiplier can therefore differ from the ratio between the chart endpoints; the signal card labels both values explicitly.
               </p>
             </Prose>
             <Formula>
               padded_start = max(start, padding_threshold)
+            </Formula>
+            <Formula>
+              displayed_multiplier = end / padded_start
             </Formula>
             <Prose>
               <p>
@@ -267,7 +270,7 @@ export default function MethodologyPage() {
             <SectionTitle step="04">Score growth via log-minmax scaling</SectionTitle>
             <Prose>
               <p>
-                Raw growth rates can&rsquo;t be compared directly across signals. A 20% increase in stars means something very different from a 20% increase in package downloads. We needed a way to put every signal on the same scale so they could be combined later.
+                Ranking growth rates can&rsquo;t be compared directly across signals. A 20% increase in stars means something very different from a 20% increase in package downloads. We needed a way to put every signal on the same scale so they could be combined later.
               </p>
               <p>
                 Our first attempt was straight percentile ranks. The appeal was obvious: every signal gets a <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">[0, 100]</code> score for free, with no tuning. The problem is that growth is heavily long-tailed. A 10× grower and a 1,000× grower can both land in the top 1%, but they&rsquo;re clearly not the same story. Percentiles collapsed that gap and flattened the top of the leaderboard.
@@ -277,7 +280,7 @@ export default function MethodologyPage() {
               </p>
             </Prose>
             <Formula>
-              <div>1. log_val = log(1 + growth_rate)</div>
+              <div>1. log_val = log(1 + padded_growth_rate)</div>
               <div className="mt-1">2. score = (log_val − min) / (max − min) × 100</div>
             </Formula>
             <Prose>

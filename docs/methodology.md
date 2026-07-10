@@ -59,8 +59,8 @@ We then compute the raw growth rate:
 growth_rate = (end − start) / start
 ```
 
-This is the rate shown in the published data and the UI. Padding never changes
-the displayed rate.
+This raw rate remains available in the published data. Charts use the observed
+`start` and `end` values directly.
 
 ### Padded start (scoring only)
 
@@ -71,7 +71,12 @@ padded_start  = max(start, padding_threshold)
 scoring_rate  = (end − padded_start) / padded_start
 ```
 
-This prevents tiny absolute changes from producing outsized rank gains. Going from 2 to 4 stars shouldn't outrank a project going from 5,000 to 8,000 stars. The padded rate only feeds the scoring step below — it's never shown as the displayed growth.
+This prevents tiny absolute changes from producing outsized rank gains. Going
+from 2 to 4 stars shouldn't outrank a project going from 5,000 to 8,000 stars.
+The leaderboard and signal cards display the ranking multiplier
+`end / padded_start`, so the number people see corresponds to the rate that
+determines rank. When padding applies, that multiplier differs from the ratio
+between the observed chart endpoints; the signal card identifies both.
 
 Padding thresholds differ by division to reflect the different scales of orgs in each tier:
 
@@ -95,14 +100,14 @@ Signals that fail any of these conditions are excluded for that organization. Th
 
 ## Step 04 — Score growth via log-minmax scaling
 
-Raw growth rates can't be compared directly across signals. A 20% increase in stars means something very different from a 20% increase in package downloads. We needed a way to put every signal on the same scale so they could be combined later.
+Ranking growth rates can't be compared directly across signals. A 20% increase in stars means something very different from a 20% increase in package downloads. We needed a way to put every signal on the same scale so they could be combined later.
 
 Our first attempt was straight percentile ranks. The appeal was obvious: every signal gets a `[0, 100]` score for free, with no tuning. The problem is that growth is heavily long-tailed — a 10× grower and a 1,000× grower can both land in the top 1%, but they're clearly not the same story. Percentiles collapsed that gap and flattened the top of the leaderboard.
 
 We ended up with a two-step **log-minmax** transform for each signal within each division:
 
 ```
-1. log_val = log(1 + growth_rate)
+1. log_val = log(1 + padded_growth_rate)
 2. score   = (log_val − min) / (max − min) × 100
 ```
 

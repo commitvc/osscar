@@ -96,14 +96,12 @@ function MetricCell({ value, rate, startValue, percentile, metric, division, sou
 
   const metricLabel = METRIC_LABELS[metric]
   const baseline = PADDING_THRESHOLDS[metric][division]
-  const showRate = rate != null && rate > 0
-  const isLowBaseline =
-    startValue != null && value != null && startValue < baseline
-  const rankingRate = isLowBaseline
+  const rankingRate = percentile != null
     ? calculateRankingGrowthRate(startValue ?? null, value, baseline)
     : null
-  const isEligibleAfterPadding =
-    rankingRate != null && rankingRate >= 0 && value != null && value >= baseline
+  const showRate = rankingRate != null
+  const isLowBaseline =
+    startValue != null && value != null && startValue < baseline
   const hasPercentile = percentile != null
   const baselineLabel = baseline === 1 ? singularize(metricLabel) : metricLabel
 
@@ -131,7 +129,7 @@ function MetricCell({ value, rate, startValue, percentile, metric, division, sou
             </span>
             {showRate ? (
               <span className="font-mono text-[0.7rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm bg-green/15 text-green">
-                {formatGrowthMultiplier(rate)}
+                {formatGrowthMultiplier(rankingRate)}
               </span>
             ) : null}
           </div>
@@ -140,9 +138,8 @@ function MetricCell({ value, rate, startValue, percentile, metric, division, sou
           <Tooltip.Positioner side="top" sideOffset={6}>
             <Tooltip.Popup className="z-50 max-w-xs rounded-md border border-white/10 bg-popover px-3 py-2 text-xs text-popover-foreground shadow-lg space-y-1.5">
               <p>
-                Actual growth: <span className="font-semibold text-green">{formatGrowthMultiplier(rate)}</span> ({formatCompact(startValue)} → {formatCompact(value)}).{" "}
-                {isEligibleAfterPadding
-                  ? <>For ranking, the minimum baseline changes that calculation to {formatCompact(baseline)} → {formatCompact(value)} ({formatGrowthMultiplier(rankingRate)}).</>
+                {showRate
+                  ? <>Ranking growth: <span className="font-semibold text-green">{formatGrowthMultiplier(rankingRate)}</span> ({formatCompact(baseline)} → {formatCompact(value)}). Chart values: {formatCompact(startValue)} → {formatCompact(value)}{rate != null ? <> ({formatGrowthMultiplier(rate)} actual)</> : null}.</>
                   : <>Because the ending value is below the minimum baseline of {formatCompact(baseline)} {baselineLabel}, this signal is not used for ranking.</>}
               </p>
               <PercentileLine percentile={percentile} metricLabel={metricLabel} />
@@ -164,7 +161,7 @@ function MetricCell({ value, rate, startValue, percentile, metric, division, sou
       </span>
       {showRate ? (
         <span className="font-mono text-[0.7rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm bg-green/15 text-green">
-          {formatGrowthMultiplier(rate)}
+          {formatGrowthMultiplier(rankingRate)}
         </span>
       ) : (
         <span className="text-[0.7rem] leading-none text-muted-foreground/25">—</span>
@@ -248,9 +245,16 @@ function SortHeader({ column, label, align = "right", sortMode, onToggleMode }: 
   )
 }
 
-/** Returns the displayed growth value for sorting — always the methodology rate (what's shown in the table) */
-function displayedGrowth(_start: number | null, _end: number | null, methodologyRate: number | null): number | null {
-  return methodologyRate
+/** Returns the padded rate used by the methodology, but only for ranked signals. */
+function displayedGrowth(
+  start: number | null,
+  end: number | null,
+  metric: MetricKey,
+  division: Division,
+  percentile: number | null,
+): number | null {
+  if (percentile == null) return null
+  return calculateRankingGrowthRate(start, end, PADDING_THRESHOLDS[metric][division])
 }
 
 /** Compare two nullable numbers for sorting. Nulls always last, Infinity always first (in natural asc, TanStack flips for desc). */
@@ -268,13 +272,16 @@ interface CardMetricRowProps {
   icon: typeof Star
   label: string
   value: number | null
-  rate: number | null
+  startValue: number | null
+  percentile: number | null
+  metric: MetricKey
+  division: Division
   sources?: string[]
 }
 
-function CardMetricRow({ icon: Icon, label, value, rate, sources }: CardMetricRowProps) {
-  const hasData = value != null || rate != null
-  const showRate = rate != null && rate > 0
+function CardMetricRow({ icon: Icon, label, value, startValue, percentile, metric, division, sources }: CardMetricRowProps) {
+  const hasData = value != null
+  const rankingRate = displayedGrowth(startValue, value, metric, division, percentile)
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="flex items-center gap-1.5 min-w-0 flex-1">
@@ -295,9 +302,12 @@ function CardMetricRow({ icon: Icon, label, value, rate, sources }: CardMetricRo
         )}>
           {value != null ? formatCompact(value) : "—"}
         </span>
-        {showRate ? (
-          <span className="font-mono text-[0.65rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm bg-green/15 text-green">
-            {formatGrowthMultiplier(rate)}
+        {rankingRate != null ? (
+          <span
+            className="font-mono text-[0.65rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm bg-green/15 text-green"
+            title="Growth multiplier used for ranking"
+          >
+            {formatGrowthMultiplier(rankingRate)}
           </span>
         ) : (
           <span className="font-mono text-[0.65rem] leading-none text-muted-foreground/25 px-1.5">—</span>
@@ -391,19 +401,28 @@ function OrgCard({ org, rank, slug, quarterId, pkg, sources }: OrgCardProps) {
           icon={Star}
           label="Stars"
           value={org.github_stars_end}
-          rate={org.github_stars_growth_rate}
+          startValue={org.github_stars_start}
+          percentile={org.github_stars_growth_percentile}
+          metric="github_stars"
+          division={org.division}
         />
         <CardMetricRow
           icon={Users}
           label="Contributors"
           value={org.github_contributors_end}
-          rate={org.github_contributors_growth_rate}
+          startValue={org.github_contributors_start}
+          percentile={org.github_contributors_growth_percentile}
+          metric="github_contributors"
+          division={org.division}
         />
         <CardMetricRow
           icon={Package}
           label="Downloads"
           value={pkg.value}
-          rate={pkg.rate}
+          startValue={org.package_downloads_start}
+          percentile={pkg.percentile}
+          metric="package_downloads"
+          division={org.division}
           sources={sources}
         />
       </div>
@@ -521,10 +540,10 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, se
         sortingFn: (rowA, rowB) => {
           const mode = starsModeRef.current
           const aVal = mode === "growth"
-            ? displayedGrowth(rowA.original.github_stars_start, rowA.original.github_stars_end, rowA.original.github_stars_growth_rate)
+            ? displayedGrowth(rowA.original.github_stars_start, rowA.original.github_stars_end, "github_stars", rowA.original.division, rowA.original.github_stars_growth_percentile)
             : rowA.original.github_stars_end
           const bVal = mode === "growth"
-            ? displayedGrowth(rowB.original.github_stars_start, rowB.original.github_stars_end, rowB.original.github_stars_growth_rate)
+            ? displayedGrowth(rowB.original.github_stars_start, rowB.original.github_stars_end, "github_stars", rowB.original.division, rowB.original.github_stars_growth_percentile)
             : rowB.original.github_stars_end
           return compareMetric(aVal, bVal)
         },
@@ -557,10 +576,10 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, se
         sortingFn: (rowA, rowB) => {
           const mode = contribModeRef.current
           const aVal = mode === "growth"
-            ? displayedGrowth(rowA.original.github_contributors_start, rowA.original.github_contributors_end, rowA.original.github_contributors_growth_rate)
+            ? displayedGrowth(rowA.original.github_contributors_start, rowA.original.github_contributors_end, "github_contributors", rowA.original.division, rowA.original.github_contributors_growth_percentile)
             : rowA.original.github_contributors_end
           const bVal = mode === "growth"
-            ? displayedGrowth(rowB.original.github_contributors_start, rowB.original.github_contributors_end, rowB.original.github_contributors_growth_rate)
+            ? displayedGrowth(rowB.original.github_contributors_start, rowB.original.github_contributors_end, "github_contributors", rowB.original.division, rowB.original.github_contributors_growth_percentile)
             : rowB.original.github_contributors_end
           return compareMetric(aVal, bVal)
         },
@@ -601,8 +620,8 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, se
           } else {
             const aStart = rowA.original.package_downloads_start
             const bStart = rowB.original.package_downloads_start
-            aVal = displayedGrowth(aStart || null, aData.value, aData.rate)
-            bVal = displayedGrowth(bStart || null, bData.value, bData.rate)
+            aVal = displayedGrowth(aStart, aData.value, "package_downloads", rowA.original.division, aData.percentile)
+            bVal = displayedGrowth(bStart, bData.value, "package_downloads", rowB.original.division, bData.percentile)
           }
           return compareMetric(aVal, bVal)
         },
@@ -712,6 +731,13 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, se
         </div>
         {searchSlot && <div className="sm:pb-2">{searchSlot}</div>}
       </div>
+
+      <p className="text-[0.65rem] leading-relaxed text-muted-foreground/60">
+        Multipliers are the padded growth values used for ranking. Charts show observed weekly values. {" "}
+        <Link href="/methodology" className="text-muted-foreground hover:text-green transition-colors">
+          How ranking growth works →
+        </Link>
+      </p>
 
       {/* Mobile/tablet card list */}
       <div className="lg:hidden space-y-2">

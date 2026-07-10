@@ -133,18 +133,30 @@ test.describe("published quarter release surface", () => {
     }
   });
 
-  test("distinguishes actual growth from padded ranking growth", async ({ page }) => {
+  test("uses methodology multipliers on the leaderboard", async ({ page }) => {
+    await page.goto("/?quarter=Q2_2026");
+
+    await expect(page.getByText("Multipliers are the padded growth values used for ranking.")).toBeVisible();
+    const mnemosyneEntry = page
+      .locator('[data-testid="ranking-entry"]:visible, tbody tr:visible')
+      .filter({ hasText: "Mnemosyne OSS" });
+    await expect(mnemosyneEntry).toBeVisible();
+    await expect(mnemosyneEntry).toContainText("14×");
+    await expect(mnemosyneEntry).not.toContainText("351×");
+  });
+
+  test("displays padded ranking growth and explains the observed chart values", async ({ page }) => {
     await page.goto("/org/phase-rs?quarter=Q2_2026");
 
     const stars = page.getByTestId("signal-card-github_stars");
     await expect(stars).toBeVisible();
-    await expect(stars).toContainText("88×");
-    await expect(stars).toContainText(/Actual:\s*2\s*→\s*176/);
-    await expect(stars).toContainText(/Ranking:\s*100\s*→\s*176\s*\(1\.76×\)/);
+    await expect(stars).toContainText("1.76×");
+    await expect(stars).toContainText(/Ranking baseline:\s*100\s*→\s*176/);
+    await expect(stars).toContainText(/Chart:\s*2\s*→\s*176\s*\(88× actual\)/);
     await expect(stars).not.toContainText("+175.0×");
   });
 
-  test("uses the first chart bucket as the displayed methodology baseline", async ({ page }) => {
+  test("keeps chart boundaries while displaying the methodology multiplier", async ({ page }) => {
     await page.goto("/org/withcoral?quarter=Q2_2026");
 
     const coralContributors = page.getByTestId("signal-card-github_contributors");
@@ -156,8 +168,8 @@ test.describe("published quarter release surface", () => {
 
     const mnemosyneStars = page.getByTestId("signal-card-github_stars");
     await expect(mnemosyneStars).toBeVisible();
-    await expect(mnemosyneStars).toContainText("351×");
-    await expect(mnemosyneStars).toContainText(/Actual:\s*4\s*→\s*1\.4K/);
-    await expect(mnemosyneStars).toContainText(/Ranking:\s*100\s*→\s*1\.4K\s*\(14×\)/);
+    await expect(mnemosyneStars).toContainText("14×");
+    await expect(mnemosyneStars).toContainText(/Ranking baseline:\s*100\s*→\s*1\.4K/);
+    await expect(mnemosyneStars).toContainText(/Chart:\s*4\s*→\s*1\.4K\s*\(351× actual\)/);
   });
 });

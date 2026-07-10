@@ -96,7 +96,7 @@ Contains every organization eligible for ranking in a given quarter. The column 
 
 ### Notes on growth rates
 
-- **Real vs. padded rate.** The `_growth_rate` column is the **real** rate `(end − start) / start`. Padding (`max(start, padding_threshold)`) is applied internally for scoring only — it prevents low-baseline outliers from dominating ranked scores, but is never surfaced as a displayed rate. See [methodology.md](../methodology.md#step-03--measure-three-growth-signals).
+- **Real vs. padded rate.** The `_growth_rate` column is the **real** rate `(end − start) / start`. Padding (`max(start, padding_threshold)`) prevents low-baseline outliers from dominating ranked scores. The website derives its displayed ranking multiplier as `end / max(start, padding_threshold)`, while charts continue to show the observed start and end values. See [methodology.md](../methodology.md#step-03--measure-three-growth-signals).
 - **Eligibility.** An organization is eligible for a metric only if both start and end values exist, the end value meets the padding threshold, and the padded growth rate is non-negative.
 - **Nullable fields.** `_growth_rate` is null when `start` is 0 (rate undefined). Package download columns are null for organizations with no data across npm, PyPI, and Cargo.
 
