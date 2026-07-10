@@ -15,7 +15,8 @@ import {
 import { ExternalLink, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, Star, Users, Package } from "lucide-react"
 import { Tooltip } from "@base-ui/react/tooltip"
 import type { Org, Division } from "@/types"
-import { formatCompact, formatGrowthRate, formatPercentile, formatTopPct, cn } from "@/lib/utils"
+import { formatCompact, formatPercentile, formatTopPct, cn } from "@/lib/utils"
+import { calculateRankingGrowthRate, formatGrowthRate } from "@/lib/growth"
 import { PADDING_THRESHOLDS, type MetricKey } from "@/lib/padding-thresholds"
 import { hrefWithQuarter } from "@/lib/quarter-url"
 import { GitHubIcon } from "@/components/github-icon"
@@ -98,6 +99,11 @@ function MetricCell({ value, rate, startValue, percentile, metric, division, sou
   const showRate = rate != null && rate > 0
   const isLowBaseline =
     showRate && startValue != null && startValue < baseline
+  const rankingRate = isLowBaseline
+    ? calculateRankingGrowthRate(startValue ?? null, value, baseline)
+    : null
+  const isEligibleAfterPadding =
+    rankingRate != null && rankingRate >= 0 && value != null && value >= baseline
   const hasPercentile = percentile != null
   const baselineLabel = baseline === 1 ? singularize(metricLabel) : metricLabel
 
@@ -132,7 +138,10 @@ function MetricCell({ value, rate, startValue, percentile, metric, division, sou
           <Tooltip.Positioner side="top" sideOffset={6}>
             <Tooltip.Popup className="z-50 max-w-xs rounded-md border border-white/10 bg-popover px-3 py-2 text-xs text-popover-foreground shadow-lg space-y-1.5">
               <p>
-                Displayed rate is real growth: <span className="font-semibold text-green">{formatGrowthRate(rate)}</span> ({formatCompact(startValue ?? 0)} → {formatCompact(value)}). For ranking, our methodology uses a minimum baseline of {formatCompact(baseline)} {baselineLabel} to avoid low-baseline distortion, so this org is ranked as if it had grown from {formatCompact(baseline)} → {formatCompact(value)}.
+                Actual growth: <span className="font-semibold text-green">{formatGrowthRate(rate)}</span> ({formatCompact(startValue ?? 0)} → {formatCompact(value)}).{" "}
+                {isEligibleAfterPadding
+                  ? <>For ranking, the minimum baseline changes that calculation to {formatCompact(baseline)} → {formatCompact(value)} ({formatGrowthRate(rankingRate)}).</>
+                  : <>Because the ending value is below the minimum baseline of {formatCompact(baseline)} {baselineLabel}, this signal is not used for ranking.</>}
               </p>
               <PercentileLine percentile={percentile} metricLabel={metricLabel} />
               <a href="/methodology" className="inline-flex items-center gap-1 text-[0.65rem] text-muted-foreground hover:text-green transition-colors font-mono">

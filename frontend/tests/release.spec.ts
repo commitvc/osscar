@@ -132,4 +132,15 @@ test.describe("published quarter release surface", () => {
       await expectRenderedChart(page);
     }
   });
+
+  test("distinguishes actual growth from padded ranking growth", async ({ page }) => {
+    await page.goto("/org/phase-rs?quarter=Q2_2026");
+
+    const stars = page.getByTestId("signal-card-github_stars");
+    await expect(stars).toBeVisible();
+    await expect(stars).toContainText("+17,500%");
+    await expect(stars).toContainText(/Actual:\s*1\s*→\s*176/);
+    await expect(stars).toContainText(/Ranking:\s*100\s*→\s*176\s*\(\+76%\)/);
+    await expect(stars).not.toContainText("+175.0×");
+  });
 });

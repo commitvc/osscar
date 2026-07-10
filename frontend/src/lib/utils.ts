@@ -31,12 +31,6 @@ export function formatCompact(n: number | null): string {
   return String(Math.round(n))
 }
 
-export function formatGrowthRate(rate: number | null): string {
-  if (rate == null) return "—"
-  const sign = rate >= 0 ? "+" : ""
-  return `${sign}${rate.toFixed(1)}×`
-}
-
 function ordinalSuffix(n: number): string {
   const mod100 = n % 100
   if (mod100 >= 11 && mod100 <= 13) return "th"

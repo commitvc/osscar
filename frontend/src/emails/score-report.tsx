@@ -8,6 +8,7 @@ import {
   Text,
 } from "@react-email/components";
 import * as React from "react";
+import { formatGrowthRate } from "@/lib/growth";
 import { COLORS, EmailFrame, MONO_STACK, SITE_URL } from "./_frame";
 
 /**
@@ -46,11 +47,11 @@ type Metric = {
   start: number | null;
   /** Quarter-end value; paired with `start` to compute the displayed delta. */
   end: number | null;
-  /** Methodology growth rate (e.g. 0.25 → "+0.3×"). */
+  /** Actual quarterly growth rate (e.g. 0.25 is displayed as "+25%"). */
   growthRate: number | null;
 };
 
-// ─── Helpers (inlined; email bundle is self-contained) ───────────────────────
+// ─── Email presentation helpers ──────────────────────────────────────────────
 
 /** "+5.9k", "+1.2M", "+240" — mirrors the share-image delta format. */
 function formatDelta(start: number | null, end: number | null): string | null {
@@ -72,10 +73,6 @@ function formatDelta(start: number | null, end: number | null): string | null {
   if (str.endsWith(".0")) str = str.slice(0, -2);
   const sign = delta > 0 ? "+" : "";
   return `${sign}${str}${suffix}`;
-}
-
-function formatGrowthRate(rate: number): string {
-  return `+${rate.toFixed(1)}×`;
 }
 
 /**
@@ -606,7 +603,7 @@ export default function ScoreReportEmail(props: ScoreReportEmailProps) {
             color: COLORS.fgSubtle,
           }}
         >
-          Growth rates use our padded-baseline methodology.{" "}
+          Growth rates show actual quarterly change. Ranking scores use the padded-baseline methodology.{" "}
           <Link
             href={`${SITE_URL}/methodology`}
             style={{ color: COLORS.fgMuted, textDecoration: "underline" }}

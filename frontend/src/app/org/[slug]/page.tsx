@@ -27,9 +27,9 @@ import {
   computeScore,
   formatScore,
   formatCompact,
-  formatGrowthRate,
   cn,
 } from "@/lib/utils";
+import { calculateRankingGrowthRate, formatGrowthRate } from "@/lib/growth";
 import { hrefWithQuarter } from "@/lib/quarter-url";
 import { PADDING_THRESHOLDS, type MetricKey } from "@/lib/padding-thresholds";
 import type { Org, Division, TimeSeriesPoint } from "@/types";
@@ -157,6 +157,7 @@ function SignalCard({
 
   return (
     <div
+      data-testid={`signal-card-${signal.key}`}
       className={cn(
         "bg-card rounded-xl border p-5 flex flex-col gap-4 transition-colors",
         hasData
@@ -185,6 +186,14 @@ function SignalCard({
           showRate &&
           signal.start != null &&
           signal.start < padding;
+        const rankingRate = isLowBaseline
+          ? calculateRankingGrowthRate(signal.start, signal.end, padding)
+          : null;
+        const isEligibleAfterPadding =
+          rankingRate != null &&
+          rankingRate >= 0 &&
+          signal.end != null &&
+          signal.end >= padding;
 
         return (
           <div className="flex flex-col gap-1.5">
@@ -200,7 +209,10 @@ function SignalCard({
             </div>
             {isLowBaseline && (
               <span className="font-mono text-[0.65rem] tabular-nums text-muted-foreground/40 leading-tight">
-                {formatCompact(signal.start)} → {formatCompact(signal.end)}. Min baseline {formatCompact(padding)} used for ranking.
+                Actual: {formatCompact(signal.start)} → {formatCompact(signal.end)}.{" "}
+                {isEligibleAfterPadding
+                  ? <>Ranking: {formatCompact(padding)} → {formatCompact(signal.end)} ({formatGrowthRate(rankingRate)}).</>
+                  : <>Below the minimum ranking baseline of {formatCompact(padding)}.</>}
               </span>
             )}
           </div>
