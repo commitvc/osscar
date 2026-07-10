@@ -138,9 +138,9 @@ test.describe("published quarter release surface", () => {
 
     const stars = page.getByTestId("signal-card-github_stars");
     await expect(stars).toBeVisible();
-    await expect(stars).toContainText("+17,500%");
+    await expect(stars).toContainText("176×");
     await expect(stars).toContainText(/Actual:\s*1\s*→\s*176/);
-    await expect(stars).toContainText(/Ranking:\s*100\s*→\s*176\s*\(\+76%\)/);
+    await expect(stars).toContainText(/Ranking:\s*100\s*→\s*176\s*\(1\.76×\)/);
     await expect(stars).not.toContainText("+175.0×");
   });
 });

@@ -8,7 +8,7 @@ import {
   Text,
 } from "@react-email/components";
 import * as React from "react";
-import { formatGrowthRate } from "@/lib/growth";
+import { formatGrowthMultiplier } from "@/lib/growth";
 import { COLORS, EmailFrame, MONO_STACK, SITE_URL } from "./_frame";
 
 /**
@@ -47,7 +47,7 @@ type Metric = {
   start: number | null;
   /** Quarter-end value; paired with `start` to compute the displayed delta. */
   end: number | null;
-  /** Actual quarterly growth rate (e.g. 0.25 is displayed as "+25%"). */
+  /** Actual quarterly growth rate (e.g. 0.25 is displayed as "1.25×"). */
   growthRate: number | null;
 };
 
@@ -302,7 +302,7 @@ function MetricCard({
               lineHeight: 1,
             }}
           >
-            {formatGrowthRate(growth)}
+            {formatGrowthMultiplier(growth)}
           </span>
         </div>
       )}

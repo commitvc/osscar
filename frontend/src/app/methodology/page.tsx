@@ -225,7 +225,7 @@ export default function MethodologyPage() {
             </Formula>
             <Prose>
               <p>
-                We display this fractional rate as a percentage: a growth rate of <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">0.25</code> is shown as <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">+25%</code>.
+                We display this fractional rate as a total multiplier by adding one: a growth rate of <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">0.25</code> is shown as <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">1.25×</code>.
               </p>
               <p>
                 For ranking, we divide instead by a <em className="text-foreground not-italic font-medium">padded start</em>: whichever is larger, the actual start value or a minimum threshold. This prevents tiny absolute changes from producing outsized rank gains. Going from 2 to 4 stars shouldn&rsquo;t outrank a project going from 5,000 to 8,000 stars. The padded rate only feeds the scoring step below. It&rsquo;s never shown as the displayed growth.

@@ -1,21 +1,22 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { calculateRankingGrowthRate, formatGrowthRate } from "./growth";
+import { calculateRankingGrowthRate, formatGrowthMultiplier } from "./growth";
 
-test("formats fractional growth rates as signed percentages", () => {
-  assert.equal(formatGrowthRate(175), "+17,500%");
-  assert.equal(formatGrowthRate(0.76), "+76%");
-  assert.equal(formatGrowthRate(0.0152752116), "+1.53%");
-  assert.equal(formatGrowthRate(0), "0%");
-  assert.equal(formatGrowthRate(-0.125), "-12.5%");
-  assert.equal(formatGrowthRate(0.0001), "+0.01%");
-  assert.equal(formatGrowthRate(null), "—");
+test("formats fractional growth rates as total multipliers", () => {
+  assert.equal(formatGrowthMultiplier(175), "176×");
+  assert.equal(formatGrowthMultiplier(0.76), "1.76×");
+  assert.equal(formatGrowthMultiplier(0.0152752116), "1.02×");
+  assert.equal(formatGrowthMultiplier(0), "1×");
+  assert.equal(formatGrowthMultiplier(-0.125), "0.875×");
+  assert.equal(formatGrowthMultiplier(0.0001), "1.0001×");
+  assert.equal(formatGrowthMultiplier(null), "—");
 });
 
-test("rejects non-finite growth rates instead of rendering invalid labels", () => {
-  assert.throws(() => formatGrowthRate(Number.POSITIVE_INFINITY), RangeError);
-  assert.throws(() => formatGrowthRate(Number.NaN), RangeError);
+test("rejects invalid growth rates instead of rendering invalid multipliers", () => {
+  assert.throws(() => formatGrowthMultiplier(Number.POSITIVE_INFINITY), RangeError);
+  assert.throws(() => formatGrowthMultiplier(Number.NaN), RangeError);
+  assert.throws(() => formatGrowthMultiplier(-1.01), RangeError);
 });
 
 test("calculates ranking growth from the padded baseline", () => {

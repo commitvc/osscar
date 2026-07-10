@@ -16,7 +16,7 @@ import { ExternalLink, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Chevro
 import { Tooltip } from "@base-ui/react/tooltip"
 import type { Org, Division } from "@/types"
 import { formatCompact, formatPercentile, formatTopPct, cn } from "@/lib/utils"
-import { calculateRankingGrowthRate, formatGrowthRate } from "@/lib/growth"
+import { calculateRankingGrowthRate, formatGrowthMultiplier } from "@/lib/growth"
 import { PADDING_THRESHOLDS, type MetricKey } from "@/lib/padding-thresholds"
 import { hrefWithQuarter } from "@/lib/quarter-url"
 import { GitHubIcon } from "@/components/github-icon"
@@ -130,7 +130,7 @@ function MetricCell({ value, rate, startValue, percentile, metric, division, sou
               {value != null ? formatCompact(value) : "—"}
             </span>
             <span className="font-mono text-[0.7rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm bg-green/15 text-green">
-              {formatGrowthRate(rate)}
+              {formatGrowthMultiplier(rate)}
             </span>
           </div>
         </Tooltip.Trigger>
@@ -138,9 +138,9 @@ function MetricCell({ value, rate, startValue, percentile, metric, division, sou
           <Tooltip.Positioner side="top" sideOffset={6}>
             <Tooltip.Popup className="z-50 max-w-xs rounded-md border border-white/10 bg-popover px-3 py-2 text-xs text-popover-foreground shadow-lg space-y-1.5">
               <p>
-                Actual growth: <span className="font-semibold text-green">{formatGrowthRate(rate)}</span> ({formatCompact(startValue ?? 0)} → {formatCompact(value)}).{" "}
+                Actual growth: <span className="font-semibold text-green">{formatGrowthMultiplier(rate)}</span> ({formatCompact(startValue ?? 0)} → {formatCompact(value)}).{" "}
                 {isEligibleAfterPadding
-                  ? <>For ranking, the minimum baseline changes that calculation to {formatCompact(baseline)} → {formatCompact(value)} ({formatGrowthRate(rankingRate)}).</>
+                  ? <>For ranking, the minimum baseline changes that calculation to {formatCompact(baseline)} → {formatCompact(value)} ({formatGrowthMultiplier(rankingRate)}).</>
                   : <>Because the ending value is below the minimum baseline of {formatCompact(baseline)} {baselineLabel}, this signal is not used for ranking.</>}
               </p>
               <PercentileLine percentile={percentile} metricLabel={metricLabel} />
@@ -162,7 +162,7 @@ function MetricCell({ value, rate, startValue, percentile, metric, division, sou
       </span>
       {showRate ? (
         <span className="font-mono text-[0.7rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm bg-green/15 text-green">
-          {formatGrowthRate(rate)}
+          {formatGrowthMultiplier(rate)}
         </span>
       ) : (
         <span className="text-[0.7rem] leading-none text-muted-foreground/25">—</span>
@@ -295,7 +295,7 @@ function CardMetricRow({ icon: Icon, label, value, rate, sources }: CardMetricRo
         </span>
         {showRate ? (
           <span className="font-mono text-[0.65rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm bg-green/15 text-green">
-            {formatGrowthRate(rate)}
+            {formatGrowthMultiplier(rate)}
           </span>
         ) : (
           <span className="font-mono text-[0.65rem] leading-none text-muted-foreground/25 px-1.5">—</span>

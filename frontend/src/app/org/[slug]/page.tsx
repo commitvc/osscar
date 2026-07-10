@@ -29,7 +29,7 @@ import {
   formatCompact,
   cn,
 } from "@/lib/utils";
-import { calculateRankingGrowthRate, formatGrowthRate } from "@/lib/growth";
+import { calculateRankingGrowthRate, formatGrowthMultiplier } from "@/lib/growth";
 import { hrefWithQuarter } from "@/lib/quarter-url";
 import { PADDING_THRESHOLDS, type MetricKey } from "@/lib/padding-thresholds";
 import type { Org, Division, TimeSeriesPoint } from "@/types";
@@ -203,7 +203,7 @@ function SignalCard({
               </span>
               {showRate ? (
                 <span className="font-mono text-sm font-semibold px-2 py-0.5 rounded-sm tabular-nums bg-green/15 text-green">
-                  {formatGrowthRate(signal.rate)}
+                  {formatGrowthMultiplier(signal.rate)}
                 </span>
               ) : null}
             </div>
@@ -211,7 +211,7 @@ function SignalCard({
               <span className="font-mono text-[0.65rem] tabular-nums text-muted-foreground/40 leading-tight">
                 Actual: {formatCompact(signal.start)} → {formatCompact(signal.end)}.{" "}
                 {isEligibleAfterPadding
-                  ? <>Ranking: {formatCompact(padding)} → {formatCompact(signal.end)} ({formatGrowthRate(rankingRate)}).</>
+                  ? <>Ranking: {formatCompact(padding)} → {formatCompact(signal.end)} ({formatGrowthMultiplier(rankingRate)}).</>
                   : <>Below the minimum ranking baseline of {formatCompact(padding)}.</>}
               </span>
             )}
