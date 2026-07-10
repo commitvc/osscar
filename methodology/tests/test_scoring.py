@@ -90,6 +90,28 @@ class TestGrowthRateComputation:
         result = ci.quarter_growth(start, end)
         assert pd.isna(result.iloc[0])
 
+    def test_zero_start_keeps_displayed_rate_null_when_scoring_is_padded(self):
+        frame = pd.DataFrame(
+            {
+                "quarter_start": ["2026-04-01"],
+                "division": ["emerging"],
+                "github_stars_start": [0.0],
+                "github_stars_end": [150.0],
+            }
+        )
+        metric = ci.MetricSpec(
+            "github_stars",
+            "github_stars_start",
+            "github_stars_end",
+            "github",
+        )
+
+        result = ci.add_metric_growth_scores(frame, metrics=[metric])
+
+        assert pd.isna(result.loc[0, "github_stars_growth_rate"])
+        assert result.loc[0, "github_stars_padded_growth_rate"] == pytest.approx(0.5)
+        assert result.loc[0, "github_stars_eligible_for_scoring"]
+
     def test_negative_growth(self):
         start = pd.Series([200.0])
         end = pd.Series([100.0])

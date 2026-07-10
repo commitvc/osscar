@@ -24,7 +24,7 @@ Explore the latest rankings at **[osscar.dev](https://osscar.dev)**.
 
 The OSS Growth Index tracks growth across GitHub stars, contributors, and package downloads (npm, PyPI, Cargo) for tens of thousands of open-source organizations each quarter. The top 100 organizations in each division are published on the website, and the full dataset is available for download.
 
-**Two divisions**, assigned from each organization's star count at the **start** of the quarter and locked for the rest of it:
+**Two divisions**, assigned from each organization's star count at the quarter's **first weekly bucket** and locked for the rest of it:
 
 - **Scaling** — `stars_start ≥ 1,000`, established organizations with meaningful baselines
 - **Emerging** — `stars_start < 1,000`, early-stage organizations where relative growth is more meaningful

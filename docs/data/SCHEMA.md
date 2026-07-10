@@ -24,16 +24,16 @@ Raw per-organization metrics for a given quarter. This is the file [`methodology
 | `owner_logo` | string | URL to the organization's avatar image |
 | `quarter_start` | string | Start date of the measurement quarter (e.g., `2026-01-01`) |
 | `quarter_end` | string | End date of the measurement quarter (e.g., `2026-04-01`) |
-| `github_stars_start` | float | Total GitHub stars at quarter start |
-| `github_stars_end` | float | Total GitHub stars at quarter end |
-| `github_contributors_start` | float | Total unique contributors at quarter start |
-| `github_contributors_end` | float | Total unique contributors at quarter end |
-| `npm_downloads_start` | float | npm downloads at quarter start (nullable) |
-| `npm_downloads_end` | float | npm downloads at quarter end (nullable) |
-| `pypi_downloads_start` | float | PyPI downloads at quarter start (nullable) |
-| `pypi_downloads_end` | float | PyPI downloads at quarter end (nullable) |
-| `cargo_downloads_start` | float | Cargo downloads at quarter start (nullable) |
-| `cargo_downloads_end` | float | Cargo downloads at quarter end (nullable) |
+| `github_stars_start` | float | Total GitHub stars at the first in-quarter weekly bucket |
+| `github_stars_end` | float | Total GitHub stars at the last in-quarter weekly bucket |
+| `github_contributors_start` | float | Total unique contributors at the first in-quarter weekly bucket |
+| `github_contributors_end` | float | Total unique contributors at the last in-quarter weekly bucket |
+| `npm_downloads_start` | float | npm downloads at the first in-quarter weekly bucket (nullable) |
+| `npm_downloads_end` | float | npm downloads at the last in-quarter weekly bucket (nullable) |
+| `pypi_downloads_start` | float | PyPI downloads at the first in-quarter weekly bucket (nullable) |
+| `pypi_downloads_end` | float | PyPI downloads at the last in-quarter weekly bucket (nullable) |
+| `cargo_downloads_start` | float | Cargo downloads at the first in-quarter weekly bucket (nullable) |
+| `cargo_downloads_end` | float | Cargo downloads at the last in-quarter weekly bucket (nullable) |
 
 ### Array columns
 
@@ -52,7 +52,7 @@ The parquet also carries weekly time-series arrays and a per-repository detail a
 
 | Field | Type | Description |
 |---|---|---|
-| `date` | string | ISO date for the week (e.g., `2026-01-04`) |
+| `date` | string | ISO date for the Sunday bucket inside the quarter (e.g., `2026-01-04`) |
 | `value` | number | Metric value at that point |
 
 ### Repository object
@@ -65,7 +65,7 @@ Each element in the `repositories` array:
 | `name` | string | Repository name |
 | `forks` | integer | Fork count at quarter end |
 | `stars` | integer | Star count at quarter end |
-| `stars_start` | integer | Star count at quarter start |
+| `stars_start` | integer | Star count at the repository's first in-quarter weekly bucket |
 | `license` | string | License identifier (nullable) |
 | `language` | string | Primary language (nullable) |
 | `description` | string | Repository description (nullable) |
@@ -80,10 +80,10 @@ Contains every organization eligible for ranking in a given quarter. The column 
 
 | Column | Type | Description |
 |---|---|---|
-| `division` | string | `emerging` (`stars_start < 1,000`) or `scaling` (`stars_start ≥ 1,000`) |
+| `division` | string | `emerging` (`stars_start < 1,000`) or `scaling` (`stars_start ≥ 1,000`), using the first in-quarter weekly bucket |
 | `division_rank` | integer | 1-based rank within the division, ordered by composite score descending. Ties share the same rank (`pandas.rank(method="min")`). |
-| `package_downloads_start` | integer | Combined npm + PyPI + Cargo downloads at quarter start (nullable) — summed from per-registry columns, treating missing registries as 0 when at least one is present |
-| `package_downloads_end` | integer | Combined downloads at quarter end (nullable) |
+| `package_downloads_start` | integer | Combined npm + PyPI + Cargo downloads at their first in-quarter weekly buckets (nullable) — summed from per-registry columns, treating missing registries as 0 when at least one is present |
+| `package_downloads_end` | integer | Combined downloads at their last in-quarter weekly buckets (nullable) |
 | `github_stars_growth_rate` | float | Real growth rate for stars: `(end − start) / start` (null when start is 0) |
 | `github_stars_growth_percentile` | float | Percentile rank of growth rate within the division (0–100) |
 | `github_stars_final_weight` | float | Weight contributed by this metric to the composite score |

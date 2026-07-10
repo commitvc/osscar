@@ -15,7 +15,7 @@ import os
 import re
 import sys
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -414,6 +414,10 @@ def validate_series(
                 f"{source} {row_label}: {field} date {point_date.isoformat()} is outside "
                 f"{quarter_start.isoformat()}..{quarter_end.isoformat()}"
             )
+        if point_date.weekday() != 6:
+            audit.fail(
+                f"{source} {row_label}: {field} date {point_date.isoformat()} is not a Sunday bucket"
+            )
 
         parsed.append((point_date, value))
 
@@ -436,22 +440,17 @@ def validate_series(
             )
 
     if parsed:
-        first_date = parsed[0][0]
-        last_date, last_value = parsed[-1]
-        if start_value is not None and start_value > 0 and first_date > quarter_start + timedelta(days=7):
-            audit.fail(
-                f"{source} {row_label}: {field} starts at {first_date.isoformat()} even though "
-                f"the metric had start value {start_value:g}"
-            )
-        if end_value is not None and end_value > 0 and last_date < quarter_end - timedelta(days=7):
-            audit.fail(
-                f"{source} {row_label}: {field} ends at {last_date.isoformat()} even though "
-                f"quarter_end is {quarter_end.isoformat()}"
-            )
+        _, first_value = parsed[0]
+        _, last_value = parsed[-1]
         if compare_last_to_end and end_value is not None and not math.isclose(last_value, end_value, abs_tol=1e-9):
             audit.fail(
                 f"{source} {row_label}: {field} final value {last_value:g} does not match "
                 f"metric end value {end_value:g}"
+            )
+        if start_value is not None and not math.isclose(first_value, start_value, abs_tol=1e-9):
+            audit.fail(
+                f"{source} {row_label}: {field} first value {first_value:g} does not match "
+                f"metric start value {start_value:g}"
             )
 
     return parsed
@@ -603,11 +602,25 @@ def validate_records(source_data: SourceData, audit: Audit) -> None:
                 require_monotone=False,
             )
         package_end = as_float(record["package_downloads_end"])
+        package_start = as_float(record["package_downloads_start"])
         non_empty_package_series = [series for series in package_series.values() if series]
         if package_end is not None and package_end > 0 and not non_empty_package_series:
             audit.fail(f"{source} {row_label}: package_downloads_end is present but all package series are empty")
         if package_end is None and non_empty_package_series:
             audit.fail(f"{source} {row_label}: package series are present but package_downloads_end is null")
+        if non_empty_package_series:
+            first_total = sum(series[0][1] for series in non_empty_package_series)
+            last_total = sum(series[-1][1] for series in non_empty_package_series)
+            if package_start is None or not math.isclose(first_total, package_start, abs_tol=1e-9):
+                audit.fail(
+                    f"{source} {row_label}: package series first values sum to {first_total:g}, "
+                    f"but package_downloads_start is {package_start!r}"
+                )
+            if package_end is None or not math.isclose(last_total, package_end, abs_tol=1e-9):
+                audit.fail(
+                    f"{source} {row_label}: package series final values sum to {last_total:g}, "
+                    f"but package_downloads_end is {package_end!r}"
+                )
         validate_repositories(audit, source=source, row_label=row_label, repositories=record["repositories"])
 
     if len(quarter_starts) != 1:

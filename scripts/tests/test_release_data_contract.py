@@ -10,10 +10,10 @@ from scripts.validate_release_data import Audit, SourceData, validate_records
 
 
 def weekly_points(values: list[int]) -> list[dict[str, int | str]]:
-    quarter_start = date(2026, 4, 1)
+    first_bucket = date(2026, 4, 5)
     return [
         {
-            "date": (quarter_start + timedelta(days=7 * index)).isoformat(),
+            "date": (first_bucket + timedelta(days=7 * index)).isoformat(),
             "value": value,
         }
         for index, value in enumerate(values)
@@ -95,6 +95,40 @@ def test_package_series_rejects_weekly_gaps() -> None:
     audit = audit_record(record)
 
     assert any("npm_weekly gap" in example for example in audit.examples)
+
+
+def test_metric_start_must_match_first_weekly_bucket() -> None:
+    record = deepcopy(valid_record())
+    record["github_contributors_start"] = 1
+
+    audit = audit_record(record)
+
+    assert any(
+        "github_contributors_weekly first value 20 does not match metric start value 1"
+        in example
+        for example in audit.examples
+    )
+
+
+def test_package_boundaries_must_match_weekly_buckets() -> None:
+    record = deepcopy(valid_record())
+    record["package_downloads_start"] = 1
+
+    audit = audit_record(record)
+
+    assert any(
+        "package series first values sum to 40" in example
+        for example in audit.examples
+    )
+
+
+def test_weekly_points_must_use_sunday_bucket_dates() -> None:
+    record = deepcopy(valid_record())
+    record["github_stars_weekly"][0]["date"] = "2026-04-06"
+
+    audit = audit_record(record)
+
+    assert any("is not a Sunday bucket" in example for example in audit.examples)
 
 
 def test_ingestion_parses_only_arrays_or_scalar_nulls() -> None:

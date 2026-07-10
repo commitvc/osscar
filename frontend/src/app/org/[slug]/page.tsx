@@ -32,7 +32,7 @@ import {
 import { calculateRankingGrowthRate, formatGrowthMultiplier } from "@/lib/growth";
 import { hrefWithQuarter } from "@/lib/quarter-url";
 import { PADDING_THRESHOLDS, type MetricKey } from "@/lib/padding-thresholds";
-import type { Org, Division, TimeSeriesPoint } from "@/types";
+import type { Org, Division } from "@/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -183,8 +183,8 @@ function SignalCard({
       {(() => {
         const padding = PADDING_THRESHOLDS[signal.key][division];
         const isLowBaseline =
-          showRate &&
           signal.start != null &&
+          signal.end != null &&
           signal.start < padding;
         const rankingRate = isLowBaseline
           ? calculateRankingGrowthRate(signal.start, signal.end, padding)
@@ -275,20 +275,6 @@ export default async function OrgPage({ params, searchParams }: Props) {
   // Unused but kept for potential display
   void score;
 
-  // If the first data point is more than 14 days after the quarter start,
-  // the signal didn't exist at the start of the quarter — prepend a zero so
-  // the chart shows the ramp-up from nothing instead of starting mid-air.
-  function withLeadingZero(data: TimeSeriesPoint[], quarterStart: string): TimeSeriesPoint[] {
-    if (data.length === 0) return data;
-    const firstPt = new Date(data[0].date).getTime();
-    const qStart = new Date(quarterStart).getTime();
-    if (firstPt <= qStart) return data;
-    const zeroPrevDate = new Date(firstPt - 7 * 86_400_000).toISOString().split("T")[0];
-    // Only prepend if the zero point falls within the quarter
-    if (zeroPrevDate < quarterStart) return data;
-    return [{ date: zeroPrevDate, value: 0 }, ...data];
-  }
-
   const quarterStart = org.quarter_start;
   const quarterEnd = org.quarter_end;
 
@@ -298,35 +284,35 @@ export default async function OrgPage({ params, searchParams }: Props) {
     {
       key: "stars",
       label: "Stars",
-      data: withLeadingZero(org.github_stars_weekly, quarterStart),
+      data: org.github_stars_weekly,
       color: BRAND,
       periodLabel: "cumulative stars",
     },
     {
       key: "contributors",
       label: "Contributors",
-      data: withLeadingZero(org.github_contributors_weekly, quarterStart),
+      data: org.github_contributors_weekly,
       color: BRAND,
       periodLabel: "cumulative contributors",
     },
     {
       key: "npm",
       label: "NPM",
-      data: withLeadingZero(org.npm_weekly, quarterStart),
+      data: org.npm_weekly,
       color: BRAND,
       periodLabel: "weekly downloads",
     },
     {
       key: "pypi",
       label: "PyPI",
-      data: withLeadingZero(org.pypi_weekly, quarterStart),
+      data: org.pypi_weekly,
       color: BRAND,
       periodLabel: "weekly downloads",
     },
     {
       key: "cargo",
       label: "Cargo",
-      data: withLeadingZero(org.cargo_weekly, quarterStart),
+      data: org.cargo_weekly,
       color: BRAND,
       periodLabel: "weekly downloads",
     },

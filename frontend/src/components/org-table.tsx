@@ -98,7 +98,7 @@ function MetricCell({ value, rate, startValue, percentile, metric, division, sou
   const baseline = PADDING_THRESHOLDS[metric][division]
   const showRate = rate != null && rate > 0
   const isLowBaseline =
-    showRate && startValue != null && startValue < baseline
+    startValue != null && value != null && startValue < baseline
   const rankingRate = isLowBaseline
     ? calculateRankingGrowthRate(startValue ?? null, value, baseline)
     : null
@@ -129,16 +129,18 @@ function MetricCell({ value, rate, startValue, percentile, metric, division, sou
             <span className="font-mono text-sm font-semibold text-foreground tabular-nums leading-none">
               {value != null ? formatCompact(value) : "—"}
             </span>
-            <span className="font-mono text-[0.7rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm bg-green/15 text-green">
-              {formatGrowthMultiplier(rate)}
-            </span>
+            {showRate ? (
+              <span className="font-mono text-[0.7rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm bg-green/15 text-green">
+                {formatGrowthMultiplier(rate)}
+              </span>
+            ) : null}
           </div>
         </Tooltip.Trigger>
         <Tooltip.Portal>
           <Tooltip.Positioner side="top" sideOffset={6}>
             <Tooltip.Popup className="z-50 max-w-xs rounded-md border border-white/10 bg-popover px-3 py-2 text-xs text-popover-foreground shadow-lg space-y-1.5">
               <p>
-                Actual growth: <span className="font-semibold text-green">{formatGrowthMultiplier(rate)}</span> ({formatCompact(startValue ?? 0)} → {formatCompact(value)}).{" "}
+                Actual growth: <span className="font-semibold text-green">{formatGrowthMultiplier(rate)}</span> ({formatCompact(startValue)} → {formatCompact(value)}).{" "}
                 {isEligibleAfterPadding
                   ? <>For ranking, the minimum baseline changes that calculation to {formatCompact(baseline)} → {formatCompact(value)} ({formatGrowthMultiplier(rankingRate)}).</>
                   : <>Because the ending value is below the minimum baseline of {formatCompact(baseline)} {baselineLabel}, this signal is not used for ranking.</>}

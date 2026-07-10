@@ -138,9 +138,26 @@ test.describe("published quarter release surface", () => {
 
     const stars = page.getByTestId("signal-card-github_stars");
     await expect(stars).toBeVisible();
-    await expect(stars).toContainText("176×");
-    await expect(stars).toContainText(/Actual:\s*1\s*→\s*176/);
+    await expect(stars).toContainText("88×");
+    await expect(stars).toContainText(/Actual:\s*2\s*→\s*176/);
     await expect(stars).toContainText(/Ranking:\s*100\s*→\s*176\s*\(1\.76×\)/);
     await expect(stars).not.toContainText("+175.0×");
+  });
+
+  test("uses the first chart bucket as the displayed methodology baseline", async ({ page }) => {
+    await page.goto("/org/withcoral?quarter=Q2_2026");
+
+    const coralContributors = page.getByTestId("signal-card-github_contributors");
+    await expect(coralContributors).toBeVisible();
+    await expect(coralContributors).toContainText("63");
+    await expect(coralContributors).toContainText("7.88×");
+
+    await page.goto("/org/mnemosyne-oss?quarter=Q2_2026");
+
+    const mnemosyneStars = page.getByTestId("signal-card-github_stars");
+    await expect(mnemosyneStars).toBeVisible();
+    await expect(mnemosyneStars).toContainText("351×");
+    await expect(mnemosyneStars).toContainText(/Actual:\s*4\s*→\s*1\.4K/);
+    await expect(mnemosyneStars).toContainText(/Ranking:\s*100\s*→\s*1\.4K\s*\(14×\)/);
   });
 });

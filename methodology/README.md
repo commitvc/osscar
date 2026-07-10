@@ -2,7 +2,7 @@
 
 This directory contains the scoring pipeline used to compute the OSS Growth Index rankings. The methodology is designed to be fully reproducible: given the same input data, it produces identical results.
 
-**Current version:** v7 (log-minmax scoring with L² norm composite)
+**Current version:** v8 (in-quarter weekly boundaries with log-minmax/L² scoring)
 
 ## How it works
 
@@ -74,7 +74,7 @@ These constants at the top of `compute_index.py` control the methodology:
 
 | Constant | Value | Description |
 |----------|-------|-------------|
-| `METHODOLOGY_VERSION` | `v7` | Version identifier for this methodology |
+| `METHODOLOGY_VERSION` | `v8` | Version identifier for this methodology |
 | `DIVISION_STARS_THRESHOLD` | `1000` | Star count boundary between divisions |
 | `GROWTH_SCORE_TRANSFORM` | `log_minmax` | Scoring function applied to growth rates |
 | `WEIGHTING_MODE` | `l2_norm` | How metric scores are aggregated |

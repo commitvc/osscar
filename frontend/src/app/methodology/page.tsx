@@ -174,7 +174,7 @@ export default function MethodologyPage() {
             <SectionTitle step="02">Assign to a division</SectionTitle>
             <Prose>
               <p>
-                Organizations are split into two independent leaderboards based on their GitHub star count at the <em className="text-foreground not-italic font-medium">start</em> of the quarter:
+                Organizations are split into two independent leaderboards based on their GitHub star count at the quarter&rsquo;s <em className="text-foreground not-italic font-medium">first weekly bucket</em>:
               </p>
               <div className="grid grid-cols-2 gap-3 not-prose my-4">
                 <div className="border border-white/10 rounded p-4">
@@ -192,7 +192,7 @@ export default function MethodologyPage() {
                 We keep the divisions separate because growth at 100 stars doesn&rsquo;t look like growth at 100,000 stars. Scores and rankings are computed within each division on its own.
               </p>
               <p>
-                Division is locked at quarter start. If an org crosses 1,000 stars during the quarter, it still stays in the emerging tier for that quarter&rsquo;s results.
+                Division is locked at the first weekly bucket. If an org crosses 1,000 stars later in the quarter, it stays in the emerging tier for that quarter&rsquo;s results.
               </p>
             </Prose>
           </Section>
@@ -208,7 +208,7 @@ export default function MethodologyPage() {
                 One constraint showed up immediately: not every org has every metric. A pure Python library has no npm or Cargo downloads. An infra project without published packages has no download data at all. Any scoring scheme had to work with a variable number of available signals without punishing orgs just for not publishing packages. That constraint shaped the eligibility rules below and, later, the aggregation choice in step 05.
               </p>
               <p>
-                For each signal, we record the value at the start and end of the quarter.
+                For each signal, we keep Sunday-dated weekly buckets inside the quarter. The first bucket is the start value and the last bucket is the end value—the same endpoints shown in each chart.
               </p>
             </Prose>
             <MetricTable />
@@ -352,8 +352,7 @@ export default function MethodologyPage() {
                 Ties are broken by minimum rank (tied organizations share the same rank number).
               </p>
               <p>
-                Division assignment is based on quarter-start stars, so the ranking reflects growth over a full quarter
-                for a consistent peer group.
+                Division assignment is based on stars at the first retained weekly bucket, so the ranking reflects growth over one consistent weekly measurement window and peer group.
               </p>
             </Prose>
           </Section>
@@ -365,7 +364,7 @@ export default function MethodologyPage() {
               <ul className="list-none space-y-3 not-prose">
                 {[
                   { k: "First version", v: "This is the first version of the index, and the methodology will keep evolving. Expect signals, thresholds, and scoring choices to change as we iterate." },
-                  { k: "Weekly data collection", v: "We snapshot data on a weekly cadence, so the start and end of a quarter rarely align with its exact first and last day. Instead, the quarter is bounded by the weekly snapshots closest to those dates." },
+                  { k: "Weekly data collection", v: "We use Sunday-dated weekly buckets inside each quarter. The first and last retained buckets define both methodology growth and chart endpoints; partial calendar weeks are not split into daily estimates." },
                   { k: "Package coverage", v: "We currently track downloads from three registries: npm, PyPI, and Cargo. Orgs that publish to other ecosystems (Maven, RubyGems, NuGet, Go modules, Hex, and others) are effectively ranked on stars and contributors alone. We plan to expand registry coverage over time." },
                   { k: "Short-term growth bias", v: "Because the index measures a single quarter, mature projects that have plateaued at high adoption can rank poorly, even when they\u2019re foundational to their ecosystem. The index is a picture of momentum, not of importance." },
                 ].map((item, i) => (
