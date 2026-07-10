@@ -55,7 +55,7 @@ python3 scripts/ingest_quarter.py \
   --quarter-id Q2_2026 \
   --quarter-label "Q2 2026" \
   --quarter-start 2026-04-01 \
-  --quarter-end 2026-07-01 \
+  --quarter-end 2026-06-30 \
   --dry-run
 ```
 
@@ -114,6 +114,6 @@ python3 scripts/ingest_quarter.py \
   --quarter-id Q2_2026 \
   --quarter-label "Q2 2026" \
   --quarter-start 2026-04-01 \
-  --quarter-end 2026-07-01 \
+  --quarter-end 2026-06-30 \
   --make-current
 ```
