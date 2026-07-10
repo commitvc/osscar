@@ -6,7 +6,7 @@ import {
   Row,
   Section,
   Text,
-} from "@react-email/components";
+} from "react-email";
 import * as React from "react";
 import { formatGrowthMultiplier } from "@/lib/growth";
 import { COLORS, EmailFrame, MONO_STACK, SITE_URL } from "./_frame";
@@ -618,7 +618,7 @@ export default function ScoreReportEmail(props: ScoreReportEmailProps) {
 }
 
 // Preview data for `react-email dev`
-ScoreReportEmail.PreviewProps = {
+export const scoreReportPreviewProps = {
   quarterLabel: "Q1 2026",
   quarterId: "Q1_2026",
   division: "scaling",
@@ -635,3 +635,5 @@ ScoreReportEmail.PreviewProps = {
   contributors: { start: 1_990, end: 2_410, growthRate: 0.21 },
   downloads: { start: 912_000, end: 1_230_000, growthRate: 0.35 },
 } satisfies ScoreReportEmailProps;
+
+ScoreReportEmail.PreviewProps = scoreReportPreviewProps;

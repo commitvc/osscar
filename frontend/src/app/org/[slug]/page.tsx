@@ -316,7 +316,11 @@ export default async function OrgPage({ params, searchParams }: Props) {
 
   return (
     <>
-      <SiteHeader quarters={orgQuarters} selectedQuarterId={quarter.id} />
+      <SiteHeader
+        quarters={orgQuarters}
+        selectedQuarterId={quarter.id}
+        homeHref={hrefWithQuarter("/", quarterParam)}
+      />
 
       <main className="flex-1 min-h-screen">
         {/* Back nav */}

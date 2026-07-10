@@ -120,6 +120,15 @@ test.describe("published quarter release surface", () => {
     }
   });
 
+  test("preserves an explicitly selected historical quarter in home navigation", async ({ page }) => {
+    await page.goto("/?quarter=Q1_2026");
+
+    await expect(page.getByTestId("site-home-link")).toHaveAttribute(
+      "href",
+      "/?quarter=Q1_2026",
+    );
+  });
+
   test("renders non-empty org detail charts for the top org in each division", async ({ page }) => {
     for (const division of ["emerging", "scaling"] as Division[]) {
       const href = await firstOrgHrefForDivision(page, division);

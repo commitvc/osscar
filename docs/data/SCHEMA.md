@@ -23,7 +23,7 @@ Raw per-organization metrics for a given quarter. This is the file [`methodology
 | `owner_description` | string | GitHub organization bio (nullable) |
 | `owner_logo` | string | URL to the organization's avatar image |
 | `quarter_start` | string | Start date of the measurement quarter (e.g., `2026-01-01`) |
-| `quarter_end` | string | End date of the measurement quarter (e.g., `2026-04-01`) |
+| `quarter_end` | string | Inclusive end date of the measurement quarter (e.g., `2026-03-31`) |
 | `github_stars_start` | float | Total GitHub stars at the first in-quarter weekly bucket |
 | `github_stars_end` | float | Total GitHub stars at the last in-quarter weekly bucket |
 | `github_contributors_start` | float | Total unique contributors at the first in-quarter weekly bucket |
@@ -115,5 +115,10 @@ The website reads published ranking data from Supabase. The app-facing database 
 - **Enrichment for org detail pages:** `github_stars_weekly`, `github_contributors_weekly`, `npm_weekly`, `pypi_weekly`, `cargo_weekly`, `repositories`
 
 The array payload columns are stored as non-null `jsonb` arrays. Quarter start/end are normalized on `quarters`; the frontend attaches that quarter metadata when returning organization records.
+
+The original Q1 2026 Parquet assets predate the inclusive metadata convention
+and contain `2026-04-01` as an exclusive end marker. The website database
+normalizes that historical quarter to the inclusive `2026-03-31`; Q2 2026 and
+later assets use inclusive calendar-quarter end dates directly.
 
 The database schema is defined under [`supabase/migrations/`](../../supabase/migrations/), and [`scripts/ingest_quarter.py`](../../scripts/ingest_quarter.py) validates the ranking parquet before loading it.

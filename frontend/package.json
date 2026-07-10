@@ -10,14 +10,12 @@
     "test": "tsx --test src/lib/*.test.ts",
     "release:e2e": "playwright test",
     "email:dev": "email dev --dir src/emails --port 3030",
-    "email:export": "email export --dir src/emails --outDir .email-out",
+    "email:export": "tsx scripts/export-emails.tsx",
     "email:send": "tsx scripts/send-test-email.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
     "@marsidev/react-turnstile": "^1.5.0",
-    "@react-email/components": "^1.0.12",
-    "@react-email/render": "^2.0.7",
     "@supabase/supabase-js": "^2.104.1",
     "@tanstack/react-table": "^8.21.3",
     "class-variance-authority": "^0.7.1",
@@ -50,6 +48,7 @@
     "typescript": "^6"
   },
   "overrides": {
+    "postcss": "8.5.16",
     "svix": "1.92.2"
   }
 }

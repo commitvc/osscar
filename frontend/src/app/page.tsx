@@ -11,6 +11,7 @@ import { OrgTable } from "@/components/org-table"
 import { ScoreRequestCta } from "@/components/score-request-cta"
 import { ScoreRequestButton } from "@/components/score-request-button"
 import { HomeSearch } from "@/components/home-search"
+import { hrefWithQuarter } from "@/lib/quarter-url"
 
 export const dynamic = "force-dynamic"
 
@@ -45,7 +46,11 @@ export default async function Home({ searchParams }: Props) {
 
   return (
     <>
-      <SiteHeader quarters={quarters} selectedQuarterId={quarter.id} />
+      <SiteHeader
+        quarters={quarters}
+        selectedQuarterId={quarter.id}
+        homeHref={hrefWithQuarter("/", quarterParam)}
+      />
 
       <main className="flex-1">
         {/* Hero */}

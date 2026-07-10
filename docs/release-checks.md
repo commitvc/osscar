@@ -69,13 +69,15 @@ After ingest, validate the app-facing database rows. This reads
 
 ```bash
 python3 scripts/validate_release_data.py \
+  --parquet methodology/results/osscar_ranking_Q2_2026.parquet \
   --supabase \
   --quarter-id Q2_2026 \
   --top-n 100
 ```
 
 This runs the same structural, time-series, and methodology recomputation checks
-against `organizations_full`, with quarter dates loaded from `quarters`.
+against `organizations_full`, with quarter dates loaded from `quarters`, and
+proves every published scalar and JSON payload matches the release artifact.
 
 ## 5. Run frontend e2e checks
 
@@ -89,6 +91,12 @@ OSSCAR_RELEASE_QUARTER_ID=Q2_2026 \
 OSSCAR_RELEASE_QUARTER_LABEL="Q2 2026" \
 npm run release:e2e
 ```
+
+Vercel Authentication protects preview deployments. Enable **Protection Bypass
+for Automation** on the Vercel project and store its value as the repository
+secret `VERCEL_AUTOMATION_BYPASS_SECRET`. The Playwright configuration sends
+that value only in the Vercel bypass header; without it, a protected preview
+correctly fails the release check instead of testing the Vercel login page.
 
 The e2e checks verify:
 

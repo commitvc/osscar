@@ -311,7 +311,6 @@ export async function renderShareCard(
             display: "flex",
             flex: 1,
             position: "relative",
-            zIndex: 1,
           }}
         >
           {/* LEFT — project identity */}

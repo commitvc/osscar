@@ -5,11 +5,11 @@ Ingest a full quarterly OSSCAR ranking parquet into Supabase.
 Example:
 
     python scripts/ingest_quarter.py \\
-        --parquet /Users/alessadro/Developer/osscar/methodology/results/osscar_ranking_Q1_2026.parquet \\
+        --parquet methodology/results/osscar_ranking_Q1_2026.parquet \\
         --quarter-id Q1_2026 \\
         --quarter-label "Q1 2026" \\
         --quarter-start 2026-01-01 \\
-        --quarter-end 2026-04-01 \\
+        --quarter-end 2026-03-31 \\
         --make-current
 
 Env (loaded from scripts/.env):
@@ -19,11 +19,14 @@ Env (loaded from scripts/.env):
 from __future__ import annotations
 
 import argparse
+import calendar
 import json
 import math
 import os
 import re
 import sys
+from collections import Counter
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -32,7 +35,7 @@ from dotenv import load_dotenv
 from supabase import Client, create_client
 
 BATCH_SIZE = 1000
-QUARTER_ID_RE = re.compile(r"^Q[1-4]_\d{4}$")
+QUARTER_ID_RE = re.compile(r"^Q([1-4])_(\d{4})$")
 DIVISIONS = {"emerging", "scaling"}
 
 # Columns we pull from the parquet (must match organizations_full schema,
@@ -149,43 +152,32 @@ def load_client() -> Client:
 
 
 def validate_args(args: argparse.Namespace) -> None:
-    if not QUARTER_ID_RE.match(args.quarter_id):
+    match = QUARTER_ID_RE.fullmatch(args.quarter_id)
+    if not match:
         sys.exit('ERROR: --quarter-id must match "Q1_2026" style.')
-
-
-def drop_duplicate_logins(df: pd.DataFrame) -> pd.DataFrame:
-    login_lc = df["owner_login"].str.lower()
-    dup_mask = login_lc.duplicated(keep=False)
-    if not dup_mask.any():
-        return df
-
-    df = df.copy()
-    duplicate_rows = df.loc[dup_mask].copy()
-    duplicate_rows["_login_lc"] = login_lc.loc[dup_mask]
-    print(
-        f"  WARNING: {dup_mask.sum()} rows across "
-        f"{duplicate_rows['_login_lc'].nunique()} logins are duplicated by login; "
-        "keeping the best-ranked row per login."
-    )
-
-    keep_indices: list[int] = []
-    for login, group in duplicate_rows.groupby("_login_lc", sort=True):
-        ordered = group.sort_values(
-            ["division_rank", "owner_id"],
-            ascending=[True, True],
-            kind="mergesort",
-        )
-        winner = ordered.iloc[0]
-        keep_indices.append(int(winner.name))
-        dropped = len(group) - 1
-        print(
-            f"    {login}: keeping owner_id={winner['owner_id']} "
-            f"(division={winner['division']}, rank={int(winner['division_rank'])}); "
-            f"dropping {dropped} other(s)"
+    quarter = int(match.group(1))
+    year = int(match.group(2))
+    expected_label = f"Q{quarter} {year}"
+    if args.quarter_label != expected_label:
+        sys.exit(
+            f"ERROR: --quarter-label must be {expected_label!r} for {args.quarter_id}."
         )
 
-    drop_idx = df.index[dup_mask].difference(keep_indices)
-    return df.drop(index=drop_idx)
+    expected_start = date(year, (quarter - 1) * 3 + 1, 1)
+    end_month = quarter * 3
+    expected_end = date(year, end_month, calendar.monthrange(year, end_month)[1])
+    try:
+        quarter_start = date.fromisoformat(args.quarter_start)
+        quarter_end = date.fromisoformat(args.quarter_end)
+    except ValueError as exc:
+        sys.exit(f"ERROR: quarter dates must use valid YYYY-MM-DD values: {exc}")
+    if quarter_start != expected_start or quarter_end != expected_end:
+        sys.exit(
+            f"ERROR: {args.quarter_id} must span {expected_start.isoformat()} through "
+            f"{expected_end.isoformat()} (inclusive)."
+        )
+    if args.dry_run and args.make_current:
+        sys.exit("ERROR: --dry-run and --make-current cannot be used together.")
 
 
 def build_rows(df: pd.DataFrame, quarter_id: str) -> list[dict]:
@@ -219,6 +211,26 @@ def validate_rows(rows: list[dict]) -> None:
         bad = [i for i, r in enumerate(rows) if not isinstance(r[field], list)]
         if bad:
             sys.exit(f"ERROR: {len(bad)} rows have non-array {field!r}; first index: {bad[0]}")
+
+    owner_id_counts = Counter(str(row["owner_id"]) for row in rows)
+    duplicate_owner_ids = sorted(
+        owner_id for owner_id, count in owner_id_counts.items() if count > 1
+    )
+    if duplicate_owner_ids:
+        sys.exit(
+            "ERROR: duplicate owner_id values are not publishable; first: "
+            f"{duplicate_owner_ids[0]!r}"
+        )
+
+    login_counts = Counter(str(row["owner_login"]).lower() for row in rows)
+    duplicate_logins = sorted(
+        login for login, count in login_counts.items() if count > 1
+    )
+    if duplicate_logins:
+        sys.exit(
+            "ERROR: duplicate owner_login values are not publishable; first: "
+            f"{duplicate_logins[0]!r}"
+        )
 
     for division in sorted(DIVISIONS):
         division_ranks = sorted(
@@ -263,9 +275,6 @@ def main() -> None:
     if unknown:
         sys.exit(f"ERROR: unexpected division values: {unknown}")
 
-    df = drop_duplicate_logins(df)
-    print(f"  ingest rows after duplicate handling: {len(df):,}")
-
     try:
         rows = build_rows(df, args.quarter_id)
     except ValueError as exc:
@@ -274,9 +283,19 @@ def main() -> None:
     validate_rows(rows)
 
     if args.dry_run:
-        print(f"→ Dry run: would replace {len(rows):,} rows. First row:")
-        for k, v in rows[0].items():
-            print(f"    {k}: {v!r}")
+        first = rows[0]
+        print(f"→ Dry run: would replace {len(rows):,} rows.")
+        print(
+            "  first row: "
+            f"owner_id={first['owner_id']!r}, owner_login={first['owner_login']!r}, "
+            f"division={first['division']!r}, division_rank={first['division_rank']}"
+        )
+        print(
+            "  first-row payload sizes: "
+            + ", ".join(
+                f"{column}={len(first[column]):,}" for column in JSON_ARRAY_COLUMNS
+            )
+        )
         return
 
     client = load_client()

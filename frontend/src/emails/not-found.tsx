@@ -1,4 +1,4 @@
-import { Button, Section, Text } from "@react-email/components";
+import { Button, Section, Text } from "react-email";
 import * as React from "react";
 import { COLORS, EmailFrame, SITE_URL } from "./_frame";
 
@@ -175,7 +175,9 @@ export default function NotFoundEmail({
   );
 }
 
-NotFoundEmail.PreviewProps = {
+export const notFoundPreviewProps = {
   quarterLabel: "Q1 2026",
   orgInput: "acme-widgets",
 } satisfies NotFoundEmailProps;
+
+NotFoundEmail.PreviewProps = notFoundPreviewProps;

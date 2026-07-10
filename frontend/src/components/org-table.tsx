@@ -688,6 +688,9 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, se
     }),
   ], [starsSortMode, contribSortMode, pkgSortMode, quarterId, packageSources])
 
+  // TanStack Table deliberately returns mutable accessors; this component is
+  // therefore excluded from React Compiler memoization by the compatibility rule.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: activeDivision === "scaling" ? scaling : emerging,
     columns,

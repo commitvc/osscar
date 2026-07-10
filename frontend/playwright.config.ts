@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
 const usesExternalServer = Boolean(process.env.PLAYWRIGHT_BASE_URL);
+const vercelBypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 
 export default defineConfig({
   testDir: "./tests",
@@ -14,6 +15,12 @@ export default defineConfig({
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL,
+    extraHTTPHeaders: vercelBypassSecret
+      ? {
+          "x-vercel-protection-bypass": vercelBypassSecret,
+          "x-vercel-set-bypass-cookie": "true",
+        }
+      : undefined,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",

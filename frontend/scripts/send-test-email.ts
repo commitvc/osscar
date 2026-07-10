@@ -12,7 +12,7 @@
  *                          so you can test before DNS is verified)
  *   NEXT_PUBLIC_SITE_URL  used for absolute image URLs in the email
  */
-import { render } from "@react-email/render";
+import { render } from "react-email";
 import { config as loadEnv } from "dotenv";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";

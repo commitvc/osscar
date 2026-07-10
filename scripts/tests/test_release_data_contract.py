@@ -1,3 +1,4 @@
+from argparse import Namespace
 from copy import deepcopy
 from datetime import date, timedelta
 from typing import Any
@@ -5,8 +6,13 @@ from typing import Any
 import pandas as pd
 import pytest
 
-from scripts.ingest_quarter import parse_json_array
-from scripts.validate_release_data import Audit, SourceData, validate_records
+from scripts.ingest_quarter import parse_json_array, validate_args, validate_rows
+from scripts.validate_release_data import (
+    Audit,
+    SourceData,
+    compare_release_sources,
+    validate_records,
+)
 
 
 def weekly_points(values: list[int]) -> list[dict[str, int | str]]:
@@ -139,3 +145,61 @@ def test_ingestion_parses_only_arrays_or_scalar_nulls() -> None:
 
     with pytest.raises(ValueError, match="expected npm_weekly to be a JSON array string"):
         parse_json_array({"value": 1}, column="npm_weekly", row_label="row 0")
+
+
+def test_ingestion_rejects_noncanonical_quarter_metadata() -> None:
+    args = Namespace(
+        quarter_id="Q2_2026",
+        quarter_label="Q2 2026",
+        quarter_start="2026-04-01",
+        quarter_end="2026-07-01",
+        dry_run=True,
+        make_current=False,
+    )
+
+    with pytest.raises(SystemExit, match="must span 2026-04-01 through 2026-06-30"):
+        validate_args(args)
+
+
+def test_ingestion_rejects_duplicate_organizations_instead_of_dropping_them() -> None:
+    def row(owner_id: str, owner_login: str, division: str) -> dict[str, Any]:
+        return {
+            "owner_id": owner_id,
+            "owner_login": owner_login,
+            "division": division,
+            "division_rank": 1,
+            **{column: [] for column in (
+                "github_stars_weekly",
+                "github_contributors_weekly",
+                "npm_weekly",
+                "pypi_weekly",
+                "cargo_weekly",
+                "repositories",
+            )},
+        }
+
+    rows = [
+        row("owner-1", "Example", "emerging"),
+        row("owner-1", "Other", "scaling"),
+    ]
+
+    with pytest.raises(SystemExit, match="duplicate owner_id values are not publishable"):
+        validate_rows(rows)
+
+
+def test_published_source_must_match_release_artifact() -> None:
+    artifact = valid_record()
+    published = deepcopy(artifact)
+    published["github_stars_end"] = 999
+    audit = Audit(max_examples=20)
+
+    compare_release_sources(
+        SourceData(label="artifact", rows=[artifact]),
+        SourceData(label="database", rows=[published]),
+        audit,
+    )
+
+    assert any(
+        "github_stars_end differs from artifact" in example
+        for example in audit.examples
+    )

@@ -19,8 +19,8 @@ Each quarterly release publishes the **full dataset** (every tracked organizatio
 
 | File | Description |
 |---|---|
-| `osscar_input_data_Q1_2026.parquet` | Raw input data for every tracked organization — the file the scoring pipeline consumes |
-| `osscar_ranking_Q1_2026.parquet` | Full ranking output: input columns + `division`, `division_rank`, and per-metric `growth_rate` / `growth_percentile` / `final_weight` |
+| `osscar_input_data_Q2_2026.parquet` | Raw input data for every tracked organization — the file the scoring pipeline consumes |
+| `osscar_ranking_Q2_2026.parquet` | Full ranking output: input columns + `division`, `division_rank`, and per-metric `growth_rate` / `growth_percentile` / `final_weight` |
 
 Parquet is used for its compact, strongly-typed encoding.
 
@@ -30,15 +30,15 @@ Using the GitHub CLI, download the input parquet into the conventional location 
 
 ```bash
 mkdir -p methodology/data
-gh release download v2026.Q1 \
-    -p "osscar_input_data_Q1_2026.parquet" \
+gh release download v2026.Q2 \
+    -p "osscar_input_data_Q2_2026.parquet" \
     -D methodology/data/
 ```
 
 The `methodology/data/` directory is gitignored and is the conventional local drop zone for release parquets. To also download the published rankings so you can compare against your reproduction:
 
 ```bash
-gh release download v2026.Q1 -p "osscar_ranking_Q1_2026.parquet"
+gh release download v2026.Q2 -p "osscar_ranking_Q2_2026.parquet"
 ```
 
 Or download directly from the [Releases page](../../releases).
@@ -50,20 +50,22 @@ Once the input parquet is in `methodology/data/`, run the pipeline from the repo
 ```bash
 pip install -r methodology/requirements.txt
 python methodology/compute_index.py \
-    --input methodology/data/osscar_input_data_Q1_2026.parquet
+    --input methodology/data/osscar_input_data_Q2_2026.parquet
 ```
 
-This produces `methodology/results/osscar_ranking_Q1_2026.parquet`, which should match the published `osscar_ranking_Q1_2026.parquet` release asset given the same input.
+This produces `methodology/results/osscar_ranking_Q2_2026.parquet`. The pinned
+dependencies make the result byte-identical to the published ranking asset for
+the same input and tagged source revision.
 
 To publish a quarter to the website database, validate and ingest the ranking parquet:
 
 ```bash
 python scripts/ingest_quarter.py \
-    --parquet methodology/results/osscar_ranking_Q1_2026.parquet \
-    --quarter-id Q1_2026 \
-    --quarter-label "Q1 2026" \
-    --quarter-start 2026-01-01 \
-    --quarter-end 2026-04-01 \
+    --parquet methodology/results/osscar_ranking_Q2_2026.parquet \
+    --quarter-id Q2_2026 \
+    --quarter-label "Q2 2026" \
+    --quarter-start 2026-04-01 \
+    --quarter-end 2026-06-30 \
     --dry-run
 ```
 

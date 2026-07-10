@@ -62,3 +62,4 @@ jobs:
           OSSCAR_RELEASE_QUARTER_ID: ${{ inputs.quarter_id }}
           OSSCAR_RELEASE_QUARTER_LABEL: ${{ inputs.quarter_label }}
           OSSCAR_FRONTEND_TOP_N: ${{ inputs.frontend_top_n }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}

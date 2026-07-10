@@ -187,6 +187,9 @@ export function RepoTable({ repos }: RepoTableProps) {
     }),
   ];
 
+  // TanStack Table deliberately returns mutable accessors; this component is
+  // therefore excluded from React Compiler memoization by the compatibility rule.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: repos,
     columns,

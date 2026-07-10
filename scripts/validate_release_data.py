@@ -792,6 +792,73 @@ def validate_full_ranking(source_data: SourceData, *, top_n: int, audit: Audit) 
         audit.fail(f"{source}: {int(not_eligible.sum()):,} row(s) are no longer eligible when recomputed; first row {first}")
 
 
+def values_match(reference: Any, published: Any) -> bool:
+    if is_null(reference) and is_null(published):
+        return True
+    if is_null(reference) != is_null(published):
+        return False
+    if is_number(reference) and is_number(published):
+        return math.isclose(
+            float(reference),
+            float(published),
+            rel_tol=1e-12,
+            abs_tol=1e-9,
+        )
+    return bool(reference == published)
+
+
+def compare_release_sources(
+    reference: SourceData,
+    published: SourceData,
+    audit: Audit,
+) -> None:
+    """Prove that a published database quarter matches its ranking artifact."""
+    if not reference.rows or not published.rows:
+        return
+
+    reference_by_owner = {
+        str(row["owner_id"]): row
+        for row in reference.rows
+        if not is_null(row.get("owner_id"))
+    }
+    published_by_owner = {
+        str(row["owner_id"]): row
+        for row in published.rows
+        if not is_null(row.get("owner_id"))
+    }
+    missing = sorted(reference_by_owner.keys() - published_by_owner.keys())
+    extra = sorted(published_by_owner.keys() - reference_by_owner.keys())
+    if missing:
+        audit.fail(
+            f"{published.label}: missing {len(missing):,} owner(s) present in "
+            f"{reference.label}; first owner_id={missing[0]!r}"
+        )
+    if extra:
+        audit.fail(
+            f"{published.label}: contains {len(extra):,} owner(s) absent from "
+            f"{reference.label}; first owner_id={extra[0]!r}"
+        )
+
+    for column in FULL_REQUIRED_COLUMNS:
+        mismatch_count = 0
+        first_mismatch: str | None = None
+        for owner_id in reference_by_owner.keys() & published_by_owner.keys():
+            expected = reference_by_owner[owner_id].get(column)
+            actual = published_by_owner[owner_id].get(column)
+            if values_match(expected, actual):
+                continue
+            mismatch_count += 1
+            if first_mismatch is None:
+                first_mismatch = (
+                    f"owner_id={owner_id!r}, artifact={expected!r}, published={actual!r}"
+                )
+        if mismatch_count:
+            audit.fail(
+                f"{published.label}: {column} differs from {reference.label} for "
+                f"{mismatch_count:,} owner(s); first: {first_mismatch}"
+            )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Validate OSSCAR release data artifacts and published Supabase rows."
@@ -842,6 +909,9 @@ def main() -> None:
             audit=audit,
         )
         validate_full_ranking(source_data, top_n=args.top_n, audit=audit)
+
+    if args.parquet and args.supabase and len(sources) == 2:
+        compare_release_sources(sources[0], sources[1], audit)
 
     audit.assert_no_failures()
 

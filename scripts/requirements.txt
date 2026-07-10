@@ -1,10 +1,9 @@
 # Deps for scripts/ingest_quarter.py and scripts/validate_release_data.py
 #
 # Install into the same environment used for methodology/release work:
-#     source /Users/alessadro/Developer/osscar/methodology/.venv/bin/activate
-#     pip install -r scripts/requirements.txt
+#     python -m pip install -r methodology/requirements.txt -r scripts/requirements.txt
 
-pandas>=3.0.2,<4.0
-pyarrow>=24.0.0
-supabase>=2.29.0,<3.0
-python-dotenv>=1.2.2,<2.0
+pandas==3.0.3
+pyarrow==24.0.0
+supabase==2.31.0
+python-dotenv==1.2.2

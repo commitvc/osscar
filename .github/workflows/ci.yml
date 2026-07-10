@@ -120,7 +120,7 @@ jobs:
 
       - name: Audit production dependencies
         working-directory: frontend
-        run: npm audit --audit-level=high --omit=dev
+        run: npm audit --audit-level=moderate --omit=dev
 
       - name: Scan for leaked secrets
         run: |
