@@ -79,16 +79,10 @@ def sanitize(value: Any) -> Any:
 def parse_json_array(value: Any, *, column: str, row_label: str) -> list:
     if value is None:
         return []
-    if isinstance(value, float) and math.isnan(value):
-        return []
-    try:
-        if pd.isna(value):
-            return []
-    except (TypeError, ValueError):
-        pass
-
     if isinstance(value, list):
         return normalize_json(value)
+    if pd.api.types.is_scalar(value) and pd.isna(value):
+        return []
 
     if not isinstance(value, str):
         raise ValueError(
