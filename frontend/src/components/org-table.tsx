@@ -20,6 +20,8 @@ import { PADDING_THRESHOLDS, type MetricKey } from "@/lib/padding-thresholds"
 import { hrefWithQuarter } from "@/lib/quarter-url"
 import {
   filterRankingsForPage,
+  getAvailableRankingPageCount,
+  getAvailableRankingPageNumber,
   getRankingPageCount,
   getRankingPageIndex,
   getRankingPageRange,
@@ -790,6 +792,14 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, re
     [activeData, pageIndex],
   )
   const pageCount = getRankingPageCount(reveal.totalRankCount)
+  const availablePageCount = getAvailableRankingPageCount(
+    reveal.visibleFromRank,
+    reveal.totalRankCount,
+  )
+  const availablePageNumber = getAvailableRankingPageNumber(
+    pageIndex,
+    reveal.visibleFromRank,
+  )
   const pageRange = getRankingPageRange(pageIndex, reveal.totalRankCount)
   const visiblePageStartRank = Math.max(
     pageRange.startRank,
@@ -958,7 +968,7 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, re
             className="font-mono text-xs text-muted-foreground tabular-nums"
             data-testid="rankings-pagination-page"
           >
-            {pageIndex + 1} / {pageCount}
+            {availablePageNumber} / {availablePageCount}
           </span>
           <Button
             variant="outline"

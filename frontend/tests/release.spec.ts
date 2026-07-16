@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
-  getRankingPageCount,
+  getAvailableRankingPageCount,
   getRankingPageIndex,
   getRankingPageRange,
 } from "../src/lib/ranking-pagination";
@@ -54,7 +54,7 @@ async function selectDivision(page: Page, division: Division) {
     ),
   );
   await expect(page.getByTestId("rankings-pagination-page")).toHaveText(
-    `${firstPageIndex + 1} / ${getRankingPageCount(expectedTopN)}`,
+    `1 / ${getAvailableRankingPageCount(reveal.visibleFromRank, expectedTopN)}`,
   );
 }
 
@@ -195,6 +195,9 @@ test.describe("published quarter release surface", () => {
     );
     await expect(page.getByTestId("rankings-pagination-summary")).toContainText(
       `${reveal.visibleFromRank}–${firstPageRange.endRank} of ${expectedTopN}`,
+    );
+    await expect(page.getByTestId("rankings-pagination-page")).toHaveText(
+      `1 / ${getAvailableRankingPageCount(reveal.visibleFromRank, expectedTopN)}`,
     );
   });
 

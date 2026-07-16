@@ -15,6 +15,23 @@ export function getRankingPageIndex(rank: number): number {
   return Math.floor((rank - 1) / RANKINGS_PER_PAGE);
 }
 
+export function getAvailableRankingPageCount(
+  visibleFromRank: number,
+  totalRankCount: number,
+): number {
+  return (
+    getRankingPageCount(totalRankCount) -
+    getRankingPageIndex(visibleFromRank)
+  );
+}
+
+export function getAvailableRankingPageNumber(
+  pageIndex: number,
+  visibleFromRank: number,
+): number {
+  return pageIndex - getRankingPageIndex(visibleFromRank) + 1;
+}
+
 export function getRankingPageRange(
   pageIndex: number,
   totalRankCount: number,

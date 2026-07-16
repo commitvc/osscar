@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   filterRankingsForPage,
+  getAvailableRankingPageCount,
+  getAvailableRankingPageNumber,
   getRankingPageCount,
   getRankingPageIndex,
   getRankingPageRange,
@@ -32,6 +34,17 @@ test("places reveal starting ranks in their final page", () => {
   assert.equal(getRankingPageIndex(31), 1);
   assert.equal(getRankingPageIndex(21), 0);
   assert.equal(getRankingPageIndex(1), 0);
+});
+
+test("numbers only the pages available during a reveal", () => {
+  assert.equal(getAvailableRankingPageNumber(1, 41), 1);
+  assert.equal(getAvailableRankingPageNumber(2, 41), 2);
+  assert.equal(getAvailableRankingPageNumber(3, 41), 3);
+  assert.equal(getAvailableRankingPageCount(41, 100), 3);
+
+  assert.equal(getAvailableRankingPageNumber(0, 21), 1);
+  assert.equal(getAvailableRankingPageCount(21, 100), 4);
+  assert.equal(getAvailableRankingPageCount(1, 100), 4);
 });
 
 test("filters rankings by permanent rank boundaries", () => {
