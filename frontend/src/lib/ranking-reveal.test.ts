@@ -17,54 +17,72 @@ test("keeps quarters without a campaign fully revealed", () => {
   );
 });
 
-test("reveals Q2 batches at 10:00 Europe/Paris on the scheduled dates", () => {
+test("hides every ranking until the first batch reveals 51-100", () => {
   assert.deepEqual(
-    getRankingReveal("Q2_2026", new Date("2026-07-16T07:59:59.999Z")),
+    getRankingReveal("Q2_2026", new Date("2026-07-20T07:59:59.999Z")),
+    {
+      visibleFromRank: 101,
+      totalRankCount: 100,
+      teaserRanks: [98, 99, 100],
+      nextRevealAt: "2026-07-20T08:00:00.000Z",
+    },
+  );
+  assert.deepEqual(
+    getRankingReveal("Q2_2026", new Date("2026-07-20T08:00:00.000Z")),
     {
       visibleFromRank: 51,
       totalRankCount: 100,
       teaserRanks: [48, 49, 50],
-      nextRevealAt: "2026-07-16T08:00:00.000Z",
+      nextRevealAt: "2026-07-21T08:00:00.000Z",
     },
   );
-  assert.deepEqual(
-    getRankingReveal("Q2_2026", new Date("2026-07-16T08:00:00.000Z")),
-    {
-      visibleFromRank: 41,
-      totalRankCount: 100,
-      teaserRanks: [38, 39, 40],
-      nextRevealAt: "2026-07-17T08:00:00.000Z",
-    },
-  );
+});
+
+test("reveals Q2 batches at 10:00 Europe/Paris on weekdays", () => {
   assert.equal(
     getRankingReveal(
       "Q2_2026",
-      new Date("2026-07-20T08:00:00.000Z"),
+      new Date("2026-07-21T08:00:00.000Z"),
     ).visibleFromRank,
-    21,
+    41,
   );
   assert.equal(
     getRankingReveal(
       "Q2_2026",
       new Date("2026-07-24T08:00:00.000Z"),
     ).visibleFromRank,
-    4,
+    11,
+  );
+  // The weekend holds Friday's batch until Monday's step fires.
+  assert.equal(
+    getRankingReveal(
+      "Q2_2026",
+      new Date("2026-07-26T12:00:00.000Z"),
+    ).visibleFromRank,
+    11,
+  );
+  assert.equal(
+    getRankingReveal(
+      "Q2_2026",
+      new Date("2026-07-27T08:00:00.000Z"),
+    ).visibleFromRank,
+    6,
   );
 });
 
 test("shrinks the teaser stack as the reveal reaches the podium", () => {
   assert.deepEqual(
-    getRankingReveal("Q2_2026", new Date("2026-07-27T08:00:00.000Z"))
+    getRankingReveal("Q2_2026", new Date("2026-07-30T08:00:00.000Z"))
       .teaserRanks,
     [1, 2],
   );
   assert.deepEqual(
-    getRankingReveal("Q2_2026", new Date("2026-07-28T08:00:00.000Z"))
+    getRankingReveal("Q2_2026", new Date("2026-07-31T08:00:00.000Z"))
       .teaserRanks,
     [1],
   );
   assert.deepEqual(
-    getRankingReveal("Q2_2026", new Date("2026-07-29T08:00:00.000Z")),
+    getRankingReveal("Q2_2026", new Date("2026-08-03T08:00:00.000Z")),
     {
       visibleFromRank: 1,
       totalRankCount: 100,

@@ -1,10 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
   getAvailableRankingPageCount,
-  getRankingPageIndex,
+  getFirstAvailableRankingPageIndex,
   getRankingPageRange,
 } from "../src/lib/ranking-pagination";
-import { getRankingReveal } from "../src/lib/ranking-reveal";
+import { getRankingReveal, type RankingReveal } from "../src/lib/ranking-reveal";
 
 const releaseQuarterId = process.env.OSSCAR_RELEASE_QUARTER_ID ?? null;
 const expectedQuarterLabel = process.env.OSSCAR_RELEASE_QUARTER_LABEL ?? null;
@@ -32,13 +32,28 @@ async function expectedRevealForPage(page: Page) {
   return getRankingReveal(await selectedQuarterId(page));
 }
 
+function hasRevealedRankings(reveal: RankingReveal): boolean {
+  return reveal.visibleFromRank <= expectedTopN;
+}
+
+function expectedFirstPageSize(reveal: RankingReveal): number {
+  if (!hasRevealedRankings(reveal)) return 0;
+
+  const firstPageIndex = getFirstAvailableRankingPageIndex(
+    reveal.visibleFromRank,
+    expectedTopN,
+  );
+  const firstPageRange = getRankingPageRange(firstPageIndex, expectedTopN);
+  return firstPageRange.endRank - reveal.visibleFromRank + 1;
+}
+
 async function visibleRankingEntries(page: Page) {
   const reveal = await expectedRevealForPage(page);
-  const firstPageIndex = getRankingPageIndex(reveal.visibleFromRank);
-  const firstPageRange = getRankingPageRange(firstPageIndex, expectedTopN);
-  const pageSize = firstPageRange.endRank - reveal.visibleFromRank + 1;
+  const pageSize = expectedFirstPageSize(reveal);
   const entries = page.locator('[data-testid="ranking-entry"]:visible');
-  await expect(entries.first()).toBeVisible();
+  if (pageSize > 0) {
+    await expect(entries.first()).toBeVisible();
+  }
   await expect(entries).toHaveCount(pageSize);
   return entries;
 }
@@ -46,13 +61,22 @@ async function visibleRankingEntries(page: Page) {
 async function selectDivision(page: Page, division: Division) {
   await page.getByTestId(`division-tab-${division}`).click();
   const reveal = await expectedRevealForPage(page);
-  const firstPageIndex = getRankingPageIndex(reveal.visibleFromRank);
-  const firstPageRange = getRankingPageRange(firstPageIndex, expectedTopN);
-  await expect(page.getByTestId("rankings-pagination-summary")).toContainText(
-    new RegExp(
-      `${reveal.visibleFromRank}\\s*[–-]\\s*${firstPageRange.endRank}\\s+of\\s+${expectedTopN}`,
-    ),
-  );
+  if (hasRevealedRankings(reveal)) {
+    const firstPageIndex = getFirstAvailableRankingPageIndex(
+      reveal.visibleFromRank,
+      expectedTopN,
+    );
+    const firstPageRange = getRankingPageRange(firstPageIndex, expectedTopN);
+    await expect(page.getByTestId("rankings-pagination-summary")).toContainText(
+      new RegExp(
+        `${reveal.visibleFromRank}\\s*[–-]\\s*${firstPageRange.endRank}\\s+of\\s+${expectedTopN}`,
+      ),
+    );
+  } else {
+    await expect(page.getByTestId("rankings-pagination-summary")).toContainText(
+      `0 of ${expectedTopN} revealed`,
+    );
+  }
   await expect(page.getByTestId("rankings-pagination-page")).toHaveText(
     `1 / ${getAvailableRankingPageCount(reveal.visibleFromRank, expectedTopN)}`,
   );
@@ -161,11 +185,18 @@ test.describe("published quarter release surface", () => {
 
     await expectSelectedQuarter(page);
 
+    const reveal = await expectedRevealForPage(page);
     for (const division of ["emerging", "scaling"] as Division[]) {
       await selectDivision(page, division);
       const entries = await visibleRankingEntries(page);
-      const firstEntry = entries.first();
+      if (!hasRevealedRankings(reveal)) {
+        await expect(
+          page.locator('[data-testid="ranking-teaser"]:visible'),
+        ).toHaveCount(reveal.teaserRanks.length);
+        continue;
+      }
 
+      const firstEntry = entries.first();
       await expect(firstEntry.getByTestId("ranking-org-link")).toBeVisible();
       await expect(page.getByText(/Stars/i).first()).toBeVisible();
       await expect(page.getByText(/Contributors/i).first()).toBeVisible();
@@ -177,7 +208,10 @@ test.describe("published quarter release surface", () => {
     await page.goto(releasePath("/"));
 
     const reveal = await expectedRevealForPage(page);
-    const firstPageIndex = getRankingPageIndex(reveal.visibleFromRank);
+    const firstPageIndex = getFirstAvailableRankingPageIndex(
+      reveal.visibleFromRank,
+      expectedTopN,
+    );
     const firstPageRange = getRankingPageRange(firstPageIndex, expectedTopN);
     const ranks = await visibleRankingEntries(page).then((entries) =>
       entries.evaluateAll((elements) =>
@@ -189,12 +223,14 @@ test.describe("published quarter release surface", () => {
 
     expect(ranks).toEqual(
       Array.from(
-        { length: firstPageRange.endRank - reveal.visibleFromRank + 1 },
+        { length: expectedFirstPageSize(reveal) },
         (_, index) => reveal.visibleFromRank + index,
       ),
     );
     await expect(page.getByTestId("rankings-pagination-summary")).toContainText(
-      `${reveal.visibleFromRank}–${firstPageRange.endRank} of ${expectedTopN}`,
+      hasRevealedRankings(reveal)
+        ? `${reveal.visibleFromRank}–${firstPageRange.endRank} of ${expectedTopN}`
+        : `0 of ${expectedTopN} revealed`,
     );
     await expect(page.getByTestId("rankings-pagination-page")).toHaveText(
       `1 / ${getAvailableRankingPageCount(reveal.visibleFromRank, expectedTopN)}`,
@@ -259,6 +295,13 @@ test.describe("published quarter release surface", () => {
   });
 
   test("renders non-empty org detail charts for the top org in each division", async ({ page }) => {
+    await page.goto(releasePath("/"));
+    const reveal = await expectedRevealForPage(page);
+    test.skip(
+      !hasRevealedRankings(reveal),
+      "No rankings are revealed yet for this quarter.",
+    );
+
     for (const division of ["emerging", "scaling"] as Division[]) {
       const href = await firstOrgHrefForDivision(page, division);
       await page.goto(href);
@@ -273,6 +316,12 @@ test.describe("published quarter release surface", () => {
 
   test("uses methodology multipliers on the leaderboard", async ({ page }) => {
     await page.goto("/?quarter=Q2_2026");
+
+    const reveal = await expectedRevealForPage(page);
+    test.skip(
+      reveal.visibleFromRank > 52,
+      "Polytoria (emerging rank 52) is not revealed at this point in the campaign.",
+    );
 
     const polytoriaEntry = await findRankingEntry(page, "Polytoria");
     await expect(polytoriaEntry).toBeVisible();

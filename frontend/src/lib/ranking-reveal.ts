@@ -6,30 +6,31 @@ type RankingRevealStep = {
 };
 
 type RankingRevealCampaign = {
-  initialVisibleFromRank: number;
   totalRankCount: number;
   teaserCount: number;
   steps: readonly RankingRevealStep[];
 };
 
+// Batches land at 08:00 UTC (10:00 Europe/Paris) on weekdays. Nothing is
+// revealed before the first step fires.
 const RANKING_REVEAL_CAMPAIGNS: Readonly<
   Record<string, RankingRevealCampaign>
 > = {
   Q2_2026: {
-    initialVisibleFromRank: 51,
     totalRankCount: 100,
     teaserCount: 3,
     steps: [
-      { startsAt: "2026-07-16T08:00:00.000Z", visibleFromRank: 41 },
-      { startsAt: "2026-07-17T08:00:00.000Z", visibleFromRank: 31 },
-      { startsAt: "2026-07-20T08:00:00.000Z", visibleFromRank: 21 },
-      { startsAt: "2026-07-21T08:00:00.000Z", visibleFromRank: 11 },
-      { startsAt: "2026-07-22T08:00:00.000Z", visibleFromRank: 6 },
-      { startsAt: "2026-07-23T08:00:00.000Z", visibleFromRank: 5 },
-      { startsAt: "2026-07-24T08:00:00.000Z", visibleFromRank: 4 },
-      { startsAt: "2026-07-27T08:00:00.000Z", visibleFromRank: 3 },
-      { startsAt: "2026-07-28T08:00:00.000Z", visibleFromRank: 2 },
-      { startsAt: "2026-07-29T08:00:00.000Z", visibleFromRank: 1 },
+      { startsAt: "2026-07-20T08:00:00.000Z", visibleFromRank: 51 },
+      { startsAt: "2026-07-21T08:00:00.000Z", visibleFromRank: 41 },
+      { startsAt: "2026-07-22T08:00:00.000Z", visibleFromRank: 31 },
+      { startsAt: "2026-07-23T08:00:00.000Z", visibleFromRank: 21 },
+      { startsAt: "2026-07-24T08:00:00.000Z", visibleFromRank: 11 },
+      { startsAt: "2026-07-27T08:00:00.000Z", visibleFromRank: 6 },
+      { startsAt: "2026-07-28T08:00:00.000Z", visibleFromRank: 5 },
+      { startsAt: "2026-07-29T08:00:00.000Z", visibleFromRank: 4 },
+      { startsAt: "2026-07-30T08:00:00.000Z", visibleFromRank: 3 },
+      { startsAt: "2026-07-31T08:00:00.000Z", visibleFromRank: 2 },
+      { startsAt: "2026-08-03T08:00:00.000Z", visibleFromRank: 1 },
     ],
   },
 };
@@ -71,7 +72,7 @@ export function getRankingReveal(
   const campaign = RANKING_REVEAL_CAMPAIGNS[quarterId];
   if (!campaign) return FULL_REVEAL;
 
-  let visibleFromRank = campaign.initialVisibleFromRank;
+  let visibleFromRank = campaign.totalRankCount + 1;
   let nextRevealAt: string | null = null;
 
   for (const step of campaign.steps) {

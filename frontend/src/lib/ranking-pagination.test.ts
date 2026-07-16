@@ -4,8 +4,8 @@ import {
   filterRankingsForPage,
   getAvailableRankingPageCount,
   getAvailableRankingPageNumber,
+  getFirstAvailableRankingPageIndex,
   getRankingPageCount,
-  getRankingPageIndex,
   getRankingPageRange,
 } from "./ranking-pagination";
 
@@ -30,19 +30,25 @@ test("keeps the top 100 in four permanent 25-rank pages", () => {
 });
 
 test("places reveal starting ranks in their final page", () => {
-  assert.equal(getRankingPageIndex(41), 1);
-  assert.equal(getRankingPageIndex(31), 1);
-  assert.equal(getRankingPageIndex(21), 0);
-  assert.equal(getRankingPageIndex(1), 0);
+  assert.equal(getFirstAvailableRankingPageIndex(51, 100), 2);
+  assert.equal(getFirstAvailableRankingPageIndex(41, 100), 1);
+  assert.equal(getFirstAvailableRankingPageIndex(21, 100), 0);
+  assert.equal(getFirstAvailableRankingPageIndex(1, 100), 0);
+});
+
+test("rests on the final page before the first reveal batch", () => {
+  assert.equal(getFirstAvailableRankingPageIndex(101, 100), 3);
+  assert.equal(getAvailableRankingPageCount(101, 100), 1);
+  assert.equal(getAvailableRankingPageNumber(3, 101, 100), 1);
 });
 
 test("numbers only the pages available during a reveal", () => {
-  assert.equal(getAvailableRankingPageNumber(1, 41), 1);
-  assert.equal(getAvailableRankingPageNumber(2, 41), 2);
-  assert.equal(getAvailableRankingPageNumber(3, 41), 3);
+  assert.equal(getAvailableRankingPageNumber(1, 41, 100), 1);
+  assert.equal(getAvailableRankingPageNumber(2, 41, 100), 2);
+  assert.equal(getAvailableRankingPageNumber(3, 41, 100), 3);
   assert.equal(getAvailableRankingPageCount(41, 100), 3);
 
-  assert.equal(getAvailableRankingPageNumber(0, 21), 1);
+  assert.equal(getAvailableRankingPageNumber(0, 21, 100), 1);
   assert.equal(getAvailableRankingPageCount(21, 100), 4);
   assert.equal(getAvailableRankingPageCount(1, 100), 4);
 });

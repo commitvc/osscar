@@ -11,8 +11,17 @@ export function getRankingPageCount(totalRankCount: number): number {
   return Math.ceil(totalRankCount / RANKINGS_PER_PAGE);
 }
 
-export function getRankingPageIndex(rank: number): number {
+function getRankingPageIndex(rank: number): number {
   return Math.floor((rank - 1) / RANKINGS_PER_PAGE);
+}
+
+export function getFirstAvailableRankingPageIndex(
+  visibleFromRank: number,
+  totalRankCount: number,
+): number {
+  // Before the first reveal batch, visibleFromRank sits past the end of the
+  // table; pagination then rests on the final page, where the teasers live.
+  return getRankingPageIndex(Math.min(visibleFromRank, totalRankCount));
 }
 
 export function getAvailableRankingPageCount(
@@ -21,15 +30,20 @@ export function getAvailableRankingPageCount(
 ): number {
   return (
     getRankingPageCount(totalRankCount) -
-    getRankingPageIndex(visibleFromRank)
+    getFirstAvailableRankingPageIndex(visibleFromRank, totalRankCount)
   );
 }
 
 export function getAvailableRankingPageNumber(
   pageIndex: number,
   visibleFromRank: number,
+  totalRankCount: number,
 ): number {
-  return pageIndex - getRankingPageIndex(visibleFromRank) + 1;
+  return (
+    pageIndex -
+    getFirstAvailableRankingPageIndex(visibleFromRank, totalRankCount) +
+    1
+  );
 }
 
 export function getRankingPageRange(

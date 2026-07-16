@@ -22,8 +22,8 @@ import {
   filterRankingsForPage,
   getAvailableRankingPageCount,
   getAvailableRankingPageNumber,
+  getFirstAvailableRankingPageIndex,
   getRankingPageCount,
-  getRankingPageIndex,
   getRankingPageRange,
 } from "@/lib/ranking-pagination"
 import type { RankingReveal } from "@/lib/ranking-reveal"
@@ -535,7 +535,11 @@ interface OrgTableProps {
 
 export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, reveal, searchSlot }: OrgTableProps) {
   const [activeDivision, setActiveDivision] = useState<Division>("emerging")
-  const firstAvailablePageIndex = getRankingPageIndex(reveal.visibleFromRank)
+  const hasRevealedRankings = reveal.visibleFromRank <= reveal.totalRankCount
+  const firstAvailablePageIndex = getFirstAvailableRankingPageIndex(
+    reveal.visibleFromRank,
+    reveal.totalRankCount,
+  )
   const [pageIndex, setPageIndex] = useState(firstAvailablePageIndex)
   const [sorting, setSorting] = useState<SortingState>([])
   const [starsSortMode, setStarsSortMode] = useState<SortMode>("growth")
@@ -799,6 +803,7 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, re
   const availablePageNumber = getAvailableRankingPageNumber(
     pageIndex,
     reveal.visibleFromRank,
+    reveal.totalRankCount,
   )
   const pageRange = getRankingPageRange(pageIndex, reveal.totalRankCount)
   const visiblePageStartRank = Math.max(
@@ -854,7 +859,9 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, re
           className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-green/15 bg-green/[0.04] px-3 py-2"
         >
           <span className="relative z-10 font-mono text-[0.6rem] uppercase tracking-widest text-green/90">
-            Ranking reveal in progress
+            {hasRevealedRankings
+              ? "Ranking reveal in progress"
+              : "Ranking reveal starting soon"}
           </span>
           <span className="relative z-10 text-xs text-muted-foreground/70">
             {activeData.length} of {reveal.totalRankCount} live. New rankings revealed every weekday.
@@ -950,8 +957,14 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, re
           className="font-mono text-[0.65rem] uppercase tracking-widest text-muted-foreground/60"
           data-testid="rankings-pagination-summary"
         >
-          {visiblePageStartRank}–{pageRange.endRank} of {reveal.totalRankCount}
-          {reveal.teaserRanks.length > 0 ? " revealed" : ""}
+          {hasRevealedRankings ? (
+            <>
+              {visiblePageStartRank}–{pageRange.endRank} of {reveal.totalRankCount}
+              {reveal.teaserRanks.length > 0 ? " revealed" : ""}
+            </>
+          ) : (
+            <>0 of {reveal.totalRankCount} revealed</>
+          )}
         </span>
         <div className="flex items-center gap-3">
           <Button
