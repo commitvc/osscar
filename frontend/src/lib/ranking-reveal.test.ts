@@ -66,23 +66,23 @@ test("reveals Q2 batches at 10:00 Europe/Paris on weekdays", () => {
       "Q2_2026",
       new Date("2026-07-27T08:00:00.000Z"),
     ).visibleFromRank,
-    6,
+    4,
   );
 });
 
 test("shrinks the teaser stack as the reveal reaches the podium", () => {
   assert.deepEqual(
-    getRankingReveal("Q2_2026", new Date("2026-07-30T08:00:00.000Z"))
+    getRankingReveal("Q2_2026", new Date("2026-07-28T08:00:00.000Z"))
       .teaserRanks,
     [1, 2],
   );
   assert.deepEqual(
-    getRankingReveal("Q2_2026", new Date("2026-07-31T08:00:00.000Z"))
+    getRankingReveal("Q2_2026", new Date("2026-07-29T08:00:00.000Z"))
       .teaserRanks,
     [1],
   );
   assert.deepEqual(
-    getRankingReveal("Q2_2026", new Date("2026-08-03T08:00:00.000Z")),
+    getRankingReveal("Q2_2026", new Date("2026-07-30T08:00:00.000Z")),
     {
       visibleFromRank: 1,
       totalRankCount: 100,
