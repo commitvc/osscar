@@ -12,6 +12,10 @@ import { ScoreRequestCta } from "@/components/score-request-cta"
 import { ScoreRequestButton } from "@/components/score-request-button"
 import { HomeSearch } from "@/components/home-search"
 import { hrefWithQuarter } from "@/lib/quarter-url"
+import {
+  filterRankingsForReveal,
+  getRankingReveal,
+} from "@/lib/ranking-reveal"
 
 export const dynamic = "force-dynamic"
 
@@ -28,7 +32,10 @@ export default async function Home({ searchParams }: Props) {
 
   if (!quarter) notFound()
 
-  const { emerging, scaling } = await getRankingsForQuarter(quarter)
+  const rankings = await getRankingsForQuarter(quarter)
+  const reveal = getRankingReveal(quarter.id)
+  const emerging = filterRankingsForReveal(rankings.emerging, reveal)
+  const scaling = filterRankingsForReveal(rankings.scaling, reveal)
   const quarterParam = quarter.is_current ? null : quarter.id
 
   // Build slug → active package managers map from per-manager weekly series
@@ -106,6 +113,7 @@ export default async function Home({ searchParams }: Props) {
               scaling={scaling}
               packageSources={packageSources}
               quarterId={quarterParam}
+              reveal={reveal}
               searchSlot={
                 <HomeSearch
                   orgs={[...emerging, ...scaling]}

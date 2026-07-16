@@ -19,6 +19,7 @@ import { formatCompact, formatPercentile, formatTopPct, cn } from "@/lib/utils"
 import { calculateRankingGrowthRate, formatGrowthMultiplier } from "@/lib/growth"
 import { PADDING_THRESHOLDS, type MetricKey } from "@/lib/padding-thresholds"
 import { hrefWithQuarter } from "@/lib/quarter-url"
+import type { RankingReveal } from "@/lib/ranking-reveal"
 import { GitHubIcon } from "@/components/github-icon"
 import { OrgLogo } from "@/components/org-logo"
 import { Button } from "@/components/ui/button"
@@ -41,6 +42,12 @@ const RANK_PIPS: Record<number, string> = {
   2: "#C0C0C0",
   3: "#CD7F32",
 }
+
+const PODIUM_COLORS = [
+  RANK_PIPS[1],
+  RANK_PIPS[2],
+  RANK_PIPS[3],
+] as const
 
 function computePackageDownloads(org: Org): { value: number | null; rate: number | null; percentile: number | null } {
   if (org.package_downloads_end == null) return { value: null, rate: null, percentile: null }
@@ -430,15 +437,95 @@ function OrgCard({ org, rank, slug, quarterId, pkg, sources }: OrgCardProps) {
   )
 }
 
+function MobileRevealTeasers({ ranks }: { ranks: number[] }) {
+  return (
+    <>
+      {ranks.map((rank, index) => (
+        <div
+          key={rank}
+          data-testid="ranking-teaser"
+          aria-hidden="true"
+          className="relative overflow-hidden rounded-lg border border-l-2 border-white/8 bg-card/30 p-4"
+          style={{ borderLeftColor: PODIUM_COLORS[index] }}
+        >
+          <div className="flex items-center gap-3 opacity-35 blur-[3px] select-none">
+            <span
+              className="size-1.5 shrink-0 rounded-full"
+              style={{ backgroundColor: PODIUM_COLORS[index] }}
+            />
+            <span className="w-5 font-mono text-sm tabular-nums">{rank}</span>
+            <span className="size-7 shrink-0 rounded-sm bg-white/20" />
+            <span className="h-3 w-32 rounded-full bg-white/25" />
+            <span className="ml-auto h-3 w-14 rounded-full bg-white/15" />
+          </div>
+          {index === 0 ? (
+            <span className="absolute inset-y-0 right-4 flex items-center font-mono text-[0.55rem] uppercase tracking-[0.18em] text-muted-foreground/70">
+              Coming soon
+            </span>
+          ) : null}
+        </div>
+      ))}
+    </>
+  )
+}
+
+function DesktopRevealTeasers({ ranks }: { ranks: number[] }) {
+  return (
+    <>
+      {ranks.map((rank, index) => (
+        <TableRow
+          key={rank}
+          data-testid="ranking-teaser"
+          aria-hidden="true"
+          className="border-l-2 border-white/8 bg-white/[0.015] hover:bg-white/[0.015]"
+          style={{ borderLeftColor: PODIUM_COLORS[index] }}
+        >
+          <TableCell className="py-3">
+            <div className="flex items-center gap-2 select-none">
+              <span
+                className="size-1.5 shrink-0 rounded-full"
+                style={{ backgroundColor: PODIUM_COLORS[index] }}
+              />
+              <span className="font-mono text-sm tabular-nums opacity-30 blur-[3px]">
+                {rank}
+              </span>
+            </div>
+          </TableCell>
+          <TableCell className="py-3">
+            <div className="flex items-center gap-2.5 opacity-35 blur-[3px] select-none">
+              <span className="size-6 shrink-0 rounded-sm bg-white/20" />
+              <span className="h-3 w-28 rounded-full bg-white/25" />
+            </div>
+            {index === 0 ? (
+              <span className="sr-only">More ranking entries are coming soon.</span>
+            ) : null}
+          </TableCell>
+          <TableCell className="py-3 pl-4">
+            <div className="ml-auto h-3 w-16 rounded-full bg-white/15 opacity-35 blur-[3px]" />
+          </TableCell>
+          <TableCell className="py-3">
+            <div className="ml-auto h-3 w-16 rounded-full bg-white/15 opacity-35 blur-[3px]" />
+          </TableCell>
+          <TableCell className="py-3">
+            <div className="ml-auto h-3 w-24 rounded-full bg-white/15 opacity-35 blur-[3px]" />
+          </TableCell>
+          <TableCell className="py-3" />
+        </TableRow>
+      ))}
+    </>
+  )
+}
+
 interface OrgTableProps {
   emerging: Org[]
   scaling: Org[]
   packageSources?: Record<string, string[]>
   quarterId?: string | null
+  reveal: RankingReveal
   searchSlot?: React.ReactNode
 }
 
-export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, searchSlot }: OrgTableProps) {
+export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, reveal, searchSlot }: OrgTableProps) {
   const [activeDivision, setActiveDivision] = useState<Division>("emerging")
   const [sorting, setSorting] = useState<SortingState>([])
   const [starsSortMode, setStarsSortMode] = useState<SortMode>("growth")
@@ -460,11 +547,12 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, se
     columnHelper.accessor(() => 0 as number, {
       id: "rank",
       enableSorting: true,
-      sortingFn: (rowA, rowB) => rowA.index - rowB.index,
+      sortingFn: (rowA, rowB) =>
+        rowA.original.division_rank - rowB.original.division_rank,
       sortDescFirst: false,
       header: ({ column }) => <SortHeader column={column} label="RANKING" align="left" />,
       cell: ({ row }) => {
-        const rank = row.index + 1
+        const rank = row.original.division_rank
         const pip = RANK_PIPS[rank]
         return (
           <div className="flex items-center gap-2">
@@ -735,18 +823,26 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, se
         {searchSlot && <div className="sm:pb-2">{searchSlot}</div>}
       </div>
 
-      <p className="text-[0.65rem] leading-relaxed text-muted-foreground/60">
-        Multipliers are the padded growth values used for ranking. Charts show observed weekly values. {" "}
-        <Link href="/methodology" className="text-muted-foreground hover:text-green transition-colors">
-          How ranking growth works →
-        </Link>
-      </p>
+      {reveal.teaserRanks.length > 0 ? (
+        <div
+          data-testid="ranking-reveal-status"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-green/15 bg-green/[0.04] px-3 py-2"
+        >
+          <span className="relative z-10 font-mono text-[0.6rem] uppercase tracking-widest text-green/90">
+            Ranking reveal in progress
+          </span>
+          <span className="relative z-10 text-xs text-muted-foreground/70">
+            {activeData.length} of {reveal.totalRankCount} rankings are live. More are coming.
+          </span>
+        </div>
+      ) : null}
 
       {/* Mobile/tablet card list */}
       <div className="lg:hidden space-y-2">
+        {pageIndex === 0 ? <MobileRevealTeasers ranks={reveal.teaserRanks} /> : null}
         {table.getRowModel().rows.map((row) => {
-          const rank = row.index + 1
           const org = row.original
+          const rank = org.division_rank
           const slug = org.owner_url
             ? org.owner_url.trim().replace(/\/$/, "").split("/").pop()?.toLowerCase()
             : undefined
@@ -792,8 +888,9 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, se
             ))}
           </TableHeader>
           <TableBody>
+            {pageIndex === 0 ? <DesktopRevealTeasers ranks={reveal.teaserRanks} /> : null}
             {table.getRowModel().rows.map((row) => {
-              const rank = row.index + 1
+              const rank = row.original.division_rank
               return (
                 <TableRow
                   key={row.id}
@@ -828,6 +925,7 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, se
           data-testid="rankings-pagination-summary"
         >
           {pageIndex * pageSize + 1}–{Math.min((pageIndex + 1) * pageSize, activeData.length)} of {activeData.length}
+          {reveal.teaserRanks.length > 0 ? " revealed" : ""}
         </span>
         <div className="flex items-center gap-3">
           <Button
@@ -835,6 +933,7 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, se
             size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
+            aria-label="Previous rankings page"
             className="h-8 w-8 p-0 cursor-pointer"
           >
             <ChevronLeft size={14} />
@@ -847,6 +946,7 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, se
             size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
+            aria-label="Next rankings page"
             className="h-8 w-8 p-0 cursor-pointer"
           >
             <ChevronRight size={14} />

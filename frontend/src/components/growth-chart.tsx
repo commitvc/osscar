@@ -11,6 +11,10 @@ import {
 } from "recharts";
 import type { TimeSeriesPoint } from "@/types";
 import { formatCompact, cn } from "@/lib/utils";
+import {
+  formatMonthTick,
+  getMonthlyTickDates,
+} from "@/lib/chart-months";
 
 const CHART_HEIGHT = 336;
 
@@ -61,6 +65,39 @@ interface GrowthChartProps {
   metrics: MetricConfig[];
   quarterStart: string;
   quarterEnd: string;
+}
+
+interface MonthAxisTickProps {
+  x?: number;
+  y?: number;
+  payload?: { value?: string };
+  visibleDates: ReadonlySet<string>;
+}
+
+function MonthAxisTick({
+  x,
+  y,
+  payload,
+  visibleDates,
+}: MonthAxisTickProps) {
+  const date = payload?.value;
+  if (x == null || y == null || !date || !visibleDates.has(date)) return null;
+
+  return (
+    <text
+      x={x}
+      y={y}
+      dy={16}
+      textAnchor="middle"
+      fill="rgba(255,255,255,0.55)"
+      fontFamily="var(--font-mono)"
+      fontSize={11}
+      fontWeight={600}
+      data-testid="growth-chart-month-tick"
+    >
+      {formatMonthTick(date)}
+    </text>
+  );
 }
 
 function useMeasuredWidth() {
@@ -118,8 +155,8 @@ export function GrowthChart({ metrics, quarterStart, quarterEnd }: GrowthChartPr
 
   const gradientId = `gradient-${id}-${current.key}`;
   const filteredData = current.data;
-
-  const tickInterval = Math.max(1, Math.floor(filteredData.length / 6));
+  const monthTicks = getMonthlyTickDates(filteredData);
+  const visibleMonthDates = new Set(monthTicks);
 
   return (
     <div
@@ -174,18 +211,10 @@ export function GrowthChart({ metrics, quarterStart, quarterEnd }: GrowthChartPr
             />
             <XAxis
               dataKey="date"
-              tickFormatter={(d: string) =>
-                new Date(d).toLocaleDateString("en-US", { month: "short" })
-              }
-              tick={{
-                fontSize: 11,
-                fill: "rgba(255,255,255,0.55)",
-                fontFamily: "var(--font-mono)",
-                fontWeight: 600,
-              }}
+              tick={<MonthAxisTick visibleDates={visibleMonthDates} />}
               tickLine={false}
               axisLine={{ stroke: "rgba(255,255,255,0.08)" }}
-              interval={tickInterval}
+              interval={0}
             />
             <YAxis
               tickFormatter={(v: number) => formatCompact(v)}

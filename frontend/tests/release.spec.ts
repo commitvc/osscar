@@ -1,9 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
+import { getRankingReveal } from "../src/lib/ranking-reveal";
 
 const releaseQuarterId = process.env.OSSCAR_RELEASE_QUARTER_ID ?? null;
 const expectedQuarterLabel = process.env.OSSCAR_RELEASE_QUARTER_LABEL ?? null;
 const expectedTopN = Number(process.env.OSSCAR_FRONTEND_TOP_N ?? "100");
-const pageSize = Math.min(25, expectedTopN);
 
 type Division = "emerging" | "scaling";
 
@@ -15,7 +15,22 @@ function releasePath(path: string): string {
   return `${url.pathname}${url.search}`;
 }
 
+async function selectedQuarterId(page: Page): Promise<string> {
+  const quarterSelector = page.getByLabel("Quarter");
+  await expect(quarterSelector).toBeVisible();
+  const quarterId = await quarterSelector.inputValue();
+  expect(quarterId, "selected quarter id").toMatch(/^Q[1-4]_\d{4}$/);
+  return quarterId;
+}
+
+async function expectedRevealForPage(page: Page) {
+  return getRankingReveal(await selectedQuarterId(page));
+}
+
 async function visibleRankingEntries(page: Page) {
+  const reveal = await expectedRevealForPage(page);
+  const visibleCount = expectedTopN - reveal.visibleFromRank + 1;
+  const pageSize = Math.min(25, visibleCount);
   const entries = page.locator('[data-testid="ranking-entry"]:visible');
   await expect(entries.first()).toBeVisible();
   await expect(entries).toHaveCount(pageSize);
@@ -24,8 +39,11 @@ async function visibleRankingEntries(page: Page) {
 
 async function selectDivision(page: Page, division: Division) {
   await page.getByTestId(`division-tab-${division}`).click();
+  const reveal = await expectedRevealForPage(page);
+  const visibleCount = expectedTopN - reveal.visibleFromRank + 1;
+  const pageSize = Math.min(25, visibleCount);
   await expect(page.getByTestId("rankings-pagination-summary")).toContainText(
-    new RegExp(`1\\s*[–-]\\s*${pageSize}\\s+of\\s+${expectedTopN}`),
+    new RegExp(`1\\s*[–-]\\s*${pageSize}\\s+of\\s+${visibleCount}`),
   );
 }
 
@@ -41,6 +59,21 @@ async function firstOrgHrefForDivision(page: Page, division: Division): Promise<
   const href = await firstLink.getAttribute("href");
   expect(href, `first ${division} org href`).toBeTruthy();
   return href as string;
+}
+
+async function findRankingEntry(page: Page, name: string) {
+  for (;;) {
+    const entry = page
+      .locator('[data-testid="ranking-entry"]:visible, tbody tr:visible')
+      .filter({ hasText: name });
+    if ((await entry.count()) > 0) return entry.first();
+
+    const nextPage = page.getByRole("button", { name: "Next rankings page" });
+    if (await nextPage.isDisabled()) {
+      throw new Error(`Could not find revealed ranking entry "${name}".`);
+    }
+    await nextPage.click();
+  }
 }
 
 async function expectSelectedQuarter(page: Page) {
@@ -96,6 +129,15 @@ async function expectRenderedChart(page: Page) {
     const box = await chart.locator("svg.recharts-surface").boundingBox();
     expect(box?.width ?? 0, `${label} SVG width`).toBeGreaterThan(240);
     expect(box?.height ?? 0, `${label} SVG height`).toBeGreaterThan(280);
+
+    const monthLabels = await chart
+      .getByTestId("growth-chart-month-tick")
+      .allTextContents();
+    expect(monthLabels.length, `${label} month tick count`).toBeGreaterThan(0);
+    expect(
+      new Set(monthLabels).size,
+      `${label} month labels should be unique`,
+    ).toBe(monthLabels.length);
   }
 }
 
@@ -118,6 +160,51 @@ test.describe("published quarter release surface", () => {
       await expect(page.getByText(/Contributors/i).first()).toBeVisible();
       await expect(page.getByText(/Downloads/i).first()).toBeVisible();
     }
+  });
+
+  test("shows the scheduled teaser stack without exposing organization data", async ({ page }) => {
+    await page.goto(releasePath("/"));
+
+    const expectedReveal = await expectedRevealForPage(page);
+    const visibleTeasers = page.locator('[data-testid="ranking-teaser"]:visible');
+    await expect(visibleTeasers).toHaveCount(expectedReveal.teaserRanks.length);
+
+    if (expectedReveal.teaserRanks.length > 0) {
+      const revealStatus = page.getByTestId("ranking-reveal-status");
+      await expect(revealStatus).toBeVisible();
+      await expect(visibleTeasers.first().getByTestId("ranking-org-link")).toHaveCount(0);
+      const podiumColors = [
+        "rgb(244, 196, 48)",
+        "rgb(192, 192, 192)",
+        "rgb(205, 127, 50)",
+      ];
+      for (let index = 0; index < expectedReveal.teaserRanks.length; index += 1) {
+        await expect(visibleTeasers.nth(index)).toHaveCSS(
+          "border-left-color",
+          podiumColors[index],
+        );
+      }
+    } else {
+      await expect(page.getByTestId("ranking-reveal-status")).toHaveCount(0);
+    }
+  });
+
+  test("keeps unrevealed organizations out of leaderboard search", async ({ page }) => {
+    await page.goto("/?quarter=Q2_2026");
+
+    const reveal = await expectedRevealForPage(page);
+    test.skip(
+      reveal.visibleFromRank <= 3,
+      "Mnemosyne OSS is already revealed at this point in the campaign.",
+    );
+
+    await page
+      .getByRole("combobox", { name: "Search organizations or repositories" })
+      .fill("Mnemosyne OSS");
+    await expect(page.getByText(/No matches for/)).toBeVisible();
+    await expect(
+      page.locator("#home-search-listbox").getByRole("option"),
+    ).toHaveCount(0);
   });
 
   test("preserves an explicitly selected historical quarter in home navigation", async ({ page }) => {
@@ -145,13 +232,10 @@ test.describe("published quarter release surface", () => {
   test("uses methodology multipliers on the leaderboard", async ({ page }) => {
     await page.goto("/?quarter=Q2_2026");
 
-    await expect(page.getByText("Multipliers are the padded growth values used for ranking.")).toBeVisible();
-    const mnemosyneEntry = page
-      .locator('[data-testid="ranking-entry"]:visible, tbody tr:visible')
-      .filter({ hasText: "Mnemosyne OSS" });
-    await expect(mnemosyneEntry).toBeVisible();
-    await expect(mnemosyneEntry).toContainText("14×");
-    await expect(mnemosyneEntry).not.toContainText("351×");
+    const polytoriaEntry = await findRankingEntry(page, "Polytoria");
+    await expect(polytoriaEntry).toBeVisible();
+    await expect(polytoriaEntry).toContainText("2.6×");
+    await expect(polytoriaEntry).not.toContainText("130×");
   });
 
   test("displays padded ranking growth and explains the observed chart values", async ({ page }) => {
@@ -180,5 +264,16 @@ test.describe("published quarter release surface", () => {
     await expect(mnemosyneStars).toContainText("14×");
     await expect(mnemosyneStars).toContainText(/Ranking baseline:\s*100\s*→\s*1\.4K/);
     await expect(mnemosyneStars).toContainText(/Chart:\s*4\s*→\s*1\.4K\s*\(351× actual\)/);
+  });
+
+  test("renders each quarter month once on growth charts", async ({ page }) => {
+    await page.goto("/org/withcoral?quarter=Q2_2026");
+
+    const monthTicks = page
+      .getByTestId("growth-chart")
+      .getByTestId("growth-chart-month-tick");
+    await expect(monthTicks.first()).toBeVisible();
+    const monthLabels = await monthTicks.allTextContents();
+    expect(monthLabels).toEqual(["Apr", "May", "Jun"]);
   });
 });
