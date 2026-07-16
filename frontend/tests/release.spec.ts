@@ -211,6 +211,9 @@ test.describe("published quarter release surface", () => {
     if (expectedReveal.teaserRanks.length > 0) {
       const revealStatus = page.getByTestId("ranking-reveal-status");
       await expect(revealStatus).toBeVisible();
+      await expect(revealStatus).toContainText(
+        `${expectedTopN - expectedReveal.visibleFromRank + 1} of ${expectedTopN} live. New rankings revealed every weekday.`,
+      );
       await expect(visibleTeasers.first().getByTestId("ranking-org-link")).toHaveCount(0);
       const podiumColors = [
         "rgb(244, 196, 48)",

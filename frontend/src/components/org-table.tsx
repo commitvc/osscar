@@ -857,7 +857,7 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, re
             Ranking reveal in progress
           </span>
           <span className="relative z-10 text-xs text-muted-foreground/70">
-            {activeData.length} of {reveal.totalRankCount} rankings are live. More are coming.
+            {activeData.length} of {reveal.totalRankCount} live. New rankings revealed every weekday.
           </span>
         </div>
       ) : null}
