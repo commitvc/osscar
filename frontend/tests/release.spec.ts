@@ -1,4 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
+import {
+  getRankingPageCount,
+  getRankingPageIndex,
+  getRankingPageRange,
+} from "../src/lib/ranking-pagination";
 import { getRankingReveal } from "../src/lib/ranking-reveal";
 
 const releaseQuarterId = process.env.OSSCAR_RELEASE_QUARTER_ID ?? null;
@@ -29,8 +34,9 @@ async function expectedRevealForPage(page: Page) {
 
 async function visibleRankingEntries(page: Page) {
   const reveal = await expectedRevealForPage(page);
-  const visibleCount = expectedTopN - reveal.visibleFromRank + 1;
-  const pageSize = Math.min(25, visibleCount);
+  const firstPageIndex = getRankingPageIndex(reveal.visibleFromRank);
+  const firstPageRange = getRankingPageRange(firstPageIndex, expectedTopN);
+  const pageSize = firstPageRange.endRank - reveal.visibleFromRank + 1;
   const entries = page.locator('[data-testid="ranking-entry"]:visible');
   await expect(entries.first()).toBeVisible();
   await expect(entries).toHaveCount(pageSize);
@@ -40,10 +46,15 @@ async function visibleRankingEntries(page: Page) {
 async function selectDivision(page: Page, division: Division) {
   await page.getByTestId(`division-tab-${division}`).click();
   const reveal = await expectedRevealForPage(page);
-  const visibleCount = expectedTopN - reveal.visibleFromRank + 1;
-  const pageSize = Math.min(25, visibleCount);
+  const firstPageIndex = getRankingPageIndex(reveal.visibleFromRank);
+  const firstPageRange = getRankingPageRange(firstPageIndex, expectedTopN);
   await expect(page.getByTestId("rankings-pagination-summary")).toContainText(
-    new RegExp(`1\\s*[–-]\\s*${pageSize}\\s+of\\s+${visibleCount}`),
+    new RegExp(
+      `${reveal.visibleFromRank}\\s*[–-]\\s*${firstPageRange.endRank}\\s+of\\s+${expectedTopN}`,
+    ),
+  );
+  await expect(page.getByTestId("rankings-pagination-page")).toHaveText(
+    `${firstPageIndex + 1} / ${getRankingPageCount(expectedTopN)}`,
   );
 }
 
@@ -160,6 +171,31 @@ test.describe("published quarter release surface", () => {
       await expect(page.getByText(/Contributors/i).first()).toBeVisible();
       await expect(page.getByText(/Downloads/i).first()).toBeVisible();
     }
+  });
+
+  test("keeps pagination aligned to the final 25-rank pages during reveal", async ({ page }) => {
+    await page.goto(releasePath("/"));
+
+    const reveal = await expectedRevealForPage(page);
+    const firstPageIndex = getRankingPageIndex(reveal.visibleFromRank);
+    const firstPageRange = getRankingPageRange(firstPageIndex, expectedTopN);
+    const ranks = await visibleRankingEntries(page).then((entries) =>
+      entries.evaluateAll((elements) =>
+        elements.map((element) =>
+          Number(element.getAttribute("data-ranking-rank")),
+        ),
+      ),
+    );
+
+    expect(ranks).toEqual(
+      Array.from(
+        { length: firstPageRange.endRank - reveal.visibleFromRank + 1 },
+        (_, index) => reveal.visibleFromRank + index,
+      ),
+    );
+    await expect(page.getByTestId("rankings-pagination-summary")).toContainText(
+      `${reveal.visibleFromRank}–${firstPageRange.endRank} of ${expectedTopN}`,
+    );
   });
 
   test("shows the scheduled teaser stack without exposing organization data", async ({ page }) => {

@@ -5,7 +5,6 @@ import Link from "next/link"
 import {
   useReactTable,
   getCoreRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   createColumnHelper,
   flexRender,
@@ -19,6 +18,12 @@ import { formatCompact, formatPercentile, formatTopPct, cn } from "@/lib/utils"
 import { calculateRankingGrowthRate, formatGrowthMultiplier } from "@/lib/growth"
 import { PADDING_THRESHOLDS, type MetricKey } from "@/lib/padding-thresholds"
 import { hrefWithQuarter } from "@/lib/quarter-url"
+import {
+  filterRankingsForPage,
+  getRankingPageCount,
+  getRankingPageIndex,
+  getRankingPageRange,
+} from "@/lib/ranking-pagination"
 import type { RankingReveal } from "@/lib/ranking-reveal"
 import { GitHubIcon } from "@/components/github-icon"
 import { OrgLogo } from "@/components/org-logo"
@@ -340,6 +345,7 @@ function OrgCard({ org, rank, slug, quarterId, pkg, sources }: OrgCardProps) {
   return (
     <div
       data-testid="ranking-entry"
+      data-ranking-rank={rank}
       className={cn(
         "rounded-lg border border-white/10 bg-card/50 p-4 space-y-3 transition-colors",
         rank <= 3 && "border-l-2",
@@ -527,6 +533,8 @@ interface OrgTableProps {
 
 export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, reveal, searchSlot }: OrgTableProps) {
   const [activeDivision, setActiveDivision] = useState<Division>("emerging")
+  const firstAvailablePageIndex = getRankingPageIndex(reveal.visibleFromRank)
+  const [pageIndex, setPageIndex] = useState(firstAvailablePageIndex)
   const [sorting, setSorting] = useState<SortingState>([])
   const [starsSortMode, setStarsSortMode] = useState<SortMode>("growth")
   const [contribSortMode, setContribSortMode] = useState<SortMode>("growth")
@@ -776,27 +784,34 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, re
     }),
   ], [starsSortMode, contribSortMode, pkgSortMode, quarterId, packageSources])
 
+  const activeData = activeDivision === "scaling" ? scaling : emerging
+  const pageData = useMemo(
+    () => filterRankingsForPage(activeData, pageIndex),
+    [activeData, pageIndex],
+  )
+  const pageCount = getRankingPageCount(reveal.totalRankCount)
+  const pageRange = getRankingPageRange(pageIndex, reveal.totalRankCount)
+  const visiblePageStartRank = Math.max(
+    pageRange.startRank,
+    reveal.visibleFromRank,
+  )
+  const isFirstAvailablePage = pageIndex === firstAvailablePageIndex
+
   // TanStack Table deliberately returns mutable accessors; this component is
   // therefore excluded from React Compiler memoization by the compatibility rule.
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
-    data: activeDivision === "scaling" ? scaling : emerging,
+    data: pageData,
     columns,
     state: { sorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    initialState: { pagination: { pageSize: 25 } },
   })
-
-  const { pageIndex, pageSize } = table.getState().pagination
-  const pageCount = table.getPageCount()
-  const activeData = activeDivision === "scaling" ? scaling : emerging
 
   function handleDivisionChange(division: Division) {
     setActiveDivision(division)
-    table.setPageIndex(0)
+    setPageIndex(firstAvailablePageIndex)
   }
 
   return (
@@ -839,7 +854,7 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, re
 
       {/* Mobile/tablet card list */}
       <div className="lg:hidden space-y-2">
-        {pageIndex === 0 ? <MobileRevealTeasers ranks={reveal.teaserRanks} /> : null}
+        {isFirstAvailablePage ? <MobileRevealTeasers ranks={reveal.teaserRanks} /> : null}
         {table.getRowModel().rows.map((row) => {
           const org = row.original
           const rank = org.division_rank
@@ -888,13 +903,14 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, re
             ))}
           </TableHeader>
           <TableBody>
-            {pageIndex === 0 ? <DesktopRevealTeasers ranks={reveal.teaserRanks} /> : null}
+            {isFirstAvailablePage ? <DesktopRevealTeasers ranks={reveal.teaserRanks} /> : null}
             {table.getRowModel().rows.map((row) => {
               const rank = row.original.division_rank
               return (
                 <TableRow
                   key={row.id}
                   data-testid="ranking-entry"
+                  data-ranking-rank={rank}
                   className={cn(
                     "border-white/10 transition-colors",
                     rank <= 3 && "border-l-2",
@@ -924,28 +940,31 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, re
           className="font-mono text-[0.65rem] uppercase tracking-widest text-muted-foreground/60"
           data-testid="rankings-pagination-summary"
         >
-          {pageIndex * pageSize + 1}–{Math.min((pageIndex + 1) * pageSize, activeData.length)} of {activeData.length}
+          {visiblePageStartRank}–{pageRange.endRank} of {reveal.totalRankCount}
           {reveal.teaserRanks.length > 0 ? " revealed" : ""}
         </span>
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+            onClick={() => setPageIndex((current) => current - 1)}
+            disabled={isFirstAvailablePage}
             aria-label="Previous rankings page"
             className="h-8 w-8 p-0 cursor-pointer"
           >
             <ChevronLeft size={14} />
           </Button>
-          <span className="font-mono text-xs text-muted-foreground tabular-nums">
+          <span
+            className="font-mono text-xs text-muted-foreground tabular-nums"
+            data-testid="rankings-pagination-page"
+          >
             {pageIndex + 1} / {pageCount}
           </span>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
+            onClick={() => setPageIndex((current) => current + 1)}
+            disabled={pageIndex === pageCount - 1}
             aria-label="Next rankings page"
             className="h-8 w-8 p-0 cursor-pointer"
           >

@@ -109,6 +109,7 @@ export default async function Home({ searchParams }: Props) {
         <section className="px-6 py-10">
           <div className="max-w-6xl mx-auto space-y-8">
             <OrgTable
+              key={`${quarter.id}:${reveal.visibleFromRank}`}
               emerging={emerging}
               scaling={scaling}
               packageSources={packageSources}
