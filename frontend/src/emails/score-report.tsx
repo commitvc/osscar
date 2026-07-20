@@ -6,8 +6,9 @@ import {
   Row,
   Section,
   Text,
-} from "@react-email/components";
+} from "react-email";
 import * as React from "react";
+import { formatGrowthMultiplier } from "@/lib/growth";
 import { COLORS, EmailFrame, MONO_STACK, SITE_URL } from "./_frame";
 
 /**
@@ -21,7 +22,7 @@ import { COLORS, EmailFrame, MONO_STACK, SITE_URL } from "./_frame";
 
 export type ScoreReportEmailProps = {
   quarterLabel: string;
-  /** Quarter id in Supabase (e.g. "Q12026") — used to build the share-card
+  /** Quarter id in Supabase (e.g. "Q1_2026") — used to build the share-card
    *  download URL so old emails keep resolving to their own quarter's data
    *  after rollover. */
   quarterId: string;
@@ -46,11 +47,11 @@ type Metric = {
   start: number | null;
   /** Quarter-end value; paired with `start` to compute the displayed delta. */
   end: number | null;
-  /** Methodology growth rate (e.g. 0.25 → "+0.3×"). */
+  /** Actual quarterly growth rate (e.g. 0.25 is displayed as "1.25×"). */
   growthRate: number | null;
 };
 
-// ─── Helpers (inlined; email bundle is self-contained) ───────────────────────
+// ─── Email presentation helpers ──────────────────────────────────────────────
 
 /** "+5.9k", "+1.2M", "+240" — mirrors the share-image delta format. */
 function formatDelta(start: number | null, end: number | null): string | null {
@@ -72,10 +73,6 @@ function formatDelta(start: number | null, end: number | null): string | null {
   if (str.endsWith(".0")) str = str.slice(0, -2);
   const sign = delta > 0 ? "+" : "";
   return `${sign}${str}${suffix}`;
-}
-
-function formatGrowthRate(rate: number): string {
-  return `+${rate.toFixed(1)}×`;
 }
 
 /**
@@ -305,7 +302,7 @@ function MetricCard({
               lineHeight: 1,
             }}
           >
-            {formatGrowthRate(growth)}
+            {formatGrowthMultiplier(growth)}
           </span>
         </div>
       )}
@@ -606,7 +603,7 @@ export default function ScoreReportEmail(props: ScoreReportEmailProps) {
             color: COLORS.fgSubtle,
           }}
         >
-          Growth rates use our padded-baseline methodology.{" "}
+          Growth rates show actual quarterly change. Ranking scores use the padded-baseline methodology.{" "}
           <Link
             href={`${SITE_URL}/methodology`}
             style={{ color: COLORS.fgMuted, textDecoration: "underline" }}
@@ -621,9 +618,9 @@ export default function ScoreReportEmail(props: ScoreReportEmailProps) {
 }
 
 // Preview data for `react-email dev`
-ScoreReportEmail.PreviewProps = {
+export const scoreReportPreviewProps = {
   quarterLabel: "Q1 2026",
-  quarterId: "Q12026",
+  quarterId: "Q1_2026",
   division: "scaling",
   divisionRank: 42,
   divisionSize: 12_840,
@@ -638,3 +635,5 @@ ScoreReportEmail.PreviewProps = {
   contributors: { start: 1_990, end: 2_410, growthRate: 0.21 },
   downloads: { start: 912_000, end: 1_230_000, growthRate: 0.35 },
 } satisfies ScoreReportEmailProps;
+
+ScoreReportEmail.PreviewProps = scoreReportPreviewProps;

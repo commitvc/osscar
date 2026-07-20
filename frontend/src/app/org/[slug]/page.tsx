@@ -18,50 +18,55 @@ import { EmbedButton } from "@/components/embed-button";
 import { RepoTable } from "@/components/repo-table";
 import { GitHubIcon } from "@/components/github-icon";
 import {
-  getAllOrgs,
-  findOrgBySlug,
-  extractSlug,
+  findOrgBySlugForQuarter,
+  getPublishedQuarters,
+  getPublishedQuartersForOrg,
+  resolveQuarter,
 } from "@/lib/data";
 import {
   computeScore,
   formatScore,
   formatCompact,
-  formatGrowthRate,
   cn,
 } from "@/lib/utils";
-import { QUARTER_LABEL } from "@/lib/config";
+import { calculateRankingGrowthRate, formatGrowthMultiplier } from "@/lib/growth";
+import { hrefWithQuarter } from "@/lib/quarter-url";
 import { PADDING_THRESHOLDS, type MetricKey } from "@/lib/padding-thresholds";
-import type { Org, Division, TimeSeriesPoint } from "@/types";
+import type { Org, Division } from "@/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Props = {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ quarter?: string }>;
 };
 
-// ─── Static params ─────────────────────────────────────────────────────────────
-
-export async function generateStaticParams() {
-  return getAllOrgs()
-    .filter((o) => o.owner_url)
-    .map((o) => ({ slug: extractSlug(o.owner_url) ?? "" }))
-    .filter((p) => p.slug);
-}
+export const dynamic = "force-dynamic";
 
 // ─── Metadata ─────────────────────────────────────────────────────────────────
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: Props): Promise<Metadata> {
   const { slug: rawSlug } = await params;
+  const resolvedSearchParams = await searchParams;
   const slug = rawSlug.toLowerCase();
-  const org = findOrgBySlug(slug);
+  const quarter = await resolveQuarter(resolvedSearchParams?.quarter);
+
+  if (!quarter) return { title: { absolute: "OSSCAR" } };
+
+  const org = await findOrgBySlugForQuarter(slug, quarter);
 
   if (!org) return { title: { absolute: "OSSCAR" } };
 
   const score = computeScore(org);
-  const ogImageUrl = `/api/og?slug=${slug}`;
+  const ogParams = new URLSearchParams({ slug });
+  if (!quarter.is_current) ogParams.set("quarter", quarter.id);
+  const ogImageUrl = `/api/og?${ogParams.toString()}`;
   return {
-    title: { absolute: `${org.owner_name} — OSSCAR ${QUARTER_LABEL}` },
-    description: `${org.owner_name} on OSSCAR ${QUARTER_LABEL} with a composite score of ${formatScore(score)}.`,
+    title: { absolute: `${org.owner_name} — OSSCAR ${quarter.label}` },
+    description: `${org.owner_name} on OSSCAR ${quarter.label} with a composite score of ${formatScore(score)}.`,
     openGraph: {
       images: [{ url: ogImageUrl, width: 1200, height: 630 }],
     },
@@ -148,10 +153,10 @@ function SignalCard({
 }) {
   const hasData = signal.end != null;
   const Icon = signal.icon;
-  const showRate = signal.rate != null && signal.rate > 0;
 
   return (
     <div
+      data-testid={`signal-card-${signal.key}`}
       className={cn(
         "bg-card rounded-xl border p-5 flex flex-col gap-4 transition-colors",
         hasData
@@ -173,13 +178,16 @@ function SignalCard({
         </span>
       </div>
 
-      {/* Value + real growth rate + padding-for-ranking note */}
+      {/* Value + ranking growth rate + observed-chart note */}
       {(() => {
         const padding = PADDING_THRESHOLDS[signal.key][division];
         const isLowBaseline =
-          showRate &&
           signal.start != null &&
+          signal.end != null &&
           signal.start < padding;
+        const rankingRate = signal.percentile != null
+          ? calculateRankingGrowthRate(signal.start, signal.end, padding)
+          : null;
 
         return (
           <div className="flex flex-col gap-1.5">
@@ -187,15 +195,17 @@ function SignalCard({
               <span className="font-mono text-3xl font-bold text-foreground tabular-nums leading-none">
                 {hasData ? formatCompact(signal.end) : "—"}
               </span>
-              {showRate ? (
+              {rankingRate != null ? (
                 <span className="font-mono text-sm font-semibold px-2 py-0.5 rounded-sm tabular-nums bg-green/15 text-green">
-                  {formatGrowthRate(signal.rate)}
+                  {formatGrowthMultiplier(rankingRate)}
                 </span>
               ) : null}
             </div>
             {isLowBaseline && (
               <span className="font-mono text-[0.65rem] tabular-nums text-muted-foreground/40 leading-tight">
-                {formatCompact(signal.start)} → {formatCompact(signal.end)}. Min baseline {formatCompact(padding)} used for ranking.
+                {rankingRate != null
+                  ? <>Ranking baseline: {formatCompact(padding)} → {formatCompact(signal.end)}. Chart: {formatCompact(signal.start)} → {formatCompact(signal.end)}{signal.rate != null ? <> ({formatGrowthMultiplier(signal.rate)} actual)</> : null}.</>
+                  : <>Below the minimum ranking baseline of {formatCompact(padding)}.</>}
               </span>
             )}
           </div>
@@ -213,12 +223,21 @@ const DIVISION_LABELS: Record<Division, string> = {
   scaling: "Scaling",
 };
 
-export default async function OrgPage({ params }: Props) {
+export default async function OrgPage({ params, searchParams }: Props) {
   const { slug: rawSlug } = await params;
+  const resolvedSearchParams = await searchParams;
   const slug = rawSlug.toLowerCase();
+  const [quarters, quarter] = await Promise.all([
+    getPublishedQuarters(),
+    resolveQuarter(resolvedSearchParams?.quarter),
+  ]);
 
-  const org = findOrgBySlug(slug);
+  if (!quarter) notFound();
+
+  const org = await findOrgBySlugForQuarter(slug, quarter);
   if (!org) notFound();
+  const orgQuarters = await getPublishedQuartersForOrg(slug, quarters);
+  const quarterParam = quarter.is_current ? null : quarter.id;
 
   const division = org.division;
   const rank = org.division_rank;
@@ -249,22 +268,8 @@ export default async function OrgPage({ params }: Props) {
   // Unused but kept for potential display
   void score;
 
-  // If the first data point is more than 14 days after the quarter start,
-  // the signal didn't exist at the start of the quarter — prepend a zero so
-  // the chart shows the ramp-up from nothing instead of starting mid-air.
-  function withLeadingZero(data: TimeSeriesPoint[], quarterStart: string): TimeSeriesPoint[] {
-    if (data.length === 0) return data;
-    const firstPt = new Date(data[0].date).getTime();
-    const qStart = new Date(quarterStart).getTime();
-    if (firstPt <= qStart) return data;
-    const zeroPrevDate = new Date(firstPt - 7 * 86_400_000).toISOString().split("T")[0];
-    // Only prepend if the zero point falls within the quarter
-    if (zeroPrevDate < quarterStart) return data;
-    return [{ date: zeroPrevDate, value: 0 }, ...data];
-  }
-
-  const quarterStart = org.quarter_start ?? "2026-01-01";
-  const quarterEnd = org.quarter_end ?? "2026-03-31";
+  const quarterStart = org.quarter_start;
+  const quarterEnd = org.quarter_end;
 
   // Chart metrics
   const BRAND = "#3ECF8E";
@@ -272,35 +277,35 @@ export default async function OrgPage({ params }: Props) {
     {
       key: "stars",
       label: "Stars",
-      data: withLeadingZero(org.github_stars_weekly, quarterStart),
+      data: org.github_stars_weekly,
       color: BRAND,
       periodLabel: "cumulative stars",
     },
     {
       key: "contributors",
       label: "Contributors",
-      data: withLeadingZero(org.github_contributors_weekly, quarterStart),
+      data: org.github_contributors_weekly,
       color: BRAND,
       periodLabel: "cumulative contributors",
     },
     {
       key: "npm",
       label: "NPM",
-      data: withLeadingZero(org.npm_weekly, quarterStart),
+      data: org.npm_weekly,
       color: BRAND,
       periodLabel: "weekly downloads",
     },
     {
       key: "pypi",
       label: "PyPI",
-      data: withLeadingZero(org.pypi_weekly, quarterStart),
+      data: org.pypi_weekly,
       color: BRAND,
       periodLabel: "weekly downloads",
     },
     {
       key: "cargo",
       label: "Cargo",
-      data: withLeadingZero(org.cargo_weekly, quarterStart),
+      data: org.cargo_weekly,
       color: BRAND,
       periodLabel: "weekly downloads",
     },
@@ -311,14 +316,18 @@ export default async function OrgPage({ params }: Props) {
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader
+        quarters={orgQuarters}
+        selectedQuarterId={quarter.id}
+        homeHref={hrefWithQuarter("/", quarterParam)}
+      />
 
       <main className="flex-1 min-h-screen">
         {/* Back nav */}
         <div className="border-b border-white/5">
           <div className="max-w-6xl mx-auto px-6 h-10 flex items-center">
             <Link
-              href="/"
+              href={hrefWithQuarter("/", quarterParam)}
               className="flex items-center gap-1.5 font-mono text-[0.65rem] uppercase tracking-widest text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors group"
             >
               <ChevronLeft
@@ -362,7 +371,7 @@ export default async function OrgPage({ params }: Props) {
                         {divisionLabel}
                       </span>
                       <span className="font-mono text-[0.6rem] uppercase tracking-widest text-muted-foreground/40">
-                        {QUARTER_LABEL}
+                        {quarter.label}
                       </span>
                     </div>
                   </div>
@@ -437,8 +446,10 @@ export default async function OrgPage({ params }: Props) {
                     rank={rank}
                     tierLabel={divisionLabel}
                     slug={slug}
+                    quarterId={quarterParam}
+                    quarterLabel={quarter.label}
                   />
-                  <EmbedButton name={name} slug={slug} />
+                  <EmbedButton name={name} slug={slug} quarterId={quarterParam} />
                 </div>
               </div>
             </div>
@@ -450,13 +461,13 @@ export default async function OrgPage({ params }: Props) {
 
           {/* Signal breakdown */}
           {hasAnySignal && (
-            <section className="space-y-5">
+            <section className="space-y-5" data-testid="signal-breakdown-section">
               <div className="flex items-baseline gap-3">
                 <h2 className="font-bold text-base text-foreground tracking-tight">
                   Signal Breakdown
                 </h2>
                 <span className="font-mono text-[0.6rem] uppercase tracking-widest text-muted-foreground/35">
-                  {QUARTER_LABEL}
+                  {quarter.label}
                 </span>
               </div>
 
@@ -477,13 +488,13 @@ export default async function OrgPage({ params }: Props) {
 
           {/* Growth chart */}
           {hasChartData && (
-            <section className="space-y-5">
+            <section className="space-y-5" data-testid="growth-chart-section">
               <div className="flex items-baseline gap-3">
                 <h2 className="font-bold text-base text-foreground tracking-tight">
                   Growth Over Time
                 </h2>
                 <span className="font-mono text-[0.6rem] uppercase tracking-widest text-muted-foreground/35">
-                  {QUARTER_LABEL}
+                  {quarter.label}
                 </span>
               </div>
               <div className="bg-card border border-white/10 rounded-xl p-6">
@@ -494,7 +505,7 @@ export default async function OrgPage({ params }: Props) {
 
           {/* Repositories */}
           {hasRepos && (
-            <section className="space-y-5">
+            <section className="space-y-5" data-testid="repositories-section">
               <div className="flex items-baseline justify-between flex-wrap gap-2">
                 <h2 className="font-bold text-base text-foreground tracking-tight">
                   Repositories

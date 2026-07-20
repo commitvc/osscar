@@ -1,12 +1,11 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
-import { findOrgBySlug } from "@/lib/data";
+import { findOrgBySlugForQuarter, resolveQuarter } from "@/lib/data";
 import {
   getInterBold,
   readPublicAsBase64,
   fetchImageAsDataUrl,
 } from "@/lib/og-helpers";
-import { QUARTER_LABEL } from "@/lib/config";
 
 // ─── Variants ─────────────────────────────────────────────────────────────────
 
@@ -109,8 +108,16 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const slug = searchParams.get("slug")?.toLowerCase() ?? "";
   const variant = parseVariant(searchParams.get("variant"));
+  const quarterParam = searchParams.get("quarter");
 
-  const org = findOrgBySlug(slug);
+  const quarter = await resolveQuarter(quarterParam);
+  if (!quarter) {
+    return new Response(quarterParam ? "Invalid quarter" : "No current quarter", {
+      status: quarterParam ? 400 : 500,
+    });
+  }
+
+  const org = await findOrgBySlugForQuarter(slug, quarter);
   if (!org) return new Response("Not found", { status: 404 });
 
   const isLight = variant === "light" || variant === "compact-light";
@@ -316,7 +323,7 @@ export async function GET(request: NextRequest) {
                 whiteSpace: "nowrap",
               }}
             >
-              {QUARTER_LABEL}
+              {quarter.label}
             </span>
           </div>
         </div>
@@ -587,7 +594,7 @@ export async function GET(request: NextRequest) {
               display: "flex",
             }}
           >
-            {QUARTER_LABEL}
+            {quarter.label}
           </span>
         </div>
       </div>

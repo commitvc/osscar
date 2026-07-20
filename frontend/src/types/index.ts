@@ -1,5 +1,14 @@
 export type Division = "emerging" | "scaling";
 
+export type Quarter = {
+  id: string;
+  label: string;
+  quarter_start: string;
+  quarter_end: string;
+  is_current: boolean;
+  published_at: string;
+};
+
 export type RepoEntry = {
   url: string;
   name: string;
@@ -17,8 +26,9 @@ export type TimeSeriesPoint = {
 
 /**
  * A single organization entry — combines the ranking data the table needs
- * and the enrichment data the org detail page needs. Matches the records
- * produced by `methodology/extract_frontend_data.py`.
+ * and the enrichment data the org detail page needs. The server data layer
+ * maps Supabase `organizations_full` rows plus `quarters` metadata into this
+ * shape.
  */
 export type Org = {
   // Identity

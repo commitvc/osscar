@@ -1,13 +1,24 @@
 import Image from "next/image"
 import Link from "next/link"
-import { QUARTER_LABEL } from "@/lib/config"
+import type { Quarter } from "@/types"
+import { QuarterSelector } from "@/components/quarter-selector"
 
-export function SiteHeader() {
+type Props = {
+  quarters?: Quarter[]
+  selectedQuarterId?: string
+  homeHref?: string
+}
+
+export function SiteHeader({ quarters = [], selectedQuarterId, homeHref = "/" }: Props) {
   return (
     <header className="border-b border-white/10 sticky top-0 z-50 bg-background/95 backdrop-blur">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <Link href="/" className="group flex items-center gap-1 font-bold tracking-[-0.02em] text-foreground hover:text-brand transition-colors">
+          <Link
+            href={homeHref}
+            data-testid="site-home-link"
+            className="group flex items-center gap-1 font-bold tracking-[-0.02em] text-foreground hover:text-brand transition-colors"
+          >
             <span
               role="img"
               aria-label="OSSCAR"
@@ -27,7 +38,12 @@ export function SiteHeader() {
             />
             OSSCAR
           </Link>
-          <span className="font-mono text-[0.6rem] sm:text-[0.65rem] uppercase tracking-widest text-muted-foreground whitespace-nowrap border border-white/10 rounded-full px-2 py-0.5">{QUARTER_LABEL}</span>
+          {selectedQuarterId && (
+            <QuarterSelector
+              quarters={quarters}
+              selectedQuarterId={selectedQuarterId}
+            />
+          )}
         </div>
         <div className="hidden sm:flex items-center gap-3 shrink-0">
           <a href="https://supabase.com" target="_blank" rel="noopener noreferrer">

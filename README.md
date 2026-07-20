@@ -24,7 +24,7 @@ Explore the latest rankings at **[osscar.dev](https://osscar.dev)**.
 
 The OSS Growth Index tracks growth across GitHub stars, contributors, and package downloads (npm, PyPI, Cargo) for tens of thousands of open-source organizations each quarter. The top 100 organizations in each division are published on the website, and the full dataset is available for download.
 
-**Two divisions**, assigned from each organization's star count at the **start** of the quarter and locked for the rest of it:
+**Two divisions**, assigned from each organization's star count at the quarter's **first weekly bucket** and locked for the rest of it:
 
 - **Scaling** — `stars_start ≥ 1,000`, established organizations with meaningful baselines
 - **Emerging** — `stars_start < 1,000`, early-stage organizations where relative growth is more meaningful
@@ -37,7 +37,7 @@ See the full [methodology documentation](docs/methodology.md) or the [executable
 
 ## Data
 
-**In this repository:** Top 100 rankings per division, one JSON file per division in [`frontend/data/`](frontend/data/). These are the files that power the website.
+**Website data:** Published quarters are loaded into the app-facing Supabase project. The website reads the selected quarter from the database so visitors can switch between published quarters.
 
 **Full dataset:** Every tracked organization, published as Parquet assets in [GitHub Releases](../../releases) (raw input data + full ranking output).
 
@@ -58,6 +58,7 @@ See [docs/data/](docs/data/) for schemas and full download / reproduction instru
 - [Methodology](docs/methodology.md) — how rankings are computed, step by step
 - [Data collection](docs/data-collection.md) — how the raw signals are sourced and processed
 - [Data schema](docs/data/SCHEMA.md) — column definitions for every published file
+- [Quarterly release checks](docs/release-checks.md) — data-quality and frontend gates before publishing a new quarter
 - [Scoring pipeline](methodology/) — reproducible Python implementation
 
 ## Development
@@ -76,7 +77,7 @@ npm run dev
 cd methodology
 pip install -r requirements.txt
 python -m pytest              # run tests
-python compute_index.py       # compute rankings (requires base data)
+python compute_index.py --input data/osscar_input_data_Q2_2026.parquet
 ```
 
 ## Contributing
@@ -86,4 +87,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). We welcome bug reports, data-quality fix
 ## License
 
 - **Code** (frontend + methodology): [MIT](LICENSE)
-- **Data** (JSON files + GitHub Release Parquet assets): [CC BY 4.0](LICENSE-DATA)
+- **Data** (GitHub Release Parquet assets): [CC BY 4.0](LICENSE-DATA)

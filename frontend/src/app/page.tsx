@@ -1,14 +1,42 @@
-import { getEmerging, getScaling, extractSlug } from "@/lib/data"
+import { notFound } from "next/navigation"
+import {
+  extractSlug,
+  getPublishedQuarters,
+  getRankingsForQuarter,
+  resolveQuarter,
+} from "@/lib/data"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { OrgTable } from "@/components/org-table"
 import { ScoreRequestCta } from "@/components/score-request-cta"
 import { ScoreRequestButton } from "@/components/score-request-button"
 import { HomeSearch } from "@/components/home-search"
+import { hrefWithQuarter } from "@/lib/quarter-url"
+import {
+  filterRankingsForReveal,
+  getRankingReveal,
+} from "@/lib/ranking-reveal"
 
-export default async function Home() {
-  const emerging = getEmerging()
-  const scaling = getScaling()
+export const dynamic = "force-dynamic"
+
+type Props = {
+  searchParams?: Promise<{ quarter?: string }>
+}
+
+export default async function Home({ searchParams }: Props) {
+  const params = await searchParams
+  const [quarters, quarter] = await Promise.all([
+    getPublishedQuarters(),
+    resolveQuarter(params?.quarter),
+  ])
+
+  if (!quarter) notFound()
+
+  const rankings = await getRankingsForQuarter(quarter)
+  const reveal = getRankingReveal(quarter.id)
+  const emerging = filterRankingsForReveal(rankings.emerging, reveal)
+  const scaling = filterRankingsForReveal(rankings.scaling, reveal)
+  const quarterParam = quarter.is_current ? null : quarter.id
 
   // Build slug → active package managers map from per-manager weekly series
   const packageSources: Record<string, string[]> = {}
@@ -25,7 +53,11 @@ export default async function Home() {
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader
+        quarters={quarters}
+        selectedQuarterId={quarter.id}
+        homeHref={hrefWithQuarter("/", quarterParam)}
+      />
 
       <main className="flex-1">
         {/* Hero */}
@@ -77,10 +109,18 @@ export default async function Home() {
         <section className="px-6 py-10">
           <div className="max-w-6xl mx-auto space-y-8">
             <OrgTable
+              key={`${quarter.id}:${reveal.visibleFromRank}`}
               emerging={emerging}
               scaling={scaling}
               packageSources={packageSources}
-              searchSlot={<HomeSearch orgs={[...emerging, ...scaling]} />}
+              quarterId={quarterParam}
+              reveal={reveal}
+              searchSlot={
+                <HomeSearch
+                  orgs={[...emerging, ...scaling]}
+                  quarterId={quarterParam}
+                />
+              }
             />
             <ScoreRequestCta />
           </div>

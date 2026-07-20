@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
-"""Compute OSS Growth Index results (org-based, Q1 2026, v7).
+"""Compute OSS Growth Index results (org-based, v8).
 
-Changes vs v6:
+Changes in v8:
+  - Start/end methodology values are the first and last published weekly
+    buckets inside the quarter, matching the frontend time series exactly.
+  - Real growth remains null for a zero start; padding affects scoring only.
+
+Changes in v7:
   - Composite aggregation switches from arithmetic sum to the L^2 norm over
     eligible per-metric scores: composite = sqrt(sum_i score_i^2).
     Per-metric scoring (log(1+growth) min-max scaled to [0, 100]) is unchanged.
@@ -14,7 +19,7 @@ Changes vs v6:
 
 from __future__ import annotations
 
-METHODOLOGY_VERSION = "v7"
+METHODOLOGY_VERSION = "v8"
 
 import argparse
 from dataclasses import dataclass
@@ -208,12 +213,6 @@ def add_metric_growth_scores(df: pd.DataFrame, metrics: List[MetricSpec]) -> pd.
 
         df[growth_col] = quarter_growth(df[metric.start_col], df[metric.end_col])
         df[padded_growth_col] = quarter_growth(df[padded_start_col], df[metric.end_col])
-        # When start == 0 the real rate is undefined; fall back to the padded rate so
-        # brand-new orgs (that grew from nothing this quarter) still get a displayed
-        # multiplier, bounded by the padding baseline.
-        zero_start = df[metric.start_col].eq(0) & df[padded_growth_col].notna()
-        if zero_start.any():
-            df.loc[zero_start, growth_col] = df.loc[zero_start, padded_growth_col]
         df[eligible_col] = (
             df[metric.start_col].notna()
             & df[metric.end_col].notna()
@@ -415,28 +414,12 @@ def run(input_path: Path, output_dir: Path) -> None:
     export_ranking_file(df=df, output_path=output_path, output_cols=output_cols)
 
 
-DEFAULT_INPUT_FILENAME = "osscar_input_data_Q1_2026.parquet"
-
-
-def default_input_path() -> Path:
-    script_dir = Path(__file__).resolve().parent
-    candidates = [
-        script_dir / "data" / DEFAULT_INPUT_FILENAME,
-        script_dir / DEFAULT_INPUT_FILENAME,
-        script_dir.parent / DEFAULT_INPUT_FILENAME,
-    ]
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
-    return candidates[0]
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Compute OSS Growth Index outputs (org-based).")
     parser.add_argument(
         "--input",
         type=Path,
-        default=default_input_path(),
+        required=True,
         help="Path to input basetable parquet.",
     )
     parser.add_argument(

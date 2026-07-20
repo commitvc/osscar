@@ -1,10 +1,9 @@
 # Data Schema
 
-OSSCAR publishes three kinds of data file per quarter:
+OSSCAR publishes two release data files per quarter:
 
 - **`osscar_input_data_Q*_*.parquet`** — the raw per-organization metrics, the input to the scoring pipeline. Attached to the GitHub Release.
-- **`osscar_ranking_Q*_*.parquet`** — the input columns passed through, plus division assignment, rank, and the derived scoring columns used by the frontend. Attached to the GitHub Release.
-- **`osscar_{emerging,scaling}_top100_Q*_*.json`** — per-division frontend bundles (top 100 orgs each). Committed to the repo under [`frontend/data/`](../../frontend/data/).
+- **`osscar_ranking_Q*_*.parquet`** — the input columns passed through, plus division assignment, rank, and the derived scoring columns used by the website ingest. Attached to the GitHub Release.
 
 ## Input parquet
 
@@ -24,17 +23,17 @@ Raw per-organization metrics for a given quarter. This is the file [`methodology
 | `owner_description` | string | GitHub organization bio (nullable) |
 | `owner_logo` | string | URL to the organization's avatar image |
 | `quarter_start` | string | Start date of the measurement quarter (e.g., `2026-01-01`) |
-| `quarter_end` | string | End date of the measurement quarter (e.g., `2026-04-01`) |
-| `github_stars_start` | float | Total GitHub stars at quarter start |
-| `github_stars_end` | float | Total GitHub stars at quarter end |
-| `github_contributors_start` | float | Total unique contributors at quarter start |
-| `github_contributors_end` | float | Total unique contributors at quarter end |
-| `npm_downloads_start` | float | npm downloads at quarter start (nullable) |
-| `npm_downloads_end` | float | npm downloads at quarter end (nullable) |
-| `pypi_downloads_start` | float | PyPI downloads at quarter start (nullable) |
-| `pypi_downloads_end` | float | PyPI downloads at quarter end (nullable) |
-| `cargo_downloads_start` | float | Cargo downloads at quarter start (nullable) |
-| `cargo_downloads_end` | float | Cargo downloads at quarter end (nullable) |
+| `quarter_end` | string | Inclusive end date of the measurement quarter (e.g., `2026-03-31`) |
+| `github_stars_start` | float | Total GitHub stars at the first in-quarter weekly bucket |
+| `github_stars_end` | float | Total GitHub stars at the last in-quarter weekly bucket |
+| `github_contributors_start` | float | Total unique contributors at the first in-quarter weekly bucket |
+| `github_contributors_end` | float | Total unique contributors at the last in-quarter weekly bucket |
+| `npm_downloads_start` | float | npm downloads at the first in-quarter weekly bucket (nullable) |
+| `npm_downloads_end` | float | npm downloads at the last in-quarter weekly bucket (nullable) |
+| `pypi_downloads_start` | float | PyPI downloads at the first in-quarter weekly bucket (nullable) |
+| `pypi_downloads_end` | float | PyPI downloads at the last in-quarter weekly bucket (nullable) |
+| `cargo_downloads_start` | float | Cargo downloads at the first in-quarter weekly bucket (nullable) |
+| `cargo_downloads_end` | float | Cargo downloads at the last in-quarter weekly bucket (nullable) |
 
 ### Array columns
 
@@ -53,7 +52,7 @@ The parquet also carries weekly time-series arrays and a per-repository detail a
 
 | Field | Type | Description |
 |---|---|---|
-| `date` | string | ISO date for the week (e.g., `2026-01-04`) |
+| `date` | string | ISO date for the Sunday bucket inside the quarter (e.g., `2026-01-04`) |
 | `value` | number | Metric value at that point |
 
 ### Repository object
@@ -66,7 +65,7 @@ Each element in the `repositories` array:
 | `name` | string | Repository name |
 | `forks` | integer | Fork count at quarter end |
 | `stars` | integer | Star count at quarter end |
-| `stars_start` | integer | Star count at quarter start |
+| `stars_start` | integer | Star count at the repository's first in-quarter weekly bucket |
 | `license` | string | License identifier (nullable) |
 | `language` | string | Primary language (nullable) |
 | `description` | string | Repository description (nullable) |
@@ -81,10 +80,10 @@ Contains every organization eligible for ranking in a given quarter. The column 
 
 | Column | Type | Description |
 |---|---|---|
-| `division` | string | `emerging` (`stars_start < 1,000`) or `scaling` (`stars_start ≥ 1,000`) |
+| `division` | string | `emerging` (`stars_start < 1,000`) or `scaling` (`stars_start ≥ 1,000`), using the first in-quarter weekly bucket |
 | `division_rank` | integer | 1-based rank within the division, ordered by composite score descending. Ties share the same rank (`pandas.rank(method="min")`). |
-| `package_downloads_start` | integer | Combined npm + PyPI + Cargo downloads at quarter start (nullable) — summed from per-registry columns, treating missing registries as 0 when at least one is present |
-| `package_downloads_end` | integer | Combined downloads at quarter end (nullable) |
+| `package_downloads_start` | integer | Combined npm + PyPI + Cargo downloads at their first in-quarter weekly buckets (nullable) — summed from per-registry columns, treating missing registries as 0 when at least one is present |
+| `package_downloads_end` | integer | Combined downloads at their last in-quarter weekly buckets (nullable) |
 | `github_stars_growth_rate` | float | Real growth rate for stars: `(end − start) / start` (null when start is 0) |
 | `github_stars_growth_percentile` | float | Percentile rank of growth rate within the division (0–100) |
 | `github_stars_final_weight` | float | Weight contributed by this metric to the composite score |
@@ -97,22 +96,29 @@ Contains every organization eligible for ranking in a given quarter. The column 
 
 ### Notes on growth rates
 
-- **Real vs. padded rate.** The `_growth_rate` column is the **real** rate `(end − start) / start`. Padding (`max(start, padding_threshold)`) is applied internally for scoring only — it prevents low-baseline outliers from dominating ranked scores, but is never surfaced as a displayed rate. See [methodology.md](../methodology.md#step-03--measure-three-growth-signals).
+- **Real vs. padded rate.** The `_growth_rate` column is the **real** rate `(end − start) / start`. Padding (`max(start, padding_threshold)`) prevents low-baseline outliers from dominating ranked scores. The website derives its displayed ranking multiplier as `end / max(start, padding_threshold)`, while charts continue to show the observed start and end values. See [methodology.md](../methodology.md#step-03--measure-three-growth-signals).
 - **Eligibility.** An organization is eligible for a metric only if both start and end values exist, the end value meets the padding threshold, and the padded growth rate is non-negative.
 - **Nullable fields.** `_growth_rate` is null when `start` is 0 (rate undefined). Package download columns are null for organizations with no data across npm, PyPI, and Cargo.
 
-## Per-division frontend JSON
+## Website Database Contract
 
-Files: `frontend/data/osscar_{emerging,scaling}_top100_Q*_*.json`
+The website reads published ranking data from Supabase. The app-facing database contains:
 
-Self-contained JSON arrays of the top 100 orgs per division, generated from the ranking parquet by [`methodology/extract_frontend_data.py`](../../methodology/extract_frontend_data.py). One file per division, one record per organization. Each record includes:
+- `quarters`: one row per published quarter, including `id`, `label`, `quarter_start`, `quarter_end`, `is_current`, and `published_at`.
+- `organizations_full`: one row per `(quarter_id, owner_id)` with the scalar ranking columns from the ranking parquet plus frontend detail payloads.
+
+`organizations_full` includes:
 
 - **Identity:** `owner_id`, `owner_login`, `owner_name`, `owner_url`, `homepage_url`, `owner_description`, `owner_logo`
-- **Quarter:** `quarter_start`, `quarter_end`
 - **Ranking:** `division`, `division_rank`
 - **Per-metric scoring:** for each of `github_stars`, `github_contributors`, `package_downloads` — `_start`, `_end`, `_growth_rate`, `_growth_percentile`, `_final_weight`
 - **Enrichment for org detail pages:** `github_stars_weekly`, `github_contributors_weekly`, `npm_weekly`, `pypi_weekly`, `cargo_weekly`, `repositories`
 
-The array columns are parsed from their JSON-string form into real JSON arrays at extraction time, so the frontend can consume them directly without further parsing. Nulls (NaN / NaT / `pandas.NA`) in the source parquet are emitted as explicit JSON `null`s.
+The array payload columns are stored as non-null `jsonb` arrays. Quarter start/end are normalized on `quarters`; the frontend attaches that quarter metadata when returning organization records.
 
-The set of columns included is authoritatively defined by `FRONTEND_COLUMNS` at the top of [`methodology/extract_frontend_data.py`](../../methodology/extract_frontend_data.py).
+The original Q1 2026 Parquet assets predate the inclusive metadata convention
+and contain `2026-04-01` as an exclusive end marker. The website database
+normalizes that historical quarter to the inclusive `2026-03-31`; Q2 2026 and
+later assets use inclusive calendar-quarter end dates directly.
+
+The database schema is defined under [`supabase/migrations/`](../../supabase/migrations/), and [`scripts/ingest_quarter.py`](../../scripts/ingest_quarter.py) validates the ranking parquet before loading it.

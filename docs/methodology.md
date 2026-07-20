@@ -21,7 +21,7 @@ The first decision was what to rank. We considered three units of analysis: indi
 
 ## Step 02 — Assign to a division
 
-Organizations are split into two independent leaderboards based on their GitHub star count at the **start** of the quarter:
+Organizations are split into two independent leaderboards based on their GitHub star count at the quarter's **first retained weekly bucket**:
 
 | Division | Criteria |
 |---|---|
@@ -30,7 +30,7 @@ Organizations are split into two independent leaderboards based on their GitHub 
 
 Divisions are kept separate because growth at 100 stars doesn't look like growth at 100,000 stars. Scoring and ranking happen within each division on its own.
 
-Division is **locked at quarter start**. If an org crosses 1,000 stars during the quarter, it still stays in the emerging tier for that quarter's results.
+Division is **locked at the first retained weekly bucket**. If an org crosses 1,000 stars later in the quarter, it still stays in the emerging tier for that quarter's results.
 
 ## Step 03 — Measure three growth signals
 
@@ -50,13 +50,17 @@ Package downloads sum across npm, PyPI, and Cargo. If an org publishes to only o
 
 ### Growth rate
 
-For each signal, we record the value at the start and end of the quarter and compute the raw quarterly growth rate:
+For each signal, we retain weekly buckets whose Sunday date falls inside the
+quarter. The first retained value is `start`, the last retained value is `end`,
+and those exact points are also the first and last values shown in the chart.
+We then compute the raw growth rate:
 
 ```
 growth_rate = (end − start) / start
 ```
 
-This is the rate shown in the published data and the UI.
+This raw rate remains available in the published data. Charts use the observed
+`start` and `end` values directly.
 
 ### Padded start (scoring only)
 
@@ -67,7 +71,12 @@ padded_start  = max(start, padding_threshold)
 scoring_rate  = (end − padded_start) / padded_start
 ```
 
-This prevents tiny absolute changes from producing outsized rank gains. Going from 2 to 4 stars shouldn't outrank a project going from 5,000 to 8,000 stars. The padded rate only feeds the scoring step below — it's never shown as the displayed growth.
+This prevents tiny absolute changes from producing outsized rank gains. Going
+from 2 to 4 stars shouldn't outrank a project going from 5,000 to 8,000 stars.
+The leaderboard and signal cards display the ranking multiplier
+`end / padded_start`, so the number people see corresponds to the rate that
+determines rank. When padding applies, that multiplier differs from the ratio
+between the observed chart endpoints; the signal card identifies both.
 
 Padding thresholds differ by division to reflect the different scales of orgs in each tier:
 
@@ -91,14 +100,14 @@ Signals that fail any of these conditions are excluded for that organization. Th
 
 ## Step 04 — Score growth via log-minmax scaling
 
-Raw growth rates can't be compared directly across signals. A 20% increase in stars means something very different from a 20% increase in package downloads. We needed a way to put every signal on the same scale so they could be combined later.
+Ranking growth rates can't be compared directly across signals. A 20% increase in stars means something very different from a 20% increase in package downloads. We needed a way to put every signal on the same scale so they could be combined later.
 
 Our first attempt was straight percentile ranks. The appeal was obvious: every signal gets a `[0, 100]` score for free, with no tuning. The problem is that growth is heavily long-tailed — a 10× grower and a 1,000× grower can both land in the top 1%, but they're clearly not the same story. Percentiles collapsed that gap and flattened the top of the leaderboard.
 
 We ended up with a two-step **log-minmax** transform for each signal within each division:
 
 ```
-1. log_val = log(1 + growth_rate)
+1. log_val = log(1 + padded_growth_rate)
 2. score   = (log_val − min) / (max − min) × 100
 ```
 
@@ -148,12 +157,12 @@ Signals with no data simply don't contribute to the sum of squares. An org that 
 
 Organizations are ranked by composite score in descending order, within each division on its own. Ties are broken by **minimum rank** — tied organizations share the same rank number (`pandas.rank(method="min")`).
 
-Because division assignment is based on quarter-start stars (step 02), the ranking reflects growth over a full quarter against a consistent peer group.
+Because division assignment is based on stars at the first retained weekly bucket (step 02), the ranking reflects growth over one consistent weekly measurement window and peer group.
 
 ## Limitations and what's next
 
 - **First version.** This is the first version of the index, and the methodology will keep evolving. Expect signals, thresholds, and scoring choices to change as we iterate.
-- **Weekly data collection.** Input data is snapshotted on a weekly cadence, so the start and end of a quarter rarely align with its exact first and last day. Instead, the quarter is bounded by the weekly snapshots closest to those dates. See [data-collection.md](data-collection.md) for details.
+- **Weekly data collection.** Input data is snapshotted on a Sunday-based weekly cadence. Methodology uses the first and last bucket dates contained in the quarter, and the charts expose those same points. See [data-collection.md](data-collection.md) for details.
 - **Package coverage.** We currently track downloads from three registries: npm, PyPI, and Cargo. Orgs that publish to other ecosystems (Maven, RubyGems, NuGet, Go modules, Hex, and others) are effectively ranked on stars and contributors alone. We plan to expand registry coverage over time.
 - **Short-term growth bias.** Because the index measures a single quarter, mature projects that have plateaued at high adoption can rank poorly, even when they're foundational to their ecosystem. The index is a picture of momentum, not of importance.
 

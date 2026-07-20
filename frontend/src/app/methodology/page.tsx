@@ -174,7 +174,7 @@ export default function MethodologyPage() {
             <SectionTitle step="02">Assign to a division</SectionTitle>
             <Prose>
               <p>
-                Organizations are split into two independent leaderboards based on their GitHub star count at the <em className="text-foreground not-italic font-medium">start</em> of the quarter:
+                Organizations are split into two independent leaderboards based on their GitHub star count at the quarter&rsquo;s <em className="text-foreground not-italic font-medium">first weekly bucket</em>:
               </p>
               <div className="grid grid-cols-2 gap-3 not-prose my-4">
                 <div className="border border-white/10 rounded p-4">
@@ -192,7 +192,7 @@ export default function MethodologyPage() {
                 We keep the divisions separate because growth at 100 stars doesn&rsquo;t look like growth at 100,000 stars. Scores and rankings are computed within each division on its own.
               </p>
               <p>
-                Division is locked at quarter start. If an org crosses 1,000 stars during the quarter, it still stays in the emerging tier for that quarter&rsquo;s results.
+                Division is locked at the first weekly bucket. If an org crosses 1,000 stars later in the quarter, it stays in the emerging tier for that quarter&rsquo;s results.
               </p>
             </Prose>
           </Section>
@@ -208,7 +208,7 @@ export default function MethodologyPage() {
                 One constraint showed up immediately: not every org has every metric. A pure Python library has no npm or Cargo downloads. An infra project without published packages has no download data at all. Any scoring scheme had to work with a variable number of available signals without punishing orgs just for not publishing packages. That constraint shaped the eligibility rules below and, later, the aggregation choice in step 05.
               </p>
               <p>
-                For each signal, we record the value at the start and end of the quarter.
+                For each signal, we keep Sunday-dated weekly buckets inside the quarter. The first bucket is the start value and the last bucket is the end value—the same endpoints shown in each chart.
               </p>
             </Prose>
             <MetricTable />
@@ -217,7 +217,7 @@ export default function MethodologyPage() {
                 Package downloads aggregate npm, PyPI, and Cargo. If an org only publishes to one or two registries, we sum the available values instead of penalizing it for the ones it&rsquo;s missing. An org with no data across all three registries gets a null for this signal.
               </p>
               <p>
-                The quarterly growth rate shown in the table is the raw rate:
+                The observed quarterly growth rate is:
               </p>
             </Prose>
             <Formula>
@@ -225,11 +225,17 @@ export default function MethodologyPage() {
             </Formula>
             <Prose>
               <p>
-                For ranking, we divide instead by a <em className="text-foreground not-italic font-medium">padded start</em>: whichever is larger, the actual start value or a minimum threshold. This prevents tiny absolute changes from producing outsized rank gains. Going from 2 to 4 stars shouldn&rsquo;t outrank a project going from 5,000 to 8,000 stars. The padded rate only feeds the scoring step below. It&rsquo;s never shown as the displayed growth.
+                The charts preserve those observed start and end values. The multiplier displayed in the leaderboard and signal cards is the value used for ranking, so it always corresponds to the score that determines the organization&rsquo;s position.
+              </p>
+              <p>
+                For ranking, we divide by a <em className="text-foreground not-italic font-medium">padded start</em>: whichever is larger, the actual start value or a minimum threshold. This prevents tiny absolute changes from producing outsized rank gains. Going from 2 to 4 stars shouldn&rsquo;t outrank a project going from 5,000 to 8,000 stars. When padding applies, the displayed multiplier can therefore differ from the ratio between the chart endpoints; the signal card labels both values explicitly.
               </p>
             </Prose>
             <Formula>
               padded_start = max(start, padding_threshold)
+            </Formula>
+            <Formula>
+              displayed_multiplier = end / padded_start
             </Formula>
             <Prose>
               <p>
@@ -264,7 +270,7 @@ export default function MethodologyPage() {
             <SectionTitle step="04">Score growth via log-minmax scaling</SectionTitle>
             <Prose>
               <p>
-                Raw growth rates can&rsquo;t be compared directly across signals. A 20% increase in stars means something very different from a 20% increase in package downloads. We needed a way to put every signal on the same scale so they could be combined later.
+                Ranking growth rates can&rsquo;t be compared directly across signals. A 20% increase in stars means something very different from a 20% increase in package downloads. We needed a way to put every signal on the same scale so they could be combined later.
               </p>
               <p>
                 Our first attempt was straight percentile ranks. The appeal was obvious: every signal gets a <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">[0, 100]</code> score for free, with no tuning. The problem is that growth is heavily long-tailed. A 10× grower and a 1,000× grower can both land in the top 1%, but they&rsquo;re clearly not the same story. Percentiles collapsed that gap and flattened the top of the leaderboard.
@@ -274,7 +280,7 @@ export default function MethodologyPage() {
               </p>
             </Prose>
             <Formula>
-              <div>1. log_val = log(1 + growth_rate)</div>
+              <div>1. log_val = log(1 + padded_growth_rate)</div>
               <div className="mt-1">2. score = (log_val − min) / (max − min) × 100</div>
             </Formula>
             <Prose>
@@ -349,8 +355,7 @@ export default function MethodologyPage() {
                 Ties are broken by minimum rank (tied organizations share the same rank number).
               </p>
               <p>
-                Division assignment is based on quarter-start stars, so the ranking reflects growth over a full quarter
-                for a consistent peer group.
+                Division assignment is based on stars at the first retained weekly bucket, so the ranking reflects growth over one consistent weekly measurement window and peer group.
               </p>
             </Prose>
           </Section>
@@ -362,7 +367,7 @@ export default function MethodologyPage() {
               <ul className="list-none space-y-3 not-prose">
                 {[
                   { k: "First version", v: "This is the first version of the index, and the methodology will keep evolving. Expect signals, thresholds, and scoring choices to change as we iterate." },
-                  { k: "Weekly data collection", v: "We snapshot data on a weekly cadence, so the start and end of a quarter rarely align with its exact first and last day. Instead, the quarter is bounded by the weekly snapshots closest to those dates." },
+                  { k: "Weekly data collection", v: "We use Sunday-dated weekly buckets inside each quarter. The first and last retained buckets define both methodology growth and chart endpoints; partial calendar weeks are not split into daily estimates." },
                   { k: "Package coverage", v: "We currently track downloads from three registries: npm, PyPI, and Cargo. Orgs that publish to other ecosystems (Maven, RubyGems, NuGet, Go modules, Hex, and others) are effectively ranked on stars and contributors alone. We plan to expand registry coverage over time." },
                   { k: "Short-term growth bias", v: "Because the index measures a single quarter, mature projects that have plateaued at high adoption can rank poorly, even when they\u2019re foundational to their ecosystem. The index is a picture of momentum, not of importance." },
                 ].map((item, i) => (

@@ -12,7 +12,7 @@ This document describes how OSSCAR's input data is collected and processed — f
 | PyPI downloads | BigQuery public PyPI dataset + [Pepy.tech](https://pepy.tech) | Weekly | Per package |
 | Cargo downloads | crates.io API | Weekly | Per package |
 
-All signals are collected as weekly snapshots at the repository (or package) level. For each quarterly release, the scoring pipeline reads the snapshots at the quarter start and quarter end, aggregates them up to the **organization** level, and computes growth. See [From weekly to quarterly](#from-weekly-to-quarterly).
+All signals are collected as weekly snapshots at the repository (or package) level. For each quarterly release, the scoring pipeline keeps the weekly buckets dated inside the quarter, aggregates them up to the **organization** level, and computes growth from the first and last retained buckets. See [From weekly to quarterly](#from-weekly-to-quarterly).
 
 ## The repository universe
 
@@ -48,7 +48,7 @@ Each week, for every repository in the universe, we fetch the activity events em
 | `forks_cum` | cumulative | Fork count at the end of this week |
 | `average_time_to_issue_resolution` | weekly | Mean resolution time for issues closed that week |
 
-The `*_cum` columns are the shape OSSCAR scoring consumes: growth = end-of-quarter cumulative minus start-of-quarter cumulative.
+The `*_cum` columns are the shape OSSCAR scoring consumes: growth compares the cumulative values at the first and last retained in-quarter weekly buckets.
 
 **Bot filtering.** Contributor counts exclude GitHub accounts whose login matches common automation patterns (suffix `[bot]`, known bot logins like `dependabot`, `renovate`, etc.). This is a heuristic — see [Limitations](#limitations).
 
@@ -126,26 +126,35 @@ FROM v2.<registry>_weekly
 
 The tables above are collected at the **repository** level. OSSCAR rankings are published at the **organization** level and at **quarterly** cadence. Two things happen between them:
 
-### 1. Read the snapshot at the quarter boundary
+### 1. Select the in-quarter weekly measurement window
 
-For each organization and each metric, the scoring pipeline reads the *cumulative* value at the quarter start and quarter end:
+For each organization and each metric, OSSCAR keeps weekly buckets whose Sunday
+date falls inside the half-open quarter interval. The first retained bucket is
+the methodology start and the last retained bucket is the methodology end:
 
 ```python
-start_value = value_at(quarter_start_date)   # e.g. 2026-01-01
-end_value   = value_at(quarter_end_date)     # e.g. 2026-04-01
+quarter_buckets = weekly.filter(quarter_start <= date < quarter_end_exclusive)
+start_value = quarter_buckets.first.value
+end_value   = quarter_buckets.last.value
 growth      = (end_value - start_value) / start_value
 ```
+
+For example, Q2 2026 runs from April 1 through June 30, so its Sunday bucket
+dates run from April 5 through June 28. The scalar start/end values, scoring
+inputs, published weekly arrays, and charts all use those same endpoints.
 
 - **Stars**, **contributors**, and each **download registry** are read from the cumulative columns described above.
 - The three package download registries are then summed into a single `package_downloads` series before scoring (`npm + pypi + cargo`, treating missing registries as 0 when at least one is present).
 
 ### 2. Aggregate repositories to the organization
 
-Each metric is summed across all repositories owned by the organization at the quarter boundary:
+Stars and downloads are summed across repositories and packages owned by the
+organization at each retained bucket. Contributors are deduplicated by login
+across the organization's repositories:
 
 ```
 org_stars(t)        = Σ repo.stars_cum(t)        over repos owned by org
-org_contributors(t) = Σ repo.contributors_cum(t) over repos owned by org
+org_contributors(t) = count(distinct contributor_login seen by t)
 org_downloads(t)    = Σ pkg.downloads_cumulative(t) over packages linked to org's repos
 ```
 
@@ -165,5 +174,8 @@ We want to be explicit about what the data does and does not capture.
 - **Download counts are aggregate totals.** Registries don't separate human installs from CI pipelines, mirrors, or automated tooling. Download figures should be read as a signal of usage breadth, not unique users.
 - **Third-party dependency for PyPI.** PyPI download counts come from Pepy.tech rather than being constructed from raw logs. If Pepy has downtime or changes methodology, OSSCAR's PyPI numbers shift with it.
 - **Data lag at week boundaries.** Registry counts can be revised for 1–2 days after a week closes. The pipeline re-reads the most recent weeks on each run to pick up these revisions, which can cause small shifts between consecutive dataset versions.
+- **Calendar boundaries are weekly.** A quarter's measurement window begins at
+  its first Sunday bucket and ends at its last Sunday bucket. Partial weeks that
+  overlap a calendar boundary are not split into daily estimates.
 
 Improvements we plan to make in future releases include better bot and automation detection, cross-registry deduplication for packages published to multiple registries under the same name, and alias resolution for contributors who use multiple GitHub accounts.

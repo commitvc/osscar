@@ -107,7 +107,7 @@ create table public.score_requests (
   matched_owner_id     text,
   matched_quarter_id   text              references public.quarters(id),
 
-  status               text              not null check (status in ('sent','not_found','rate_limited','invalid_input','error')),
+  status               text              not null check (status in ('sent','not_found','rate_limited','error')),
   ip_hash              text,
   user_agent           text
 );

@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
-import { findOrgBySlug } from "@/lib/data";
+import { findOrgBySlugForQuarter, resolveQuarter } from "@/lib/data";
 import { normalizeLogin } from "@/lib/normalize-login";
-import { QUARTER_LABEL } from "@/lib/config";
 import {
   getShareCardByLogin,
   isQuarterId,
@@ -13,10 +12,10 @@ import { renderShareCard, type OrgCardData } from "./render";
  *
  * Renders the 1200×630 social share card. Two data-source paths:
  *
- *   ?slug=<login>                 — site share modal & Open Graph meta.
- *                                    Reads from the top-N frontend JSON
- *                                    (lib/data.ts). Fast, no DB. Returns 404
- *                                    for orgs outside the top 100 per division.
+ *   ?slug=<login>[&quarter=<id>]  — site share modal & Open Graph meta.
+ *                                    Reads from Supabase for the selected
+ *                                    published quarter. Returns 404 when the
+ *                                    org is outside that quarter's ranking.
  *
  *   ?login=<login>[&quarter=<id>] — email "Download your share card" CTA.
  *                                    Reads from Supabase `organizations_full`,
@@ -68,13 +67,18 @@ export async function GET(request: NextRequest) {
   }
 
   let card: OrgCardData | null = null;
-  let quarterLabel: string = QUARTER_LABEL;
+  let quarterLabel: string | null = null;
 
   if (slugParam) {
     const normalized = normalizeLogin(slugParam);
     if (!normalized) return bad(400, "Invalid slug");
-    const org = findOrgBySlug(normalized);
+    const quarter = await resolveQuarter(quarterParam);
+    if (!quarter) {
+      return quarterParam ? bad(400, "Invalid quarter") : bad(500, "No current quarter");
+    }
+    const org = await findOrgBySlugForQuarter(normalized, quarter);
     if (!org) return new Response("Not found", { status: 404 });
+    quarterLabel = quarter.label;
     card = {
       owner_login: org.owner_login,
       owner_name: org.owner_name,
@@ -100,6 +104,10 @@ export async function GET(request: NextRequest) {
     if (!result) return new Response("Not found", { status: 404 });
     card = result.card;
     quarterLabel = result.quarterLabel;
+  }
+
+  if (!card || !quarterLabel) {
+    return bad(500, "Share card could not be built");
   }
 
   const headers: Record<string, string> = {};

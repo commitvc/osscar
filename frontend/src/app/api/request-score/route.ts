@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
-import { render } from "@react-email/render";
+import { render } from "react-email";
 import { createElement } from "react";
 import { Resend } from "resend";
 import { z } from "zod";

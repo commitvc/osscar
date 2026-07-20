@@ -5,7 +5,6 @@ import Link from "next/link"
 import {
   useReactTable,
   getCoreRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   createColumnHelper,
   flexRender,
@@ -15,8 +14,19 @@ import {
 import { ExternalLink, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, Star, Users, Package } from "lucide-react"
 import { Tooltip } from "@base-ui/react/tooltip"
 import type { Org, Division } from "@/types"
-import { formatCompact, formatGrowthRate, formatPercentile, formatTopPct, cn } from "@/lib/utils"
+import { formatCompact, formatPercentile, formatTopPct, cn } from "@/lib/utils"
+import { calculateRankingGrowthRate, formatGrowthMultiplier } from "@/lib/growth"
 import { PADDING_THRESHOLDS, type MetricKey } from "@/lib/padding-thresholds"
+import { hrefWithQuarter } from "@/lib/quarter-url"
+import {
+  filterRankingsForPage,
+  getAvailableRankingPageCount,
+  getAvailableRankingPageNumber,
+  getFirstAvailableRankingPageIndex,
+  getRankingPageCount,
+  getRankingPageRange,
+} from "@/lib/ranking-pagination"
+import type { RankingReveal } from "@/lib/ranking-reveal"
 import { GitHubIcon } from "@/components/github-icon"
 import { OrgLogo } from "@/components/org-logo"
 import { Button } from "@/components/ui/button"
@@ -39,6 +49,12 @@ const RANK_PIPS: Record<number, string> = {
   2: "#C0C0C0",
   3: "#CD7F32",
 }
+
+const PODIUM_COLORS = [
+  RANK_PIPS[1],
+  RANK_PIPS[2],
+  RANK_PIPS[3],
+] as const
 
 function computePackageDownloads(org: Org): { value: number | null; rate: number | null; percentile: number | null } {
   if (org.package_downloads_end == null) return { value: null, rate: null, percentile: null }
@@ -94,9 +110,12 @@ function MetricCell({ value, rate, startValue, percentile, metric, division, sou
 
   const metricLabel = METRIC_LABELS[metric]
   const baseline = PADDING_THRESHOLDS[metric][division]
-  const showRate = rate != null && rate > 0
+  const rankingRate = percentile != null
+    ? calculateRankingGrowthRate(startValue ?? null, value, baseline)
+    : null
+  const showRate = rankingRate != null
   const isLowBaseline =
-    showRate && startValue != null && startValue < baseline
+    startValue != null && value != null && startValue < baseline
   const hasPercentile = percentile != null
   const baselineLabel = baseline === 1 ? singularize(metricLabel) : metricLabel
 
@@ -122,16 +141,20 @@ function MetricCell({ value, rate, startValue, percentile, metric, division, sou
             <span className="font-mono text-sm font-semibold text-foreground tabular-nums leading-none">
               {value != null ? formatCompact(value) : "—"}
             </span>
-            <span className="font-mono text-[0.7rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm bg-green/15 text-green">
-              {formatGrowthRate(rate)}
-            </span>
+            {showRate ? (
+              <span className="font-mono text-[0.7rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm bg-green/15 text-green">
+                {formatGrowthMultiplier(rankingRate)}
+              </span>
+            ) : null}
           </div>
         </Tooltip.Trigger>
         <Tooltip.Portal>
           <Tooltip.Positioner side="top" sideOffset={6}>
             <Tooltip.Popup className="z-50 max-w-xs rounded-md border border-white/10 bg-popover px-3 py-2 text-xs text-popover-foreground shadow-lg space-y-1.5">
               <p>
-                Displayed rate is real growth: <span className="font-semibold text-green">{formatGrowthRate(rate)}</span> ({formatCompact(startValue ?? 0)} → {formatCompact(value)}). For ranking, our methodology uses a minimum baseline of {formatCompact(baseline)} {baselineLabel} to avoid low-baseline distortion, so this org is ranked as if it had grown from {formatCompact(baseline)} → {formatCompact(value)}.
+                {showRate
+                  ? <>Ranking growth: <span className="font-semibold text-green">{formatGrowthMultiplier(rankingRate)}</span> ({formatCompact(baseline)} → {formatCompact(value)}). Chart values: {formatCompact(startValue)} → {formatCompact(value)}{rate != null ? <> ({formatGrowthMultiplier(rate)} actual)</> : null}.</>
+                  : <>Because the ending value is below the minimum baseline of {formatCompact(baseline)} {baselineLabel}, this signal is not used for ranking.</>}
               </p>
               <PercentileLine percentile={percentile} metricLabel={metricLabel} />
               <a href="/methodology" className="inline-flex items-center gap-1 text-[0.65rem] text-muted-foreground hover:text-green transition-colors font-mono">
@@ -152,7 +175,7 @@ function MetricCell({ value, rate, startValue, percentile, metric, division, sou
       </span>
       {showRate ? (
         <span className="font-mono text-[0.7rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm bg-green/15 text-green">
-          {formatGrowthRate(rate)}
+          {formatGrowthMultiplier(rankingRate)}
         </span>
       ) : (
         <span className="text-[0.7rem] leading-none text-muted-foreground/25">—</span>
@@ -236,16 +259,16 @@ function SortHeader({ column, label, align = "right", sortMode, onToggleMode }: 
   )
 }
 
-/** Compute the real growth rate; returns Infinity when start is 0 and end > 0 */
-function realGrowth(start: number | null, end: number | null): number | null {
-  if (end == null) return null
-  if (start == null || start === 0) return end > 0 ? Infinity : null
-  return (end - start) / start
-}
-
-/** Returns the displayed growth value for sorting — always the methodology rate (what's shown in the table) */
-function displayedGrowth(_start: number | null, _end: number | null, methodologyRate: number | null): number | null {
-  return methodologyRate
+/** Returns the padded rate used by the methodology, but only for ranked signals. */
+function displayedGrowth(
+  start: number | null,
+  end: number | null,
+  metric: MetricKey,
+  division: Division,
+  percentile: number | null,
+): number | null {
+  if (percentile == null) return null
+  return calculateRankingGrowthRate(start, end, PADDING_THRESHOLDS[metric][division])
 }
 
 /** Compare two nullable numbers for sorting. Nulls always last, Infinity always first (in natural asc, TanStack flips for desc). */
@@ -263,13 +286,16 @@ interface CardMetricRowProps {
   icon: typeof Star
   label: string
   value: number | null
-  rate: number | null
+  startValue: number | null
+  percentile: number | null
+  metric: MetricKey
+  division: Division
   sources?: string[]
 }
 
-function CardMetricRow({ icon: Icon, label, value, rate, sources }: CardMetricRowProps) {
-  const hasData = value != null || rate != null
-  const showRate = rate != null && rate > 0
+function CardMetricRow({ icon: Icon, label, value, startValue, percentile, metric, division, sources }: CardMetricRowProps) {
+  const hasData = value != null
+  const rankingRate = displayedGrowth(startValue, value, metric, division, percentile)
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="flex items-center gap-1.5 min-w-0 flex-1">
@@ -290,9 +316,12 @@ function CardMetricRow({ icon: Icon, label, value, rate, sources }: CardMetricRo
         )}>
           {value != null ? formatCompact(value) : "—"}
         </span>
-        {showRate ? (
-          <span className="font-mono text-[0.65rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm bg-green/15 text-green">
-            {formatGrowthRate(rate)}
+        {rankingRate != null ? (
+          <span
+            className="font-mono text-[0.65rem] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded-sm bg-green/15 text-green"
+            title="Growth multiplier used for ranking"
+          >
+            {formatGrowthMultiplier(rankingRate)}
           </span>
         ) : (
           <span className="font-mono text-[0.65rem] leading-none text-muted-foreground/25 px-1.5">—</span>
@@ -306,16 +335,19 @@ interface OrgCardProps {
   org: Org
   rank: number
   slug?: string
+  quarterId?: string | null
   pkg: { value: number | null; rate: number | null; percentile: number | null }
   sources?: string[]
 }
 
-function OrgCard({ org, rank, slug, pkg, sources }: OrgCardProps) {
+function OrgCard({ org, rank, slug, quarterId, pkg, sources }: OrgCardProps) {
   const pip = RANK_PIPS[rank]
   const rankColor = rank === 1 ? "#F4C430" : rank === 2 ? "#C0C0C0" : rank === 3 ? "#CD7F32" : null
 
   return (
     <div
+      data-testid="ranking-entry"
+      data-ranking-rank={rank}
       className={cn(
         "rounded-lg border border-white/10 bg-card/50 p-4 space-y-3 transition-colors",
         rank <= 3 && "border-l-2",
@@ -340,7 +372,8 @@ function OrgCard({ org, rank, slug, pkg, sources }: OrgCardProps) {
         <OrgLogo logoUrl={org.owner_logo} name={org.owner_name} size={28} className="mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
           <Link
-            href={slug ? `/org/${slug}` : "#"}
+            href={slug ? hrefWithQuarter(`/org/${slug}`, quarterId) : "#"}
+            data-testid="ranking-org-link"
             className="block font-semibold text-sm text-foreground hover:text-green transition-colors truncate leading-snug"
           >
             {org.owner_name}
@@ -383,19 +416,28 @@ function OrgCard({ org, rank, slug, pkg, sources }: OrgCardProps) {
           icon={Star}
           label="Stars"
           value={org.github_stars_end}
-          rate={org.github_stars_growth_rate}
+          startValue={org.github_stars_start}
+          percentile={org.github_stars_growth_percentile}
+          metric="github_stars"
+          division={org.division}
         />
         <CardMetricRow
           icon={Users}
           label="Contributors"
           value={org.github_contributors_end}
-          rate={org.github_contributors_growth_rate}
+          startValue={org.github_contributors_start}
+          percentile={org.github_contributors_growth_percentile}
+          metric="github_contributors"
+          division={org.division}
         />
         <CardMetricRow
           icon={Package}
           label="Downloads"
           value={pkg.value}
-          rate={pkg.rate}
+          startValue={org.package_downloads_start}
+          percentile={pkg.percentile}
+          metric="package_downloads"
+          division={org.division}
           sources={sources}
         />
       </div>
@@ -403,15 +445,102 @@ function OrgCard({ org, rank, slug, pkg, sources }: OrgCardProps) {
   )
 }
 
+function MobileRevealTeasers({ ranks }: { ranks: number[] }) {
+  return (
+    <>
+      {ranks.map((rank, index) => (
+        <div
+          key={rank}
+          data-testid="ranking-teaser"
+          aria-hidden="true"
+          className="relative overflow-hidden rounded-lg border border-l-2 border-white/8 bg-card/30 p-4"
+          style={{ borderLeftColor: PODIUM_COLORS[index] }}
+        >
+          <div className="flex items-center gap-3 opacity-35 blur-[3px] select-none">
+            <span
+              className="size-1.5 shrink-0 rounded-full"
+              style={{ backgroundColor: PODIUM_COLORS[index] }}
+            />
+            <span className="w-5 font-mono text-sm tabular-nums">{rank}</span>
+            <span className="size-7 shrink-0 rounded-sm bg-white/20" />
+            <span className="h-3 w-32 rounded-full bg-white/25" />
+            <span className="ml-auto h-3 w-14 rounded-full bg-white/15" />
+          </div>
+          {index === 0 ? (
+            <span className="absolute inset-y-0 right-4 flex items-center font-mono text-[0.55rem] uppercase tracking-[0.18em] text-muted-foreground/70">
+              Coming soon
+            </span>
+          ) : null}
+        </div>
+      ))}
+    </>
+  )
+}
+
+function DesktopRevealTeasers({ ranks }: { ranks: number[] }) {
+  return (
+    <>
+      {ranks.map((rank, index) => (
+        <TableRow
+          key={rank}
+          data-testid="ranking-teaser"
+          aria-hidden="true"
+          className="border-l-2 border-white/8 bg-white/[0.015] hover:bg-white/[0.015]"
+          style={{ borderLeftColor: PODIUM_COLORS[index] }}
+        >
+          <TableCell className="py-3">
+            <div className="flex items-center gap-2 select-none">
+              <span
+                className="size-1.5 shrink-0 rounded-full"
+                style={{ backgroundColor: PODIUM_COLORS[index] }}
+              />
+              <span className="font-mono text-sm tabular-nums opacity-30 blur-[3px]">
+                {rank}
+              </span>
+            </div>
+          </TableCell>
+          <TableCell className="py-3">
+            <div className="flex items-center gap-2.5 opacity-35 blur-[3px] select-none">
+              <span className="size-6 shrink-0 rounded-sm bg-white/20" />
+              <span className="h-3 w-28 rounded-full bg-white/25" />
+            </div>
+            {index === 0 ? (
+              <span className="sr-only">More ranking entries are coming soon.</span>
+            ) : null}
+          </TableCell>
+          <TableCell className="py-3 pl-4">
+            <div className="ml-auto h-3 w-16 rounded-full bg-white/15 opacity-35 blur-[3px]" />
+          </TableCell>
+          <TableCell className="py-3">
+            <div className="ml-auto h-3 w-16 rounded-full bg-white/15 opacity-35 blur-[3px]" />
+          </TableCell>
+          <TableCell className="py-3">
+            <div className="ml-auto h-3 w-24 rounded-full bg-white/15 opacity-35 blur-[3px]" />
+          </TableCell>
+          <TableCell className="py-3" />
+        </TableRow>
+      ))}
+    </>
+  )
+}
+
 interface OrgTableProps {
   emerging: Org[]
   scaling: Org[]
   packageSources?: Record<string, string[]>
+  quarterId?: string | null
+  reveal: RankingReveal
   searchSlot?: React.ReactNode
 }
 
-export function OrgTable({ emerging, scaling, packageSources = {}, searchSlot }: OrgTableProps) {
+export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, reveal, searchSlot }: OrgTableProps) {
   const [activeDivision, setActiveDivision] = useState<Division>("emerging")
+  const hasRevealedRankings = reveal.visibleFromRank <= reveal.totalRankCount
+  const firstAvailablePageIndex = getFirstAvailableRankingPageIndex(
+    reveal.visibleFromRank,
+    reveal.totalRankCount,
+  )
+  const [pageIndex, setPageIndex] = useState(firstAvailablePageIndex)
   const [sorting, setSorting] = useState<SortingState>([])
   const [starsSortMode, setStarsSortMode] = useState<SortMode>("growth")
   const [contribSortMode, setContribSortMode] = useState<SortMode>("growth")
@@ -428,16 +557,16 @@ export function OrgTable({ emerging, scaling, packageSources = {}, searchSlot }:
   // Create new sort-state objects to break TanStack's internal memo cache
   const forceSortRefresh = () => setSorting(prev => prev.length > 0 ? prev.map(s => ({ ...s })) : prev)
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const columns = useMemo(() => [
-    columnHelper.accessor((_row: Org) => 0 as number, {
+    columnHelper.accessor(() => 0 as number, {
       id: "rank",
       enableSorting: true,
-      sortingFn: (rowA, rowB) => rowA.index - rowB.index,
+      sortingFn: (rowA, rowB) =>
+        rowA.original.division_rank - rowB.original.division_rank,
       sortDescFirst: false,
       header: ({ column }) => <SortHeader column={column} label="RANKING" align="left" />,
       cell: ({ row }) => {
-        const rank = row.index + 1
+        const rank = row.original.division_rank
         const pip = RANK_PIPS[rank]
         return (
           <div className="flex items-center gap-2">
@@ -468,7 +597,15 @@ export function OrgTable({ emerging, scaling, packageSources = {}, searchSlot }:
             <OrgLogo logoUrl={org.owner_logo} name={org.owner_name} size={24} className="mt-0.5 shrink-0" />
             <div className="min-w-0">
               <Link
-                href={org.owner_url ? `/org/${org.owner_url.trim().replace(/\/$/, "").split("/").pop()?.toLowerCase()}` : "#"}
+                href={
+                  org.owner_url
+                    ? hrefWithQuarter(
+                        `/org/${org.owner_url.trim().replace(/\/$/, "").split("/").pop()?.toLowerCase()}`,
+                        quarterId,
+                      )
+                    : "#"
+                }
+                data-testid="ranking-org-link"
                 className="font-semibold text-sm text-foreground hover:text-green transition-colors truncate leading-snug flex items-baseline gap-1 cursor-pointer"
               >
                 <span className="truncate">{org.owner_name}</span>
@@ -505,10 +642,10 @@ export function OrgTable({ emerging, scaling, packageSources = {}, searchSlot }:
         sortingFn: (rowA, rowB) => {
           const mode = starsModeRef.current
           const aVal = mode === "growth"
-            ? displayedGrowth(rowA.original.github_stars_start, rowA.original.github_stars_end, rowA.original.github_stars_growth_rate)
+            ? displayedGrowth(rowA.original.github_stars_start, rowA.original.github_stars_end, "github_stars", rowA.original.division, rowA.original.github_stars_growth_percentile)
             : rowA.original.github_stars_end
           const bVal = mode === "growth"
-            ? displayedGrowth(rowB.original.github_stars_start, rowB.original.github_stars_end, rowB.original.github_stars_growth_rate)
+            ? displayedGrowth(rowB.original.github_stars_start, rowB.original.github_stars_end, "github_stars", rowB.original.division, rowB.original.github_stars_growth_percentile)
             : rowB.original.github_stars_end
           return compareMetric(aVal, bVal)
         },
@@ -541,10 +678,10 @@ export function OrgTable({ emerging, scaling, packageSources = {}, searchSlot }:
         sortingFn: (rowA, rowB) => {
           const mode = contribModeRef.current
           const aVal = mode === "growth"
-            ? displayedGrowth(rowA.original.github_contributors_start, rowA.original.github_contributors_end, rowA.original.github_contributors_growth_rate)
+            ? displayedGrowth(rowA.original.github_contributors_start, rowA.original.github_contributors_end, "github_contributors", rowA.original.division, rowA.original.github_contributors_growth_percentile)
             : rowA.original.github_contributors_end
           const bVal = mode === "growth"
-            ? displayedGrowth(rowB.original.github_contributors_start, rowB.original.github_contributors_end, rowB.original.github_contributors_growth_rate)
+            ? displayedGrowth(rowB.original.github_contributors_start, rowB.original.github_contributors_end, "github_contributors", rowB.original.division, rowB.original.github_contributors_growth_percentile)
             : rowB.original.github_contributors_end
           return compareMetric(aVal, bVal)
         },
@@ -585,8 +722,8 @@ export function OrgTable({ emerging, scaling, packageSources = {}, searchSlot }:
           } else {
             const aStart = rowA.original.package_downloads_start
             const bStart = rowB.original.package_downloads_start
-            aVal = displayedGrowth(aStart || null, aData.value, aData.rate)
-            bVal = displayedGrowth(bStart || null, bData.value, bData.rate)
+            aVal = displayedGrowth(aStart, aData.value, "package_downloads", rowA.original.division, aData.percentile)
+            bVal = displayedGrowth(bStart, bData.value, "package_downloads", rowB.original.division, bData.percentile)
           }
           return compareMetric(aVal, bVal)
         },
@@ -651,30 +788,49 @@ export function OrgTable({ emerging, scaling, packageSources = {}, searchSlot }:
         )
       },
     }),
-  ], [starsSortMode, contribSortMode, pkgSortMode])
+  ], [starsSortMode, contribSortMode, pkgSortMode, quarterId, packageSources])
 
+  const activeData = activeDivision === "scaling" ? scaling : emerging
+  const pageData = useMemo(
+    () => filterRankingsForPage(activeData, pageIndex),
+    [activeData, pageIndex],
+  )
+  const pageCount = getRankingPageCount(reveal.totalRankCount)
+  const availablePageCount = getAvailableRankingPageCount(
+    reveal.visibleFromRank,
+    reveal.totalRankCount,
+  )
+  const availablePageNumber = getAvailableRankingPageNumber(
+    pageIndex,
+    reveal.visibleFromRank,
+    reveal.totalRankCount,
+  )
+  const pageRange = getRankingPageRange(pageIndex, reveal.totalRankCount)
+  const visiblePageStartRank = Math.max(
+    pageRange.startRank,
+    reveal.visibleFromRank,
+  )
+  const isFirstAvailablePage = pageIndex === firstAvailablePageIndex
+
+  // TanStack Table deliberately returns mutable accessors; this component is
+  // therefore excluded from React Compiler memoization by the compatibility rule.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
-    data: activeDivision === "scaling" ? scaling : emerging,
+    data: pageData,
     columns,
     state: { sorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    initialState: { pagination: { pageSize: 25 } },
   })
-
-  const { pageIndex, pageSize } = table.getState().pagination
-  const pageCount = table.getPageCount()
-  const activeData = activeDivision === "scaling" ? scaling : emerging
 
   function handleDivisionChange(division: Division) {
     setActiveDivision(division)
-    table.setPageIndex(0)
+    setPageIndex(firstAvailablePageIndex)
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid="rankings">
       {/* Division selector + optional search */}
       <div className="flex flex-col-reverse gap-3 border-b border-white/10 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
         <div className="flex gap-6">
@@ -682,6 +838,7 @@ export function OrgTable({ emerging, scaling, packageSources = {}, searchSlot }:
             <button
               key={division}
               onClick={() => handleDivisionChange(division)}
+              data-testid={`division-tab-${division}`}
               className={cn(
                 "pb-3 text-xs uppercase tracking-widest font-semibold transition-colors -mb-px cursor-pointer",
                 activeDivision === division
@@ -696,11 +853,28 @@ export function OrgTable({ emerging, scaling, packageSources = {}, searchSlot }:
         {searchSlot && <div className="sm:pb-2">{searchSlot}</div>}
       </div>
 
+      {reveal.teaserRanks.length > 0 ? (
+        <div
+          data-testid="ranking-reveal-status"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-green/15 bg-green/[0.04] px-3 py-2"
+        >
+          <span className="relative z-10 font-mono text-[0.6rem] uppercase tracking-widest text-green/90">
+            {hasRevealedRankings
+              ? "Ranking reveal in progress"
+              : "Ranking reveal starting soon"}
+          </span>
+          <span className="relative z-10 text-xs text-muted-foreground/70">
+            {activeData.length} of {reveal.totalRankCount} live. New rankings revealed every weekday.
+          </span>
+        </div>
+      ) : null}
+
       {/* Mobile/tablet card list */}
       <div className="lg:hidden space-y-2">
+        {isFirstAvailablePage ? <MobileRevealTeasers ranks={reveal.teaserRanks} /> : null}
         {table.getRowModel().rows.map((row) => {
-          const rank = row.index + 1
           const org = row.original
+          const rank = org.division_rank
           const slug = org.owner_url
             ? org.owner_url.trim().replace(/\/$/, "").split("/").pop()?.toLowerCase()
             : undefined
@@ -712,6 +886,7 @@ export function OrgTable({ emerging, scaling, packageSources = {}, searchSlot }:
               org={org}
               rank={rank}
               slug={slug}
+              quarterId={quarterId}
               pkg={pkg}
               sources={sources}
             />
@@ -745,11 +920,14 @@ export function OrgTable({ emerging, scaling, packageSources = {}, searchSlot }:
             ))}
           </TableHeader>
           <TableBody>
+            {isFirstAvailablePage ? <DesktopRevealTeasers ranks={reveal.teaserRanks} /> : null}
             {table.getRowModel().rows.map((row) => {
-              const rank = row.index + 1
+              const rank = row.original.division_rank
               return (
                 <TableRow
                   key={row.id}
+                  data-testid="ranking-entry"
+                  data-ranking-rank={rank}
                   className={cn(
                     "border-white/10 transition-colors",
                     rank <= 3 && "border-l-2",
@@ -775,27 +953,42 @@ export function OrgTable({ emerging, scaling, packageSources = {}, searchSlot }:
 
       {/* Pagination */}
       <div className="flex items-center justify-between py-2">
-        <span className="font-mono text-[0.65rem] uppercase tracking-widest text-muted-foreground/60">
-          {pageIndex * pageSize + 1}–{Math.min((pageIndex + 1) * pageSize, activeData.length)} of {activeData.length}
+        <span
+          className="font-mono text-[0.65rem] uppercase tracking-widest text-muted-foreground/60"
+          data-testid="rankings-pagination-summary"
+        >
+          {hasRevealedRankings ? (
+            <>
+              {visiblePageStartRank}–{pageRange.endRank} of {reveal.totalRankCount}
+              {reveal.teaserRanks.length > 0 ? " revealed" : ""}
+            </>
+          ) : (
+            <>0 of {reveal.totalRankCount} revealed</>
+          )}
         </span>
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+            onClick={() => setPageIndex((current) => current - 1)}
+            disabled={isFirstAvailablePage}
+            aria-label="Previous rankings page"
             className="h-8 w-8 p-0 cursor-pointer"
           >
             <ChevronLeft size={14} />
           </Button>
-          <span className="font-mono text-xs text-muted-foreground tabular-nums">
-            {pageIndex + 1} / {pageCount}
+          <span
+            className="font-mono text-xs text-muted-foreground tabular-nums"
+            data-testid="rankings-pagination-page"
+          >
+            {availablePageNumber} / {availablePageCount}
           </span>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
+            onClick={() => setPageIndex((current) => current + 1)}
+            disabled={pageIndex === pageCount - 1}
+            aria-label="Next rankings page"
             className="h-8 w-8 p-0 cursor-pointer"
           >
             <ChevronRight size={14} />

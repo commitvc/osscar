@@ -8,14 +8,13 @@ import type { OrgCardData } from "@/app/api/og/render";
  * at /api/og?login=…, used by the "Download your share card" CTA in the
  * score-report email).
  *
- * The site's share modal uses the frontend top-N JSON (see lib/data.ts), which
- * only covers the top 100 per division. Emails go out to every org in the
- * dataset — tens of thousands — so when a recipient clicks Download we have
- * to look up their org from the full `organizations_full` view instead.
+ * The site's share modal and org pages use the same Supabase table, scoped to
+ * whichever quarter is selected. Emails go out to every org in the dataset,
+ * so when a recipient clicks Download we look up their org from the full
+ * `organizations_full` table as well.
  *
- * We select only the columns the renderer needs. `organizations_full` is a
- * view, not a table, so this is a read against materialized data — no heavy
- * joins at request time.
+ * We select only the columns the renderer needs from the materialized
+ * `organizations_full` table — no heavy joins at request time.
  */
 
 export type ShareCardLookup = {
@@ -23,10 +22,7 @@ export type ShareCardLookup = {
   quarterLabel: string;
 };
 
-// Quarter IDs are short text tokens assigned by the ingest script, e.g.
-// "Q12026". Accept any short alphanumeric string (with `_`/`-`) so the format
-// can evolve without code changes; the DB lookup is the source of truth.
-const QUARTER_ID_RE = /^[A-Za-z0-9_-]{1,32}$/;
+const QUARTER_ID_RE = /^Q[1-4]_\d{4}$/;
 
 export function isQuarterId(value: string | null | undefined): value is string {
   return !!value && QUARTER_ID_RE.test(value);
