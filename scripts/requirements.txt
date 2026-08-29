@@ -3,7 +3,7 @@
 # Install into the same environment used for methodology/release work:
 #     python -m pip install -r methodology/requirements.txt -r scripts/requirements.txt
 
-pandas==3.0.3
+pandas==3.0.5
 pyarrow==24.0.0
 supabase==2.31.0
 python-dotenv==1.2.2
