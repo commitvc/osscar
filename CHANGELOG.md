@@ -2,6 +2,26 @@
 
 All notable changes to the OSS Growth Index are documented here. Each quarterly release includes methodology, data, and frontend changes.
 
+## Q3 2026
+
+**Release tag:** `v2026.Q3`
+
+### Methodology
+
+- Methodology v9 caps each signal's growth at its 99.9th percentile within the division before log-minmax scaling; equal capped scores are ordered by the uncapped score.
+- GitHub stars use the active stock net of removed stars; organizations whose pre-quarter repositories lack a star baseline are not ranked, and repositories GitHub no longer resolves are left out of star counts.
+- Packages linked to several repositories of one organization count once; forks and archived repositories are excluded.
+
+### Data
+
+- 56,079 organizations across the emerging and scaling divisions.
+- Q3 2026 spans July 1 through September 30, with weekly chart buckets from July 5 through September 27.
+
+### Frontend
+
+- The Q3 top 100 is revealed in weekday batches from October 21 to November 2.
+- Next.js 16.4.2 and sharp 0.35.5 address production security advisories.
+
 ## Q2 2026
 
 **Release tag:** `v2026.Q2`

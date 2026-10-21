@@ -7,6 +7,7 @@ produce correct, deterministic results.
 from pathlib import Path
 import sys
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -141,6 +142,87 @@ class TestLogMinmax:
         # Scores should be monotonically increasing
         for i in range(len(result) - 1):
             assert result.iloc[i] < result.iloc[i + 1]
+
+
+class TestGrowthCap:
+    def test_single_extreme_value_does_not_compress_other_scores(self):
+        growth = pd.Series(list(np.linspace(0.0, 10.0, 2000)) + [1e6])
+        scores = ci.log_minmax(ci.cap_growth(growth))
+        assert scores.iloc[-1] == pytest.approx(100.0)
+        # Uncapped, the organization just below the outlier would score ~17.
+        assert scores.iloc[-2] > 99.0
+
+    def test_cap_keeps_ordering_below_the_cap(self):
+        growth = pd.Series(np.linspace(0.0, 10.0, 2000))
+        capped = ci.cap_growth(growth)
+        below = growth < capped.max()
+        assert capped[below].equals(growth[below])
+
+    def test_displayed_growth_is_not_capped(self, scored_df: pd.DataFrame):
+        expected = ci.quarter_growth(scored_df["github_stars_start"], scored_df["github_stars_end"])
+        pd.testing.assert_series_equal(
+            scored_df["github_stars_growth_rate"], expected, check_names=False
+        )
+
+
+class TestCapTies:
+    def test_equal_capped_scores_rank_by_uncapped_growth(self):
+        growth = list(np.linspace(0.0, 1.0, 3000)) + [50.0, 5000.0]
+        frame = pd.DataFrame({
+            "owner_id": [str(i) for i in range(len(growth))],
+            "owner_login": [f"org-{i}" for i in range(len(growth))],
+            "github_stars_start": 100.0,
+            "github_stars_end": [100.0 * (1 + g) for g in growth],
+        })
+        frame["division"] = "emerging"
+
+        for metric in [m for m in ci.active_metrics() if m.key != "github_stars"]:
+            frame[metric.start_col] = np.nan
+            frame[metric.end_col] = np.nan
+        frame = ci.add_metric_growth_scores(frame, ci.active_metrics())
+        frame = ci.add_metric_weights_and_score(frame, ci.active_metrics())
+        frame = ci.add_ranks(frame)
+        fast, faster = frame.iloc[-2], frame.iloc[-1]
+        assert fast["composite_score"] == pytest.approx(faster["composite_score"])
+        assert faster["division_rank"] == 1
+        assert fast["division_rank"] == 2
+
+
+class TestRankTies:
+    @staticmethod
+    def ranked(frame: pd.DataFrame) -> pd.DataFrame:
+        frame["division"] = "emerging"
+        frame = ci.add_metric_growth_scores(frame, ci.active_metrics())
+        frame = ci.add_metric_weights_and_score(frame, ci.active_metrics())
+        return ci.add_ranks(frame)
+
+    def test_identical_organizations_share_a_rank_and_skip_the_next(self):
+        frame = pd.DataFrame({
+            "owner_login": ["a", "b", "c"],
+            "github_stars_start": [100.0, 100.0, 100.0],
+            "github_stars_end": [400.0, 400.0, 200.0],
+        })
+        for metric in ci.active_metrics():
+            if metric.key != "github_stars":
+                frame[metric.start_col] = np.nan
+                frame[metric.end_col] = np.nan
+        ranks = self.ranked(frame).set_index("owner_login")["division_rank"]
+        assert ranks.to_dict() == {"a": 1, "b": 1, "c": 3}
+
+    def test_missing_signals_count_as_zero_in_the_tiebreak(self):
+        frame = pd.DataFrame({
+            "owner_login": ["stars-only", "two-signals", "other"],
+            "github_stars_start": [100.0, 100.0, 100.0],
+            "github_stars_end": [400.0, 400.0, 150.0],
+            "github_contributors_start": [np.nan, 5.0, 5.0],
+            "github_contributors_end": [np.nan, 10.0, 6.0],
+            "package_downloads_start": [np.nan, np.nan, np.nan],
+            "package_downloads_end": [np.nan, np.nan, np.nan],
+        })
+        ranked = self.ranked(frame)
+        assert ranked["composite_tiebreak"].notna().all()
+        ranks = ranked.set_index("owner_login")["division_rank"]
+        assert ranks["two-signals"] < ranks["stars-only"]
 
 
 class TestPaddingThresholds:

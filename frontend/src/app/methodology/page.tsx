@@ -42,7 +42,7 @@ function Prose({ children }: { children: React.ReactNode }) {
 
 function MetricTable() {
   const metrics = [
-    { key: "github_stars", label: "GitHub Stars", family: "github", description: "Net new stars on the org's repos" },
+    { key: "github_stars", label: "GitHub Stars", family: "github", description: "Active stars on the org's repos, net of removed stars" },
     { key: "github_contributors", label: "GitHub Contributors", family: "github", description: "Unique contributors across the org's repos" },
     { key: "package_downloads", label: "Package Downloads", family: "usage", description: "Aggregated download count across npm, PyPI, and Cargo (sum of available registries)" },
   ]
@@ -214,7 +214,7 @@ export default function MethodologyPage() {
             <MetricTable />
             <Prose>
               <p className="mt-6">
-                Package downloads aggregate npm, PyPI, and Cargo. If an org only publishes to one or two registries, we sum the available values instead of penalizing it for the ones it&rsquo;s missing. An org with no data across all three registries gets a null for this signal.
+                Package downloads aggregate npm, PyPI, and Cargo. If an org only publishes to one or two registries, we sum the available values instead of penalizing it for the ones it&rsquo;s missing. An org with no data across all three registries gets a null for this signal. A package linked to several repositories of the same org counts once.
               </p>
               <p>
                 The observed quarterly growth rate is:
@@ -262,6 +262,9 @@ export default function MethodologyPage() {
                   </li>
                 ))}
               </ul>
+              <p className="mt-4">
+                Stars also decide the division, so the starting star count must be complete. Every repository that existed before the quarter needs a star measurement at the first bucket, or in the four weeks before it. Otherwise the org&rsquo;s starting stars are unknown, and it is not ranked that quarter rather than having the unmeasured repositories counted as growth. Repositories GitHub no longer resolves (deleted or no longer public) are left out of the org&rsquo;s star count entirely.
+              </p>
             </Prose>
           </Section>
 
@@ -280,18 +283,19 @@ export default function MethodologyPage() {
               </p>
             </Prose>
             <Formula>
-              <div>1. log_val = log(1 + padded_growth_rate)</div>
-              <div className="mt-1">2. score = (log_val − min) / (max − min) × 100</div>
+              <div>1. capped = min(padded_growth_rate, p99.9 of padded_growth_rate)</div>
+              <div className="mt-1">2. log_val = log(1 + capped)</div>
+              <div className="mt-1">3. score = (log_val − min) / (max − min) × 100</div>
             </Formula>
             <Prose>
               <p>
                 The logarithm compresses the long tail of growth rates while keeping real separation between a 10× and a 1,000× grower. The min-max step then maps the distribution to <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">[0, 100]</code>, so scores are directly comparable across signals.
               </p>
               <p>
-                We don&rsquo;t clip. If one org grows exceptionally fast, it anchors the maximum and pushes everyone else down. That&rsquo;s the point. An exceptional grower should stand out on the leaderboard, and log-minmax makes that visible in a way percentiles can&rsquo;t.
+                Until v8 we did not cap, on the reasoning that an exceptional grower should anchor the maximum and stand out. In Q3 2026 that broke down: one organization&rsquo;s package downloads grew more than 200 times faster than the next one&rsquo;s, which pushed every other organization in its division toward a package score of zero. Since v9, each signal&rsquo;s growth is capped at its 99.9th percentile within the division before scaling. Every organization at or above the cap scores 100, so exceptional growers still lead, but a single extreme value no longer sets the scale for everyone else. The growth rates shown on the site are never capped.
               </p>
               <p>
-                Both <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">min</code> and <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">max</code> are computed only over eligible organizations in the same division for that signal.
+                The percentile, <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">min</code>, and <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/80">max</code> are computed only over eligible organizations in the same division for that signal.
               </p>
             </Prose>
           </Section>
@@ -352,7 +356,7 @@ export default function MethodologyPage() {
             <Prose>
               <p>
                 Organizations are ranked by their composite score in descending order, within each division on its own.
-                Ties are broken by minimum rank (tied organizations share the same rank number).
+                Equal composite scores, which the growth cap makes possible, are ordered by the composite computed without the cap, so the cap never hides which organization grew faster. Organizations still equal after that share the same rank number.
               </p>
               <p>
                 Division assignment is based on stars at the first retained weekly bucket, so the ranking reflects growth over one consistent weekly measurement window and peer group.
@@ -370,6 +374,7 @@ export default function MethodologyPage() {
                   { k: "Weekly data collection", v: "We use Sunday-dated weekly buckets inside each quarter. The first and last retained buckets define both methodology growth and chart endpoints; partial calendar weeks are not split into daily estimates." },
                   { k: "Package coverage", v: "We currently track downloads from three registries: npm, PyPI, and Cargo. Orgs that publish to other ecosystems (Maven, RubyGems, NuGet, Go modules, Hex, and others) are effectively ranked on stars and contributors alone. We plan to expand registry coverage over time." },
                   { k: "Short-term growth bias", v: "Because the index measures a single quarter, mature projects that have plateaued at high adoption can rank poorly, even when they\u2019re foundational to their ecosystem. The index is a picture of momentum, not of importance." },
+                  { k: "No filtering of inauthentic activity", v: "Rankings use the public numbers as they are. Stars, contributors, and downloads can be inflated, for example by bought stars, classroom repositories, or packages that are always installed together, and the index does not currently detect or exclude such activity." },
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm text-muted-foreground">
                     <span className="font-mono text-green mt-0.5 shrink-0">›</span>

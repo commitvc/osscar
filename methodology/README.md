@@ -2,7 +2,7 @@
 
 This directory contains the scoring pipeline used to compute the OSS Growth Index rankings. The methodology is designed to be fully reproducible: given the same input data, it produces identical results.
 
-**Current version:** v8 (in-quarter weekly boundaries with log-minmax/L² scoring)
+**Current version:** v9 (log-minmax scoring capped at the 99.9th percentile, L² composite)
 
 ## How it works
 
@@ -10,7 +10,7 @@ This directory contains the scoring pipeline used to compute the OSS Growth Inde
 2. **Assign divisions**: emerging (<1,000 stars) and scaling (>=1,000 stars)
 3. **Aggregate package downloads**: npm + PyPI + Cargo combined into one metric
 4. **Compute growth rates** with padding thresholds to prevent distortion at small baselines
-5. **Score** each metric via log(1 + padded growth rate), then min-max scale to [0, 100]
+5. **Score** each metric via log(1 + padded growth rate capped at its 99.9th percentile within the division), then min-max scale to [0, 100]
 6. **Composite score** = L² norm of eligible metric scores: `sqrt(Σ score_i²)` (breadth-rewarding, with extra weight on standout performance)
 7. **Rank** within each division by composite score
 
@@ -69,9 +69,10 @@ These constants at the top of `compute_index.py` control the methodology:
 
 | Constant | Value | Description |
 |----------|-------|-------------|
-| `METHODOLOGY_VERSION` | `v8` | Version identifier for this methodology |
+| `METHODOLOGY_VERSION` | `v9` | Version identifier for this methodology |
 | `DIVISION_STARS_THRESHOLD` | `1000` | Star count boundary between divisions |
 | `GROWTH_SCORE_TRANSFORM` | `log_minmax` | Scoring function applied to growth rates |
+| `GROWTH_SCORE_CAP_QUANTILE` | `0.999` | Growth above this division percentile scores 100 |
 | `WEIGHTING_MODE` | `l2_norm` | How metric scores are aggregated |
 
 ### Padding thresholds

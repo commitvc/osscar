@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""Compute OSS Growth Index results (org-based, v8).
+"""Compute OSS Growth Index results (org-based, v9).
+
+Changes in v9:
+  - Before log-minmax scaling, each signal's padded growth is capped at its
+    99.9th percentile within the division. One extreme organization no longer
+    sets the scale for everyone else: every organization at or above the cap
+    scores 100. Displayed growth rates and percentiles are unchanged.
+  - Equal composite scores are ordered by the uncapped composite, so the cap
+    never hides which organization grew faster.
 
 Changes in v8:
   - Start/end methodology values are the first and last published weekly
@@ -19,7 +27,7 @@ Changes in v7:
 
 from __future__ import annotations
 
-METHODOLOGY_VERSION = "v8"
+METHODOLOGY_VERSION = "v9"
 
 import argparse
 from dataclasses import dataclass
@@ -42,6 +50,7 @@ DIVISION_ORDER = ["emerging", "scaling"]
 DIVISION_STARS_THRESHOLD = 1000.0
 DIVISION_SOURCE_COLUMN = "github_stars_start"
 GROWTH_SCORE_TRANSFORM = "log_minmax"
+GROWTH_SCORE_CAP_QUANTILE = 0.999
 INCLUDE_WEB_METRIC = False
 INCLUDE_HUGGINGFACE_METRICS = False
 WEIGHTING_MODE = "l2_norm"
@@ -148,6 +157,27 @@ def log_minmax(values: pd.Series) -> pd.Series:
     return (log_vals - lo) / (hi - lo) * 100.0
 
 
+def transform_growth(values: pd.Series, growth_percentiles: pd.Series) -> pd.Series:
+    if GROWTH_SCORE_TRANSFORM == "z_score":
+        return z_score(values)
+    if GROWTH_SCORE_TRANSFORM == "robust_scaler":
+        return robust_scale(values)
+    if GROWTH_SCORE_TRANSFORM == "growth_percentile":
+        return growth_percentiles
+    if GROWTH_SCORE_TRANSFORM == "log_minmax":
+        return log_minmax(values)
+    raise ValueError(f"Unknown growth score transform: {GROWTH_SCORE_TRANSFORM}")
+
+
+def cap_growth(values: pd.Series) -> pd.Series:
+    """Cap growth at the division's GROWTH_SCORE_CAP_QUANTILE before scaling.
+
+    Min-max scaling anchors 100 on the single largest value, so one extreme
+    organization would otherwise compress every other score toward zero.
+    """
+    return values.clip(upper=values.quantile(GROWTH_SCORE_CAP_QUANTILE))
+
+
 def quarter_growth(start: pd.Series, end: pd.Series) -> pd.Series:
     growth = (end - start) / start
     return growth.where(start != 0)
@@ -192,8 +222,8 @@ def add_metric_growth_scores(df: pd.DataFrame, metrics: List[MetricSpec]) -> pd.
     for metric in metrics:
         padding_col = f"{metric.key}_padding_threshold"
         padded_start_col = f"{metric.key}_start_for_growth"
-        # Real rate (end - start) / start — shown to users; never negative for
-        # monotonic metrics. Padded rate is kept for scoring only.
+        # Real rate (end - start) / start — shown to users; negative when stars,
+        # a net stock, decline. Padded rate is kept for scoring only.
         growth_col = f"{metric.key}_growth_rate"
         padded_growth_col = f"{metric.key}_padded_growth_rate"
         eligible_col = f"{metric.key}_eligible_for_scoring"
@@ -201,6 +231,7 @@ def add_metric_growth_scores(df: pd.DataFrame, metrics: List[MetricSpec]) -> pd.
         pct_col = f"{metric.key}_growth_percentile"
         size_pct_col = f"{metric.key}_size_percentile"
         score_col = f"{metric.key}_score_for_aggregation"
+        uncapped_score_col = f"{metric.key}_uncapped_score"
 
         df[padding_col] = padding_threshold_for_metric(metric.key, df["division"])
         df[padded_start_col] = np.nan
@@ -226,6 +257,7 @@ def add_metric_growth_scores(df: pd.DataFrame, metrics: List[MetricSpec]) -> pd.
         df[pct_col] = np.nan
         df[size_pct_col] = np.nan
         df[score_col] = np.nan
+        df[uncapped_score_col] = np.nan
 
         group_cols = list(quarter_group_cols) + ["division"]
         valid_mask = df[eligible_col] & df["division"].notna()
@@ -238,16 +270,8 @@ def add_metric_growth_scores(df: pd.DataFrame, metrics: List[MetricSpec]) -> pd.
             values = df.loc[idx_list, padded_growth_col]
             size_values = df.loc[idx_list, metric.end_col]
             growth_percentiles = percentile_rank(values)
-            if GROWTH_SCORE_TRANSFORM == "z_score":
-                growth_scores = z_score(values)
-            elif GROWTH_SCORE_TRANSFORM == "robust_scaler":
-                growth_scores = robust_scale(values)
-            elif GROWTH_SCORE_TRANSFORM == "growth_percentile":
-                growth_scores = growth_percentiles
-            elif GROWTH_SCORE_TRANSFORM == "log_minmax":
-                growth_scores = log_minmax(values)
-            else:
-                raise ValueError(f"Unknown growth score transform: {GROWTH_SCORE_TRANSFORM}")
+            growth_scores = transform_growth(cap_growth(values), growth_percentiles)
+            df.loc[idx_list, uncapped_score_col] = transform_growth(values, growth_percentiles)
             size_scores = percentile_rank(size_values)
             df.loc[idx_list, z_col] = growth_scores
             df.loc[idx_list, pct_col] = growth_percentiles
@@ -325,6 +349,11 @@ def add_metric_weights_and_score(df: pd.DataFrame, metrics: List[MetricSpec]) ->
 
     df["composite_score"] = np.nan
     df.loc[valid_denominator, "composite_score"] = composite.loc[valid_denominator]
+    uncapped = np.sqrt(sum(
+        df[f"{metric.key}_uncapped_score"].clip(lower=0.0).fillna(0.0).pow(2) for metric in metrics
+    ))
+    df["composite_tiebreak"] = np.nan
+    df.loc[valid_denominator, "composite_tiebreak"] = uncapped.loc[valid_denominator]
     df["metric_count"] = df[[f"{metric.key}_score_for_aggregation" for metric in metrics]].notna().sum(axis=1)
     df["family_count"] = df["metric_count"]
     return df
@@ -340,12 +369,14 @@ def add_ranks(df: pd.DataFrame) -> pd.DataFrame:
     if eligible.empty:
         return df
 
+    order_cols = ["composite_score", "composite_tiebreak"]
     grouped = eligible.groupby(group_cols, dropna=False)
     for _, idx in grouped.groups.items():
-        idx_list = list(idx)
-        df.loc[idx_list, "division_rank"] = (
-            df.loc[idx_list, "composite_score"].rank(method="min", ascending=False)
-        )
+        ordered = df.loc[list(idx), order_cols].sort_values(order_cols, ascending=False)
+        # Rows equal on both keys share the rank of their first position ("min").
+        position = pd.Series(np.arange(1, len(ordered) + 1), index=ordered.index)
+        ties_before = ordered.groupby(order_cols, sort=False).cumcount()
+        df.loc[ordered.index, "division_rank"] = position - ties_before
     return df
 
 
