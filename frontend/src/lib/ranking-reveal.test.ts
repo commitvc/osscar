@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   filterRankingsForReveal,
   getRankingReveal,
+  isRankRevealed,
 } from "./ranking-reveal";
 
 test("keeps quarters without a campaign fully revealed", () => {
@@ -149,4 +150,13 @@ test("rejects invalid reveal times", () => {
     () => getRankingReveal("Q2_2026", "emerging", new Date("invalid")),
     /valid date/,
   );
+});
+
+test("keeps unrevealed top ranks private while ranks beyond the top 100 stay public", () => {
+  const thursdayNoon = new Date("2026-10-22T10:00:00.000Z");
+  assert.equal(isRankRevealed("Q3_2026", { division: "emerging", division_rank: 26 }, thursdayNoon), true);
+  assert.equal(isRankRevealed("Q3_2026", { division: "emerging", division_rank: 25 }, thursdayNoon), false);
+  assert.equal(isRankRevealed("Q3_2026", { division: "scaling", division_rank: 90 }, thursdayNoon), false);
+  assert.equal(isRankRevealed("Q3_2026", { division: "scaling", division_rank: 101 }, thursdayNoon), true);
+  assert.equal(isRankRevealed("Q1_2026", { division: "scaling", division_rank: 1 }, thursdayNoon), true);
 });

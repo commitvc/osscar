@@ -33,9 +33,10 @@ export default async function Home({ searchParams }: Props) {
   if (!quarter) notFound()
 
   const rankings = await getRankingsForQuarter(quarter)
+  const now = new Date()
   const reveals = {
-    emerging: getRankingReveal(quarter.id, "emerging"),
-    scaling: getRankingReveal(quarter.id, "scaling"),
+    emerging: getRankingReveal(quarter.id, "emerging", now),
+    scaling: getRankingReveal(quarter.id, "scaling", now),
   }
   const emerging = filterRankingsForReveal(rankings.emerging, reveals.emerging)
   const scaling = filterRankingsForReveal(rankings.scaling, reveals.scaling)

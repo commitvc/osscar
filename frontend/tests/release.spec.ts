@@ -4,7 +4,7 @@ import {
   getFirstAvailableRankingPageIndex,
   getRankingPageRange,
 } from "../src/lib/ranking-pagination";
-import { getRankingReveal, type RankingReveal } from "../src/lib/ranking-reveal";
+import { getRankingReveal, isRankRevealed, type RankingReveal } from "../src/lib/ranking-reveal";
 
 const releaseQuarterId = process.env.OSSCAR_RELEASE_QUARTER_ID ?? null;
 const expectedQuarterLabel = process.env.OSSCAR_RELEASE_QUARTER_LABEL ?? null;
@@ -318,6 +318,10 @@ test.describe("published quarter release surface", () => {
 
   test("draws no hover line over weeks without data", async ({ page, isMobile }) => {
     test.skip(isMobile, "Hovering needs a pointer; touch devices have no hover line.");
+    test.skip(
+      !isRankRevealed("Q3_2026", { division: "emerging", division_rank: 51 }),
+      "intrinsic-ai (emerging #51) is not revealed yet.",
+    );
     // intrinsic-ai (Q3 2026) has no star data before September 6.
     await page.goto("/org/intrinsic-ai?quarter=Q3_2026");
     const chart = page.getByTestId("growth-chart-renderer");

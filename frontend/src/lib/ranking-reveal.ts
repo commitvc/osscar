@@ -132,3 +132,16 @@ export function filterRankingsForReveal<T extends Pick<Org, "division_rank">>(
       org.division_rank <= reveal.totalRankCount,
   );
 }
+
+/**
+ * Whether an organization's rank is public: its division has reached it, or it
+ * sits outside the published top ranks, which are never staged.
+ */
+export function isRankRevealed(
+  quarterId: string,
+  org: Pick<Org, "division" | "division_rank">,
+  now: Date = new Date(),
+): boolean {
+  const reveal = getRankingReveal(quarterId, org.division, now);
+  return org.division_rank >= reveal.visibleFromRank || org.division_rank > reveal.totalRankCount;
+}
