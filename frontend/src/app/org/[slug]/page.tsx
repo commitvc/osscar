@@ -279,7 +279,7 @@ export default async function OrgPage({ params, searchParams }: Props) {
       label: "Stars",
       data: org.github_stars_weekly,
       color: BRAND,
-      periodLabel: "cumulative stars",
+      periodLabel: "active stars",
     },
     {
       key: "contributors",
@@ -293,21 +293,21 @@ export default async function OrgPage({ params, searchParams }: Props) {
       label: "NPM",
       data: org.npm_weekly,
       color: BRAND,
-      periodLabel: "weekly downloads",
+      periodLabel: "cumulative downloads",
     },
     {
       key: "pypi",
       label: "PyPI",
       data: org.pypi_weekly,
       color: BRAND,
-      periodLabel: "weekly downloads",
+      periodLabel: "cumulative downloads",
     },
     {
       key: "cargo",
       label: "Cargo",
       data: org.cargo_weekly,
       color: BRAND,
-      periodLabel: "weekly downloads",
+      periodLabel: "cumulative downloads",
     },
   ];
 

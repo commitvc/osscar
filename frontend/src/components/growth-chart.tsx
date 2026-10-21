@@ -8,12 +8,15 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  ReferenceArea,
 } from "recharts";
 import type { TimeSeriesPoint } from "@/types";
 import { formatCompact, cn } from "@/lib/utils";
 import {
+  alignToQuarterBuckets,
   formatMonthTick,
   getMonthlyTickDates,
+  getQuarterBucketDates,
 } from "@/lib/chart-months";
 
 const CHART_HEIGHT = 336;
@@ -44,6 +47,7 @@ function CustomTooltip({ active, payload, label, color, periodLabel }: CustomToo
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   });
 
   return (
@@ -154,16 +158,33 @@ export function GrowthChart({ metrics, quarterStart, quarterEnd }: GrowthChartPr
   }
 
   const gradientId = `gradient-${id}-${current.key}`;
-  const filteredData = current.data;
-  const monthTicks = getMonthlyTickDates(filteredData);
+  // Every signal shares the full quarter axis; weeks before the first
+  // observation stay empty instead of being drawn as zero.
+  const buckets = getQuarterBucketDates(quarterStart, quarterEnd);
+  const chartData = alignToQuarterBuckets(current.data, buckets);
+  const firstObserved = chartData.findIndex((point) => point.value != null);
+  const monthTicks = getMonthlyTickDates(chartData);
   const visibleMonthDates = new Set(monthTicks);
+  const noDataLabel =
+    firstObserved > 0
+      ? `No data before ${new Date(`${buckets[firstObserved]}T00:00:00Z`).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          timeZone: "UTC",
+        })}`
+      : null;
+  // A line needs two adjacent points; an observation between gaps is drawn as a dot.
+  const isIsolated = (index: number) =>
+    chartData[index]?.value != null &&
+    chartData[index - 1]?.value == null &&
+    chartData[index + 1]?.value == null;
 
   return (
     <div
       className="space-y-4"
       data-testid="growth-chart"
       data-active-key={current.key}
-      data-active-point-count={filteredData.length}
+      data-active-point-count={current.data.length}
     >
       {/* Metric toggle */}
       <div className="flex flex-wrap gap-2">
@@ -195,7 +216,7 @@ export function GrowthChart({ metrics, quarterStart, quarterEnd }: GrowthChartPr
           <AreaChart
             width={chartWidth}
             height={CHART_HEIGHT}
-            data={filteredData}
+            data={chartData}
             margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
           >
             <defs>
@@ -234,7 +255,7 @@ export function GrowthChart({ metrics, quarterStart, quarterEnd }: GrowthChartPr
               type="number"
               interval="preserveStartEnd"
               ticks={(() => {
-                const maxVal = Math.max(...filteredData.map(d => d.value));
+                const maxVal = Math.max(...current.data.map(d => d.value));
                 const steps = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000];
                 const step = steps.find(s => maxVal / s <= 6) ?? steps[steps.length - 1];
                 const ticks: number[] = [];
@@ -254,13 +275,45 @@ export function GrowthChart({ metrics, quarterStart, quarterEnd }: GrowthChartPr
               }
               cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
             />
+            {noDataLabel && (
+              <ReferenceArea
+                x1={buckets[0]}
+                x2={buckets[firstObserved]}
+                fill="rgba(255,255,255,0.05)"
+                fillOpacity={1}
+                stroke="none"
+                ifOverflow="visible"
+                label={{
+                  value: noDataLabel,
+                  position: "insideTopLeft",
+                  fill: "rgba(255,255,255,0.4)",
+                  fontSize: 10,
+                  fontFamily: "var(--font-mono)",
+                }}
+                data-testid="growth-chart-no-data"
+              />
+            )}
             <Area
               type="linear"
+              connectNulls={false}
               dataKey="value"
               stroke={current.color}
               strokeWidth={2}
               fill={`url(#${gradientId})`}
-              dot={false}
+              dot={(props: { cx?: number; cy?: number; index?: number }) =>
+                props.index != null && props.cx != null && props.cy != null && isIsolated(props.index) ? (
+                  <circle
+                    key={`isolated-${props.index}`}
+                    cx={props.cx}
+                    cy={props.cy}
+                    r={3}
+                    fill={current.color}
+                    data-testid="growth-chart-isolated-point"
+                  />
+                ) : (
+                  <g key={`no-dot-${props.index}`} />
+                )
+              }
               activeDot={{
                 r: 4,
                 fill: current.color,

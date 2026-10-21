@@ -43,9 +43,9 @@ The parquet also carries weekly time-series arrays and a per-repository detail a
 |---|---|---|
 | `github_stars_weekly` | `{ date, value }` | Weekly active-star counts over the quarter, net of removed stars, so values can decrease |
 | `github_contributors_weekly` | `{ date, value }` | Cumulative weekly contributor counts |
-| `npm_weekly` | `{ date, value }` | Weekly npm download counts |
-| `pypi_weekly` | `{ date, value }` | Weekly PyPI download counts |
-| `cargo_weekly` | `{ date, value }` | Weekly Cargo download counts |
+| `npm_weekly` | `{ date, value }` | Cumulative npm downloads at each weekly bucket |
+| `pypi_weekly` | `{ date, value }` | Cumulative PyPI downloads at each weekly bucket |
+| `cargo_weekly` | `{ date, value }` | Cumulative Cargo downloads at each weekly bucket |
 | `repositories` | see [repository object](#repository-object) | Per-repository detail for the org |
 
 ### Weekly time-series point schema
