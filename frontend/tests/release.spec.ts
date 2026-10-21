@@ -314,6 +314,23 @@ test.describe("published quarter release surface", () => {
     }
   });
 
+  test("draws no hover line over weeks without data", async ({ page, isMobile }) => {
+    test.skip(isMobile, "Hovering needs a pointer; touch devices have no hover line.");
+    // intrinsic-ai (Q3 2026) has no star data before September 6.
+    await page.goto("/org/intrinsic-ai?quarter=Q3_2026");
+    const chart = page.getByTestId("growth-chart-renderer");
+    await expect(page.getByTestId("growth-chart")).toHaveAttribute("data-active-key", "stars");
+    await chart.scrollIntoViewIfNeeded();
+    const box = await chart.boundingBox();
+    expect(box, "chart bounding box").not.toBeNull();
+
+    await page.mouse.move(box!.x + box!.width * 0.4, box!.y + box!.height / 2);
+    await expect(page.getByTestId("growth-chart-hover-cursor")).toHaveCount(0);
+
+    await page.mouse.move(box!.x + box!.width * 0.985, box!.y + box!.height / 2);
+    await expect(page.getByTestId("growth-chart-hover-cursor")).toHaveCount(1);
+  });
+
   test("uses methodology multipliers on the leaderboard", async ({ page }) => {
     await page.goto("/?quarter=Q2_2026");
 

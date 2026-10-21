@@ -70,10 +70,16 @@ interface HoverCursorProps {
   payload?: ReadonlyArray<{ value?: number | null }>;
 }
 
-/** Hover line, drawn only on weeks that have an observation. */
+/**
+ * Hover line, drawn only on weeks that have an observation. The tooltip drops
+ * null values, so a week without data arrives with an empty payload.
+ */
 function HoverCursor({ points, payload }: HoverCursorProps) {
-  const [start, end] = points ?? [];
-  if (payload?.[0]?.value == null || !start || !end) return null;
+  if (payload?.[0]?.value == null) return null;
+  if (points?.length !== 2) {
+    throw new Error("Recharts must pass the two endpoints of the hover line");
+  }
+  const [start, end] = points;
   return (
     <line
       x1={start.x}
