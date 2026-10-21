@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import { findOrgBySlugForQuarter, resolveQuarter } from "@/lib/data";
+import { isRankRevealed } from "@/lib/ranking-reveal";
 import {
   getInterBold,
   readPublicAsBase64,
@@ -118,7 +119,7 @@ export async function GET(request: NextRequest) {
   }
 
   const org = await findOrgBySlugForQuarter(slug, quarter);
-  if (!org) return new Response("Not found", { status: 404 });
+  if (!org || !isRankRevealed(quarter.id, org)) return new Response("Not found", { status: 404 });
 
   const isLight = variant === "light" || variant === "compact-light";
   const isCompact = variant === "compact" || variant === "compact-light";

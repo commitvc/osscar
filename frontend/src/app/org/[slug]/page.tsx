@@ -13,6 +13,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { OrgLogo } from "@/components/org-logo";
 import { GrowthChart, type MetricConfig } from "@/components/growth-chart";
+import { isRankRevealed } from "@/lib/ranking-reveal";
 import { ShareButton } from "@/components/share-button";
 import { EmbedButton } from "@/components/embed-button";
 import { RepoTable } from "@/components/repo-table";
@@ -58,7 +59,7 @@ export async function generateMetadata({
 
   const org = await findOrgBySlugForQuarter(slug, quarter);
 
-  if (!org) return { title: { absolute: "OSSCAR" } };
+  if (!org || !isRankRevealed(quarter.id, org)) return { title: { absolute: "OSSCAR" } };
 
   const score = computeScore(org);
   const ogParams = new URLSearchParams({ slug });
@@ -235,7 +236,8 @@ export default async function OrgPage({ params, searchParams }: Props) {
   if (!quarter) notFound();
 
   const org = await findOrgBySlugForQuarter(slug, quarter);
-  if (!org) notFound();
+  // An organization whose rank is still in the staged reveal has no public page.
+  if (!org || !isRankRevealed(quarter.id, org)) notFound();
   const orgQuarters = await getPublishedQuartersForOrg(slug, quarters);
   const quarterParam = quarter.is_current ? null : quarter.id;
 

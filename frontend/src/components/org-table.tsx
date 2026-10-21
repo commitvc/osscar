@@ -529,12 +529,13 @@ interface OrgTableProps {
   scaling: Org[]
   packageSources?: Record<string, string[]>
   quarterId?: string | null
-  reveal: RankingReveal
+  reveals: Readonly<Record<Division, RankingReveal>>
   searchSlot?: React.ReactNode
 }
 
-export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, reveal, searchSlot }: OrgTableProps) {
+export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, reveals, searchSlot }: OrgTableProps) {
   const [activeDivision, setActiveDivision] = useState<Division>("emerging")
+  const reveal = reveals[activeDivision]
   const hasRevealedRankings = reveal.visibleFromRank <= reveal.totalRankCount
   const firstAvailablePageIndex = getFirstAvailableRankingPageIndex(
     reveal.visibleFromRank,
@@ -826,7 +827,12 @@ export function OrgTable({ emerging, scaling, packageSources = {}, quarterId, re
 
   function handleDivisionChange(division: Division) {
     setActiveDivision(division)
-    setPageIndex(firstAvailablePageIndex)
+    setPageIndex(
+      getFirstAvailableRankingPageIndex(
+        reveals[division].visibleFromRank,
+        reveals[division].totalRankCount,
+      ),
+    )
   }
 
   return (

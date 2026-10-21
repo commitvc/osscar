@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { findOrgBySlugForQuarter, resolveQuarter } from "@/lib/data";
+import { isRankRevealed } from "@/lib/ranking-reveal";
 import { normalizeLogin } from "@/lib/normalize-login";
 import {
   getShareCardByLogin,
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest) {
       return quarterParam ? bad(400, "Invalid quarter") : bad(500, "No current quarter");
     }
     const org = await findOrgBySlugForQuarter(normalized, quarter);
-    if (!org) return new Response("Not found", { status: 404 });
+    if (!org || !isRankRevealed(quarter.id, org)) return new Response("Not found", { status: 404 });
     quarterLabel = quarter.label;
     card = {
       owner_login: org.owner_login,
