@@ -8,12 +8,15 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  ReferenceArea,
 } from "recharts";
 import type { TimeSeriesPoint } from "@/types";
 import { formatCompact, cn } from "@/lib/utils";
 import {
+  alignToQuarterBuckets,
   formatMonthTick,
   getMonthlyTickDates,
+  getQuarterBucketDates,
 } from "@/lib/chart-months";
 
 const CHART_HEIGHT = 336;
@@ -154,16 +157,25 @@ export function GrowthChart({ metrics, quarterStart, quarterEnd }: GrowthChartPr
   }
 
   const gradientId = `gradient-${id}-${current.key}`;
-  const filteredData = current.data;
-  const monthTicks = getMonthlyTickDates(filteredData);
+  // Every signal shares the full quarter axis; weeks before the first
+  // observation stay empty instead of being drawn as zero.
+  const buckets = getQuarterBucketDates(quarterStart, quarterEnd);
+  const chartData = alignToQuarterBuckets(current.data, buckets);
+  const firstObserved = chartData.findIndex((point) => point.value != null);
+  const monthTicks = getMonthlyTickDates(chartData);
   const visibleMonthDates = new Set(monthTicks);
+  const firstObservedLabel = new Date(`${buckets[firstObserved]}T00:00:00Z`).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
 
   return (
     <div
       className="space-y-4"
       data-testid="growth-chart"
       data-active-key={current.key}
-      data-active-point-count={filteredData.length}
+      data-active-point-count={current.data.length}
     >
       {/* Metric toggle */}
       <div className="flex flex-wrap gap-2">
@@ -195,7 +207,7 @@ export function GrowthChart({ metrics, quarterStart, quarterEnd }: GrowthChartPr
           <AreaChart
             width={chartWidth}
             height={CHART_HEIGHT}
-            data={filteredData}
+            data={chartData}
             margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
           >
             <defs>
@@ -234,7 +246,7 @@ export function GrowthChart({ metrics, quarterStart, quarterEnd }: GrowthChartPr
               type="number"
               interval="preserveStartEnd"
               ticks={(() => {
-                const maxVal = Math.max(...filteredData.map(d => d.value));
+                const maxVal = Math.max(...current.data.map(d => d.value));
                 const steps = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000];
                 const step = steps.find(s => maxVal / s <= 6) ?? steps[steps.length - 1];
                 const ticks: number[] = [];
@@ -254,8 +266,26 @@ export function GrowthChart({ metrics, quarterStart, quarterEnd }: GrowthChartPr
               }
               cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
             />
+            {firstObserved > 0 && (
+              <ReferenceArea
+                x1={buckets[0]}
+                x2={buckets[firstObserved]}
+                fill="rgba(255,255,255,0.03)"
+                stroke="none"
+                ifOverflow="visible"
+                label={{
+                  value: `No data before ${firstObservedLabel}`,
+                  position: "insideTopLeft",
+                  fill: "rgba(255,255,255,0.4)",
+                  fontSize: 10,
+                  fontFamily: "var(--font-mono)",
+                }}
+                data-testid="growth-chart-no-data"
+              />
+            )}
             <Area
               type="linear"
+              connectNulls={false}
               dataKey="value"
               stroke={current.color}
               strokeWidth={2}

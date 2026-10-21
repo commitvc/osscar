@@ -58,3 +58,42 @@ export function formatMonthTick(date: string): string {
   const monthIndex = Number(date.slice(5, 7)) - 1;
   return MONTH_LABELS[monthIndex]!;
 }
+
+export type QuarterChartPoint = { date: string; value: number | null };
+
+function addDays(date: string, days: number): string {
+  const parsed = new Date(`${date}T00:00:00Z`);
+  parsed.setUTCDate(parsed.getUTCDate() + days);
+  return parsed.toISOString().slice(0, 10);
+}
+
+/** Sunday bucket dates inside the inclusive quarter interval. */
+export function getQuarterBucketDates(quarterStart: string, quarterEnd: string): string[] {
+  assertIsoDate(quarterStart);
+  assertIsoDate(quarterEnd);
+  const weekday = new Date(`${quarterStart}T00:00:00Z`).getUTCDay();
+  const buckets: string[] = [];
+  for (let date = addDays(quarterStart, (7 - weekday) % 7); date <= quarterEnd; date = addDays(date, 7)) {
+    buckets.push(date);
+  }
+  return buckets;
+}
+
+/**
+ * Place a series on every bucket of the quarter. Weeks without an observation
+ * stay null rather than zero: the chart must not invent values the published
+ * data does not contain.
+ */
+export function alignToQuarterBuckets(
+  points: readonly TimeSeriesPoint[],
+  buckets: readonly string[],
+): QuarterChartPoint[] {
+  const values = new Map<string, number>();
+  for (const point of points) {
+    if (!buckets.includes(point.date)) {
+      throw new Error(`Chart point ${point.date} is not a quarter bucket`);
+    }
+    values.set(point.date, point.value);
+  }
+  return buckets.map((date) => ({ date, value: values.get(date) ?? null }));
+}
