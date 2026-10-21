@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Compute OSS Growth Index results (org-based, v8).
+"""Compute OSS Growth Index results (org-based, v9).
+
+Changes in v9:
+  - Before log-minmax scaling, each signal's padded growth is capped at its
+    99.9th percentile within the division. One extreme organization no longer
+    sets the scale for everyone else: every organization at or above the cap
+    scores 100. Displayed growth rates and percentiles are unchanged.
 
 Changes in v8:
   - Start/end methodology values are the first and last published weekly
@@ -19,7 +25,7 @@ Changes in v7:
 
 from __future__ import annotations
 
-METHODOLOGY_VERSION = "v8"
+METHODOLOGY_VERSION = "v9"
 
 import argparse
 from dataclasses import dataclass
@@ -42,6 +48,7 @@ DIVISION_ORDER = ["emerging", "scaling"]
 DIVISION_STARS_THRESHOLD = 1000.0
 DIVISION_SOURCE_COLUMN = "github_stars_start"
 GROWTH_SCORE_TRANSFORM = "log_minmax"
+GROWTH_SCORE_CAP_QUANTILE = 0.999
 INCLUDE_WEB_METRIC = False
 INCLUDE_HUGGINGFACE_METRICS = False
 WEIGHTING_MODE = "l2_norm"
@@ -148,6 +155,15 @@ def log_minmax(values: pd.Series) -> pd.Series:
     return (log_vals - lo) / (hi - lo) * 100.0
 
 
+def cap_growth(values: pd.Series) -> pd.Series:
+    """Cap growth at the division's GROWTH_SCORE_CAP_QUANTILE before scaling.
+
+    Min-max scaling anchors 100 on the single largest value, so one extreme
+    organization would otherwise compress every other score toward zero.
+    """
+    return values.clip(upper=values.quantile(GROWTH_SCORE_CAP_QUANTILE))
+
+
 def quarter_growth(start: pd.Series, end: pd.Series) -> pd.Series:
     growth = (end - start) / start
     return growth.where(start != 0)
@@ -238,14 +254,15 @@ def add_metric_growth_scores(df: pd.DataFrame, metrics: List[MetricSpec]) -> pd.
             values = df.loc[idx_list, padded_growth_col]
             size_values = df.loc[idx_list, metric.end_col]
             growth_percentiles = percentile_rank(values)
+            capped_values = cap_growth(values)
             if GROWTH_SCORE_TRANSFORM == "z_score":
-                growth_scores = z_score(values)
+                growth_scores = z_score(capped_values)
             elif GROWTH_SCORE_TRANSFORM == "robust_scaler":
-                growth_scores = robust_scale(values)
+                growth_scores = robust_scale(capped_values)
             elif GROWTH_SCORE_TRANSFORM == "growth_percentile":
                 growth_scores = growth_percentiles
             elif GROWTH_SCORE_TRANSFORM == "log_minmax":
-                growth_scores = log_minmax(values)
+                growth_scores = log_minmax(capped_values)
             else:
                 raise ValueError(f"Unknown growth score transform: {GROWTH_SCORE_TRANSFORM}")
             size_scores = percentile_rank(size_values)

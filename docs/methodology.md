@@ -38,7 +38,7 @@ We track three signals per org. These are the ones we could collect consistently
 
 | Signal | Family | Description |
 |---|---|---|
-| `github_stars` | github | Net new stars on the org's repos |
+| `github_stars` | github | Active stars on the org's repos, net of removed stars |
 | `github_contributors` | github | Unique contributors across the org's repos |
 | `package_downloads` | usage | Aggregated download count across npm, PyPI, and Cargo (sum of available registries) |
 
@@ -47,6 +47,8 @@ One constraint showed up immediately: not every org has every metric. A pure Pyt
 ### Package download aggregation
 
 Package downloads sum across npm, PyPI, and Cargo. If an org publishes to only one or two registries, we sum the available values instead of penalizing it for the ones it's missing. An org with no data across all three registries gets a null for this signal.
+
+A package linked to several repositories of the same org counts once: its downloads are one registry observation, not one per repository.
 
 ### Growth rate
 
@@ -98,6 +100,18 @@ An organization is eligible for a given signal only when **all three** hold:
 
 Signals that fail any of these conditions are excluded for that organization. The organization can still be scored on the remaining eligible signals.
 
+### Complete star baseline
+
+An org's star count is the sum over its repositories, and it also decides the
+division. Every repository that existed before the quarter must therefore have
+a star measurement at the first retained bucket, or in the four weeks before
+it. If one does not, the org's starting stars are unknown: summing only the
+measured repositories would later report the missing ones as growth. Such an
+org has no division and is not ranked that quarter. Repositories created during
+the quarter count from their first measurement. Repositories GitHub no longer
+resolves, because they were deleted or are no longer public, are left out of
+their org's star count entirely: they neither block the baseline nor add stars.
+
 ## Step 04 — Score growth via log-minmax scaling
 
 Ranking growth rates can't be compared directly across signals. A 20% increase in stars means something very different from a 20% increase in package downloads. We needed a way to put every signal on the same scale so they could be combined later.
@@ -107,22 +121,23 @@ Our first attempt was straight percentile ranks. The appeal was obvious: every s
 We ended up with a two-step **log-minmax** transform for each signal within each division:
 
 ```
-1. log_val = log(1 + padded_growth_rate)
-2. score   = (log_val − min) / (max − min) × 100
+1. capped  = min(padded_growth_rate, p99.9 of padded_growth_rate)
+2. log_val = log(1 + capped)
+3. score   = (log_val − min) / (max − min) × 100
 ```
 
 The logarithm compresses the long tail of growth rates while keeping real separation between a 10× and a 1,000× grower. The min-max step then maps the distribution to `[0, 100]`, so scores are directly comparable across signals.
 
-We don't clip. If one org grows exceptionally fast, it anchors the maximum and pushes everyone else down. That's the point — an exceptional grower should stand out on the leaderboard, and log-minmax makes that visible in a way percentiles can't.
+Until v8 we did not cap, on the reasoning that an exceptional grower should anchor the maximum and stand out. In Q3 2026 that broke down: one organization's package downloads grew more than 200 times faster than the next one's, which pushed every other organization in its division toward a package score of zero and turned that division into a ranking on stars alone. Since v9, each signal's growth is capped at its 99.9th percentile within the division before scaling. Every organization at or above the cap scores 100, so exceptional growers still lead, but a single extreme value no longer sets the scale for everyone else. The growth rates shown on the website are never capped.
 
-Both `min` and `max` are computed only over eligible organizations in the same division for that signal.
+The percentile, `min`, and `max` are computed only over eligible organizations in the same division for that signal.
 
 ### Why log-minmax over alternatives
 
 | Method | Problem |
 |---|---|
 | Raw percentile | Compresses all outliers toward the top — a 10× grower looks the same as a 1,000× grower |
-| Raw log | A single extreme value compresses everyone else toward 0 |
+| Raw log, or min-max without a cap | A single extreme value compresses everyone else toward 0 |
 | **Log-minmax** | Preserves outlier separation while keeping the scale bounded and comparable |
 
 ## Step 05 — Combine eligible scores via the L² norm
@@ -165,5 +180,6 @@ Because division assignment is based on stars at the first retained weekly bucke
 - **Weekly data collection.** Input data is snapshotted on a Sunday-based weekly cadence. Methodology uses the first and last bucket dates contained in the quarter, and the charts expose those same points. See [data-collection.md](data-collection.md) for details.
 - **Package coverage.** We currently track downloads from three registries: npm, PyPI, and Cargo. Orgs that publish to other ecosystems (Maven, RubyGems, NuGet, Go modules, Hex, and others) are effectively ranked on stars and contributors alone. We plan to expand registry coverage over time.
 - **Short-term growth bias.** Because the index measures a single quarter, mature projects that have plateaued at high adoption can rank poorly, even when they're foundational to their ecosystem. The index is a picture of momentum, not of importance.
+- **No filtering of inauthentic activity.** Rankings use the public numbers as they are. Stars, contributors, and downloads can be inflated, for example by bought stars, classroom repositories, or packages that are always installed together, and the index does not currently detect or exclude such activity.
 
 The project is fully open source. If you spot something wrong, want to suggest a new signal, or want to discuss any step of the methodology, [open an issue on GitHub](https://github.com/commitvc/osscar).

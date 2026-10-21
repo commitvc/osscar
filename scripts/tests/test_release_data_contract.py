@@ -85,13 +85,22 @@ def test_valid_release_record_accepts_fluctuating_package_downloads() -> None:
     assert audit.failures == 0
 
 
-def test_cumulative_github_series_cannot_decrease() -> None:
+def test_contributor_series_cannot_decrease() -> None:
     record = deepcopy(valid_record())
-    record["github_stars_weekly"][6]["value"] = 90
+    record["github_contributors_weekly"][6]["value"] = record["github_contributors_weekly"][5]["value"] - 1
 
     audit = audit_record(record)
 
-    assert any("github_stars_weekly decreases" in example for example in audit.examples)
+    assert any("github_contributors_weekly decreases" in example for example in audit.examples)
+
+
+def test_star_series_accepts_net_declines() -> None:
+    record = deepcopy(valid_record())
+    record["github_stars_weekly"][6]["value"] = record["github_stars_weekly"][5]["value"] - 1
+
+    audit = audit_record(record)
+
+    assert audit.failures == 0
 
 
 def test_package_series_rejects_weekly_gaps() -> None:

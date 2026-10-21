@@ -106,6 +106,10 @@ TIME_SERIES_TO_METRIC = {
     "github_contributors_weekly": "github_contributors",
 }
 
+# Contributors accumulate first appearances and never decrease. Stars are the
+# active stock net of unstars, so a real weekly decline is valid data.
+NON_DECREASING_SERIES = {"github_contributors_weekly"}
+
 PACKAGE_SERIES_COLUMNS = ["npm_weekly", "pypi_weekly", "cargo_weekly"]
 
 DB_SELECT_COLUMNS = [
@@ -581,7 +585,7 @@ def validate_records(source_data: SourceData, audit: Audit) -> None:
                 require_when_end_present=True,
                 fail_when_end_absent=True,
                 compare_last_to_end=True,
-                require_monotone=True,
+                require_monotone=field in NON_DECREASING_SERIES,
             )
 
         package_series: dict[str, list[tuple[date, float]]] = {}

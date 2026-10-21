@@ -7,6 +7,7 @@ produce correct, deterministic results.
 from pathlib import Path
 import sys
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -141,6 +142,27 @@ class TestLogMinmax:
         # Scores should be monotonically increasing
         for i in range(len(result) - 1):
             assert result.iloc[i] < result.iloc[i + 1]
+
+
+class TestGrowthCap:
+    def test_single_extreme_value_does_not_compress_other_scores(self):
+        growth = pd.Series(list(np.linspace(0.0, 10.0, 2000)) + [1e6])
+        scores = ci.log_minmax(ci.cap_growth(growth))
+        assert scores.iloc[-1] == pytest.approx(100.0)
+        # Uncapped, the organization just below the outlier would score ~17.
+        assert scores.iloc[-2] > 99.0
+
+    def test_cap_keeps_ordering_below_the_cap(self):
+        growth = pd.Series(np.linspace(0.0, 10.0, 2000))
+        capped = ci.cap_growth(growth)
+        below = growth < capped.max()
+        assert capped[below].equals(growth[below])
+
+    def test_displayed_growth_is_not_capped(self, scored_df: pd.DataFrame):
+        expected = ci.quarter_growth(scored_df["github_stars_start"], scored_df["github_stars_end"])
+        pd.testing.assert_series_equal(
+            scored_df["github_stars_growth_rate"], expected, check_names=False
+        )
 
 
 class TestPaddingThresholds:

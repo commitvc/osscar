@@ -20,14 +20,18 @@ OSSCAR does not cover every repository on GitHub. The universe is a defined set 
 
 - **Company-linked repositories** — all public repositories owned by GitHub organizations that are linked to a tracked company.
 - **Broader organization universe** — all public repositories owned by GitHub organizations created in 2015 or later.
-- **Archived repositories are excluded.**
+- **Forks and archived repositories are excluded.**
 - Duplicates across the two sets are resolved in favor of the company-linked entry.
 
 Because the universe is re-evaluated on every run, newly onboarded organizations, newly linked companies, and newly archived repositories take effect on the next weekly collection.
 
 ## Weekly windowing
 
-All data is bucketed into weeks running **Sunday → Saturday**, stored by the Sunday start date. Only *completed* weeks are written — the in-progress week is skipped until it closes. The weekly collection runs every Monday at 00:00 UTC, so the freshest available data on any given Monday covers the week that ended the prior Saturday.
+All data is bucketed into weeks. Source rows carry the Saturday label of
+their week, and each maps to the following Sunday, which is the bucket date
+OSSCAR publishes. Weeks labeled from September 2026 onward close on the
+Saturday rather than the Sunday, a one-day difference that is not corrected.
+Only *completed* weeks are written — the in-progress week is skipped until it closes. The weekly collection runs every Monday at 00:00 UTC, so the freshest available data on any given Monday covers the week that ended the prior Saturday.
 
 ## GitHub data
 
@@ -44,11 +48,21 @@ Each week, for every repository in the universe, we fetch the activity events em
 | `contributors_cum` | cumulative | Distinct author count (bots excluded) through this week |
 | `issues_cum` | cumulative | All-time issue count through this week |
 | `releases_cum` | cumulative | All-time release count through this week |
-| `stars_cum` | cumulative | Star count at the end of this week |
+| `stars_total` | stock | Active stars at capture, net of removed stars |
 | `forks_cum` | cumulative | Fork count at the end of this week |
 | `average_time_to_issue_resolution` | weekly | Mean resolution time for issues closed that week |
 
-The `*_cum` columns are the shape OSSCAR scoring consumes: growth compares the cumulative values at the first and last retained in-quarter weekly buckets.
+The `*_cum` columns are cumulative through each week. Stars are scored from
+`stars_total` and contributors from `github_contributors_weekly`, comparing
+values at the first and last retained in-quarter weekly buckets.
+
+**Star history.** `stars_total` is captured weekly from August 2026. Earlier
+weeks, and weeks a capture missed, are reconstructed from GitHub's star history,
+which dates each star that is still active by when it was given. A star removed
+since then is absent from the reconstruction, so reconstructed weeks slightly
+understate the stars that were active at the time. Because `stars_total` is net
+of removed stars, an organization's star count can decline from one week to
+the next.
 
 **Bot filtering.** Contributor counts exclude GitHub accounts whose login matches common automation patterns (suffix `[bot]`, known bot logins like `dependabot`, `renovate`, etc.). This is a heuristic — see [Limitations](#limitations).
 
@@ -143,7 +157,7 @@ For example, Q2 2026 runs from April 1 through June 30, so its Sunday bucket
 dates run from April 5 through June 28. The scalar start/end values, scoring
 inputs, published weekly arrays, and charts all use those same endpoints.
 
-- **Stars**, **contributors**, and each **download registry** are read from the cumulative columns described above.
+- **Stars** are read from `stars_total`; **contributors** and each **download registry** from the cumulative data described above. A star value may be carried forward from the most recent earlier measurement, at the quarter start only from the four weeks before it.
 - The three package download registries are then summed into a single `package_downloads` series before scoring (`npm + pypi + cargo`, treating missing registries as 0 when at least one is present).
 
 ### 2. Aggregate repositories to the organization
@@ -153,10 +167,16 @@ organization at each retained bucket. Contributors are deduplicated by login
 across the organization's repositories:
 
 ```
-org_stars(t)        = Σ repo.stars_cum(t)        over repos owned by org
+org_stars(t)        = Σ repo.stars_total(t)      over repos owned by org
 org_contributors(t) = count(distinct contributor_login seen by t)
-org_downloads(t)    = Σ pkg.downloads_cumulative(t) over packages linked to org's repos
+org_downloads(t)    = Σ pkg.downloads_cumulative(t) over distinct packages linked to org's repos
 ```
+
+A package linked to several repositories of one organization counts once. An
+organization's star series is published only from the first bucket where every
+repository that existed before the quarter has a measurement; if that is not
+the quarter's first bucket, its starting stars are unknown and it is not ranked
+(see [methodology.md](methodology.md#complete-star-baseline)).
 
 The resulting per-organization `*_start`/`*_end` columns, together with the per-quarter weekly time series, form the published input parquet `osscar_input_data_Q*_*.parquet`. See [data/SCHEMA.md](data/SCHEMA.md) for the full column list.
 
@@ -167,7 +187,8 @@ From there, [`methodology/compute_index.py`](../methodology/compute_index.py) ha
 We want to be explicit about what the data does and does not capture.
 
 - **The universe is a defined subset of GitHub.** Repositories outside the company-linked and 2015+ organization sets are not tracked. A newly onboarded organization can take one cycle to appear.
-- **Cumulative counts are forward-rolling.** If an upstream event is reported late (e.g. a star counted with a delay), future weekly cumulatives will reflect it, but historical weekly rows are not back-patched.
+- **Cumulative counts are forward-rolling.** If an upstream event is reported late (e.g. a commit counted with a delay), future weekly cumulatives will reflect it, but historical weekly rows are not back-patched.
+- **Reconstructed star weeks only see surviving stars.** Weeks rebuilt from GitHub's star history omit stars removed before the reconstruction, which can slightly overstate growth that is measured from a reconstructed start.
 - **Bot filtering is heuristic.** Automation accounts whose GitHub login doesn't match common bot patterns are counted as human contributors.
 - **Alt-account aliasing is not resolved.** A person who commits from both a personal and a work GitHub account is counted as two contributors.
 - **Package ↔ repository matching is imperfect.** A package whose manifest doesn't declare its source repository *and* isn't referenced in its repository's README cannot be linked. Monorepos that publish many packages only show the packages we successfully matched.

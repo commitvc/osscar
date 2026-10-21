@@ -31,6 +31,21 @@ const RANKING_REVEAL_CAMPAIGNS: Readonly<
       { startsAt: "2026-07-30T08:00:00.000Z", visibleFromRank: 1 },
     ],
   },
+  Q3_2026: {
+    totalRankCount: 100,
+    teaserCount: 3,
+    steps: [
+      { startsAt: "2026-10-21T08:00:00.000Z", visibleFromRank: 51 },
+      { startsAt: "2026-10-22T08:00:00.000Z", visibleFromRank: 41 },
+      { startsAt: "2026-10-23T08:00:00.000Z", visibleFromRank: 31 },
+      { startsAt: "2026-10-26T08:00:00.000Z", visibleFromRank: 21 },
+      { startsAt: "2026-10-27T08:00:00.000Z", visibleFromRank: 11 },
+      { startsAt: "2026-10-28T08:00:00.000Z", visibleFromRank: 4 },
+      { startsAt: "2026-10-29T08:00:00.000Z", visibleFromRank: 3 },
+      { startsAt: "2026-10-30T08:00:00.000Z", visibleFromRank: 2 },
+      { startsAt: "2026-11-02T08:00:00.000Z", visibleFromRank: 1 },
+    ],
+  },
 };
 
 export type RankingReveal = {
