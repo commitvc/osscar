@@ -92,37 +92,25 @@ test("shrinks the teaser stack as the reveal reaches the podium", () => {
   );
 });
 
-test("reveals Q3 on weekdays from October 21 and crowns #1 on November 2", () => {
-  assert.equal(
-    getRankingReveal("Q3_2026", new Date("2026-10-21T07:59:59.999Z"))
-      .visibleFromRank,
-    101,
-  );
-  assert.equal(
-    getRankingReveal("Q3_2026", new Date("2026-10-21T08:00:00.000Z"))
-      .visibleFromRank,
-    51,
-  );
-  // The weekend holds Friday's 31-40 batch until Monday's step fires.
-  assert.equal(
-    getRankingReveal("Q3_2026", new Date("2026-10-25T12:00:00.000Z"))
-      .visibleFromRank,
-    31,
-  );
+test("keeps Q3 fully hidden on October 21 and reveals the compressed schedule", () => {
   assert.deepEqual(
-    getRankingReveal("Q3_2026", new Date("2026-10-31T12:00:00.000Z")),
+    getRankingReveal("Q3_2026", new Date("2026-10-21T13:00:00.000Z")),
     {
-      visibleFromRank: 2,
+      visibleFromRank: 101,
       totalRankCount: 100,
-      teaserRanks: [1],
-      nextRevealAt: "2026-11-02T08:00:00.000Z",
+      teaserRanks: [98, 99, 100],
+      nextRevealAt: "2026-10-22T08:00:00.000Z",
     },
   );
-  assert.equal(
-    getRankingReveal("Q3_2026", new Date("2026-11-02T08:00:00.000Z"))
-      .visibleFromRank,
-    1,
-  );
+  const at = (iso: string) => getRankingReveal("Q3_2026", new Date(iso)).visibleFromRank;
+  assert.equal(at("2026-10-22T08:00:00.000Z"), 26);
+  assert.equal(at("2026-10-23T08:00:00.000Z"), 11);
+  // Weekend holds Friday's batch; Paris is UTC+1 from October 25.
+  assert.equal(at("2026-10-26T08:59:59.999Z"), 11);
+  assert.equal(at("2026-10-26T09:00:00.000Z"), 4);
+  assert.equal(at("2026-10-27T09:00:00.000Z"), 3);
+  assert.equal(at("2026-10-28T09:00:00.000Z"), 2);
+  assert.equal(at("2026-10-29T09:00:00.000Z"), 1);
 });
 
 test("filters only the unrevealed leading ranks without renumbering entries", () => {
