@@ -170,7 +170,7 @@ Signals with no data simply don't contribute to the sum of squares. An org that 
 
 ## Step 06 — Rank within each division
 
-Organizations are ranked by composite score in descending order, within each division on its own. Ties are broken by **minimum rank** — tied organizations share the same rank number (`pandas.rank(method="min")`).
+Organizations are ranked by composite score in descending order, within each division on its own. Equal composite scores, which the growth cap makes possible, are ordered by the composite computed without the cap, so the cap never hides which organization grew faster. Organizations still equal after that share the same rank number.
 
 Because division assignment is based on stars at the first retained weekly bucket (step 02), the ranking reflects growth over one consistent weekly measurement window and peer group.
 

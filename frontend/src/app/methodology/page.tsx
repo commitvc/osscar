@@ -356,7 +356,7 @@ export default function MethodologyPage() {
             <Prose>
               <p>
                 Organizations are ranked by their composite score in descending order, within each division on its own.
-                Ties are broken by minimum rank (tied organizations share the same rank number).
+                Equal composite scores, which the growth cap makes possible, are ordered by the composite computed without the cap, so the cap never hides which organization grew faster. Organizations still equal after that share the same rank number.
               </p>
               <p>
                 Division assignment is based on stars at the first retained weekly bucket, so the ranking reflects growth over one consistent weekly measurement window and peer group.

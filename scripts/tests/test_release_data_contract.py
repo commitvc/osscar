@@ -103,6 +103,18 @@ def test_star_series_accepts_net_declines() -> None:
     assert audit.failures == 0
 
 
+def test_star_scalars_accept_a_net_quarterly_decline() -> None:
+    record = deepcopy(valid_record())
+    for point in record["github_stars_weekly"]:
+        point["value"] = 100
+    record["github_stars_weekly"][-1]["value"] = 99
+    record["github_stars_start"], record["github_stars_end"] = 100, 99
+
+    audit = audit_record(record)
+
+    assert not any("github_stars_end" in example for example in audit.examples)
+
+
 def test_package_series_rejects_weekly_gaps() -> None:
     record = deepcopy(valid_record())
     del record["npm_weekly"][6]

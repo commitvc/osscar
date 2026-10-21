@@ -165,6 +165,29 @@ class TestGrowthCap:
         )
 
 
+class TestCapTies:
+    def test_equal_capped_scores_rank_by_uncapped_growth(self):
+        growth = list(np.linspace(0.0, 1.0, 3000)) + [50.0, 5000.0]
+        frame = pd.DataFrame({
+            "owner_id": [str(i) for i in range(len(growth))],
+            "owner_login": [f"org-{i}" for i in range(len(growth))],
+            "github_stars_start": 100.0,
+            "github_stars_end": [100.0 * (1 + g) for g in growth],
+        })
+        frame["division"] = "emerging"
+
+        for metric in [m for m in ci.active_metrics() if m.key != "github_stars"]:
+            frame[metric.start_col] = np.nan
+            frame[metric.end_col] = np.nan
+        frame = ci.add_metric_growth_scores(frame, ci.active_metrics())
+        frame = ci.add_metric_weights_and_score(frame, ci.active_metrics())
+        frame = ci.add_ranks(frame)
+        fast, faster = frame.iloc[-2], frame.iloc[-1]
+        assert fast["composite_score"] == pytest.approx(faster["composite_score"])
+        assert faster["division_rank"] == 1
+        assert fast["division_rank"] == 2
+
+
 class TestPaddingThresholds:
     def test_emerging_stars_padding(self):
         divisions = pd.Series(["emerging"])

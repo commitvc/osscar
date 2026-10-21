@@ -106,9 +106,12 @@ TIME_SERIES_TO_METRIC = {
     "github_contributors_weekly": "github_contributors",
 }
 
-# Contributors accumulate first appearances and never decrease. Stars are the
-# active stock net of unstars, so a real weekly decline is valid data.
-NON_DECREASING_SERIES = {"github_contributors_weekly"}
+# Contributors and cumulative downloads never decrease. Stars are the active
+# stock net of unstars, so a real decline is valid data.
+NON_DECREASING_METRICS = {"github_contributors", "package_downloads"}
+NON_DECREASING_SERIES = {
+    field for field, metric in TIME_SERIES_TO_METRIC.items() if metric in NON_DECREASING_METRICS
+}
 
 PACKAGE_SERIES_COLUMNS = ["npm_weekly", "pypi_weekly", "cargo_weekly"]
 
@@ -559,7 +562,12 @@ def validate_records(source_data: SourceData, audit: Audit) -> None:
         for metric in METRIC_PREFIXES:
             start_value = as_float(record[f"{metric}_start"])
             end_value = as_float(record[f"{metric}_end"])
-            if start_value is not None and end_value is not None and end_value < start_value:
+            if (
+                metric in NON_DECREASING_METRICS
+                and start_value is not None
+                and end_value is not None
+                and end_value < start_value
+            ):
                 audit.fail(
                     f"{source} {row_label}: {metric}_end {end_value:g} is smaller than "
                     f"{metric}_start {start_value:g}"
