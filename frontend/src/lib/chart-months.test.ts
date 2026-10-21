@@ -70,3 +70,16 @@ test("rejects points outside the quarter buckets", () => {
     /not a quarter bucket/,
   );
 });
+
+test("includes the first day when a quarter starts on a Sunday", () => {
+  const buckets = getQuarterBucketDates("2029-07-01", "2029-09-30");
+  assert.equal(buckets[0], "2029-07-01");
+  assert.equal(buckets.at(-1), "2029-09-30");
+});
+
+test("ends Q4 buckets inside the year", () => {
+  const buckets = getQuarterBucketDates("2026-10-01", "2026-12-31");
+  assert.equal(buckets[0], "2026-10-04");
+  assert.equal(buckets.at(-1), "2026-12-27");
+  assert.equal(buckets.length, 13);
+});

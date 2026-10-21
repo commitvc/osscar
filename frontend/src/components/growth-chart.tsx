@@ -47,6 +47,7 @@ function CustomTooltip({ active, payload, label, color, periodLabel }: CustomToo
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   });
 
   return (
@@ -164,11 +165,19 @@ export function GrowthChart({ metrics, quarterStart, quarterEnd }: GrowthChartPr
   const firstObserved = chartData.findIndex((point) => point.value != null);
   const monthTicks = getMonthlyTickDates(chartData);
   const visibleMonthDates = new Set(monthTicks);
-  const firstObservedLabel = new Date(`${buckets[firstObserved]}T00:00:00Z`).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    timeZone: "UTC",
-  });
+  const noDataLabel =
+    firstObserved > 0
+      ? `No data before ${new Date(`${buckets[firstObserved]}T00:00:00Z`).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          timeZone: "UTC",
+        })}`
+      : null;
+  // A line needs two adjacent points; an observation between gaps is drawn as a dot.
+  const isIsolated = (index: number) =>
+    chartData[index]?.value != null &&
+    chartData[index - 1]?.value == null &&
+    chartData[index + 1]?.value == null;
 
   return (
     <div
@@ -266,15 +275,16 @@ export function GrowthChart({ metrics, quarterStart, quarterEnd }: GrowthChartPr
               }
               cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
             />
-            {firstObserved > 0 && (
+            {noDataLabel && (
               <ReferenceArea
                 x1={buckets[0]}
                 x2={buckets[firstObserved]}
-                fill="rgba(255,255,255,0.03)"
+                fill="rgba(255,255,255,0.05)"
+                fillOpacity={1}
                 stroke="none"
                 ifOverflow="visible"
                 label={{
-                  value: `No data before ${firstObservedLabel}`,
+                  value: noDataLabel,
                   position: "insideTopLeft",
                   fill: "rgba(255,255,255,0.4)",
                   fontSize: 10,
@@ -290,7 +300,20 @@ export function GrowthChart({ metrics, quarterStart, quarterEnd }: GrowthChartPr
               stroke={current.color}
               strokeWidth={2}
               fill={`url(#${gradientId})`}
-              dot={false}
+              dot={(props: { cx?: number; cy?: number; index?: number }) =>
+                props.index != null && props.cx != null && props.cy != null && isIsolated(props.index) ? (
+                  <circle
+                    key={`isolated-${props.index}`}
+                    cx={props.cx}
+                    cy={props.cy}
+                    r={3}
+                    fill={current.color}
+                    data-testid="growth-chart-isolated-point"
+                  />
+                ) : (
+                  <g key={`no-dot-${props.index}`} />
+                )
+              }
               activeDot={{
                 r: 4,
                 fill: current.color,
