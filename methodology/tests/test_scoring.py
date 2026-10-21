@@ -188,6 +188,43 @@ class TestCapTies:
         assert fast["division_rank"] == 2
 
 
+class TestRankTies:
+    @staticmethod
+    def ranked(frame: pd.DataFrame) -> pd.DataFrame:
+        frame["division"] = "emerging"
+        frame = ci.add_metric_growth_scores(frame, ci.active_metrics())
+        frame = ci.add_metric_weights_and_score(frame, ci.active_metrics())
+        return ci.add_ranks(frame)
+
+    def test_identical_organizations_share_a_rank_and_skip_the_next(self):
+        frame = pd.DataFrame({
+            "owner_login": ["a", "b", "c"],
+            "github_stars_start": [100.0, 100.0, 100.0],
+            "github_stars_end": [400.0, 400.0, 200.0],
+        })
+        for metric in ci.active_metrics():
+            if metric.key != "github_stars":
+                frame[metric.start_col] = np.nan
+                frame[metric.end_col] = np.nan
+        ranks = self.ranked(frame).set_index("owner_login")["division_rank"]
+        assert ranks.to_dict() == {"a": 1, "b": 1, "c": 3}
+
+    def test_missing_signals_count_as_zero_in_the_tiebreak(self):
+        frame = pd.DataFrame({
+            "owner_login": ["stars-only", "two-signals", "other"],
+            "github_stars_start": [100.0, 100.0, 100.0],
+            "github_stars_end": [400.0, 400.0, 150.0],
+            "github_contributors_start": [np.nan, 5.0, 5.0],
+            "github_contributors_end": [np.nan, 10.0, 6.0],
+            "package_downloads_start": [np.nan, np.nan, np.nan],
+            "package_downloads_end": [np.nan, np.nan, np.nan],
+        })
+        ranked = self.ranked(frame)
+        assert ranked["composite_tiebreak"].notna().all()
+        ranks = ranked.set_index("owner_login")["division_rank"]
+        assert ranks["two-signals"] < ranks["stars-only"]
+
+
 class TestPaddingThresholds:
     def test_emerging_stars_padding(self):
         divisions = pd.Series(["emerging"])

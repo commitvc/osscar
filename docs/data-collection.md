@@ -27,11 +27,15 @@ Because the universe is re-evaluated on every run, newly onboarded organizations
 
 ## Weekly windowing
 
-All data is bucketed into weeks. Source rows carry the Saturday label of
-their week, and each maps to the following Sunday, which is the bucket date
-OSSCAR publishes. Weeks labeled from September 2026 onward close on the
-Saturday rather than the Sunday, a one-day difference that is not corrected.
-Only *completed* weeks are written — the in-progress week is skipped until it closes. The weekly collection runs every Monday at 00:00 UTC, so the freshest available data on any given Monday covers the week that ended the prior Saturday.
+Data is collected once a week, and only *completed* weeks are written; the
+in-progress week is skipped until it closes. The collection runs every Monday
+at 00:00 UTC.
+
+OSSCAR dates each weekly bucket with a Sunday. The source stores the same week
+under the Saturday just before that Sunday, so a source row labeled Saturday
+July 4 becomes the bucket of Sunday July 5. Weeks stored from September 2026
+onward end on that Saturday rather than on the following Sunday; this one-day
+difference is not corrected.
 
 ## GitHub data
 

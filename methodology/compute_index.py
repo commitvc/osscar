@@ -222,8 +222,8 @@ def add_metric_growth_scores(df: pd.DataFrame, metrics: List[MetricSpec]) -> pd.
     for metric in metrics:
         padding_col = f"{metric.key}_padding_threshold"
         padded_start_col = f"{metric.key}_start_for_growth"
-        # Real rate (end - start) / start — shown to users; never negative for
-        # monotonic metrics. Padded rate is kept for scoring only.
+        # Real rate (end - start) / start — shown to users; negative when stars,
+        # a net stock, decline. Padded rate is kept for scoring only.
         growth_col = f"{metric.key}_growth_rate"
         padded_growth_col = f"{metric.key}_padded_growth_rate"
         eligible_col = f"{metric.key}_eligible_for_scoring"

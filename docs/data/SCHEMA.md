@@ -41,7 +41,7 @@ The parquet also carries weekly time-series arrays and a per-repository detail a
 
 | Column | Element schema | Description |
 |---|---|---|
-| `github_stars_weekly` | `{ date, value }` | Cumulative weekly star counts over the quarter |
+| `github_stars_weekly` | `{ date, value }` | Weekly active-star counts over the quarter, net of removed stars, so values can decrease |
 | `github_contributors_weekly` | `{ date, value }` | Cumulative weekly contributor counts |
 | `npm_weekly` | `{ date, value }` | Weekly npm download counts |
 | `pypi_weekly` | `{ date, value }` | Weekly PyPI download counts |
