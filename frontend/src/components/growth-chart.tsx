@@ -65,6 +65,29 @@ function CustomTooltip({ active, payload, label, color, periodLabel }: CustomToo
   );
 }
 
+interface HoverCursorProps {
+  points?: ReadonlyArray<{ x: number; y: number }>;
+  payload?: ReadonlyArray<{ value?: number | null }>;
+}
+
+/** Hover line, drawn only on weeks that have an observation. */
+function HoverCursor({ points, payload }: HoverCursorProps) {
+  const [start, end] = points ?? [];
+  if (payload?.[0]?.value == null || !start || !end) return null;
+  return (
+    <line
+      x1={start.x}
+      y1={start.y}
+      x2={end.x}
+      y2={end.y}
+      stroke="rgba(255,255,255,0.1)"
+      strokeWidth={1}
+      pointerEvents="none"
+      data-testid="growth-chart-hover-cursor"
+    />
+  );
+}
+
 interface GrowthChartProps {
   metrics: MetricConfig[];
   quarterStart: string;
@@ -273,7 +296,7 @@ export function GrowthChart({ metrics, quarterStart, quarterEnd }: GrowthChartPr
                   periodLabel={current.periodLabel}
                 />
               }
-              cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
+              cursor={<HoverCursor />}
             />
             {noDataLabel && (
               <ReferenceArea
