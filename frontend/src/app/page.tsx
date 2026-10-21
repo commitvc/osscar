@@ -33,9 +33,12 @@ export default async function Home({ searchParams }: Props) {
   if (!quarter) notFound()
 
   const rankings = await getRankingsForQuarter(quarter)
-  const reveal = getRankingReveal(quarter.id)
-  const emerging = filterRankingsForReveal(rankings.emerging, reveal)
-  const scaling = filterRankingsForReveal(rankings.scaling, reveal)
+  const reveals = {
+    emerging: getRankingReveal(quarter.id, "emerging"),
+    scaling: getRankingReveal(quarter.id, "scaling"),
+  }
+  const emerging = filterRankingsForReveal(rankings.emerging, reveals.emerging)
+  const scaling = filterRankingsForReveal(rankings.scaling, reveals.scaling)
   const quarterParam = quarter.is_current ? null : quarter.id
 
   // Build slug → active package managers map from per-manager weekly series
@@ -109,12 +112,12 @@ export default async function Home({ searchParams }: Props) {
         <section className="px-6 py-10">
           <div className="max-w-6xl mx-auto space-y-8">
             <OrgTable
-              key={`${quarter.id}:${reveal.visibleFromRank}`}
+              key={`${quarter.id}:${reveals.emerging.visibleFromRank}:${reveals.scaling.visibleFromRank}`}
               emerging={emerging}
               scaling={scaling}
               packageSources={packageSources}
               quarterId={quarterParam}
-              reveal={reveal}
+              reveals={reveals}
               searchSlot={
                 <HomeSearch
                   orgs={[...emerging, ...scaling]}
