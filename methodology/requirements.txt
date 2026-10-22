@@ -1,4 +1,4 @@
-pandas==3.0.3
+pandas==3.0.5
 numpy==2.4.4
 pyarrow==24.0.0
 pytest==9.0.3
